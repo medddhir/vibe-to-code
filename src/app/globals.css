@@ -201,10 +201,10 @@ pre {
 .eyebrow {
   margin-bottom: 14px;
   color: var(--accent-dark);
-  font-size: 0.76rem;
+  font-size: 0.875rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
-  line-height: 1.2;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
   text-transform: uppercase;
 }
 
@@ -1241,7 +1241,7 @@ pre {
   display: inline-flex;
   margin-bottom: 32px;
   color: var(--muted);
-  font-size: 0.84rem;
+  font-size: 0.9375rem;
   font-weight: 720;
 }
 
@@ -4098,6 +4098,478 @@ pre {
   text-transform: uppercase;
 }
 
+/* Lesson 1 v3: action-first learning patterns */
+.mission-kickoff {
+  display: grid;
+  align-items: center;
+  padding: 36px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-large);
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 38%),
+    var(--surface);
+  box-shadow: var(--shadow-large);
+  grid-template-columns: minmax(0, 1.35fr) minmax(250px, 0.65fr);
+  gap: 34px;
+}
+
+.mission-kickoff .lesson-label {
+  margin-bottom: 28px;
+}
+
+.mission-kickoff h2 {
+  max-width: 620px;
+  margin-bottom: 18px;
+  font-size: clamp(2.65rem, 6vw, 4.4rem);
+  letter-spacing: -0.06em;
+}
+
+.mission-kickoff .mission-lead {
+  margin-bottom: 0;
+}
+
+.mission-kickoff-status {
+  display: grid;
+  min-height: 170px;
+  align-content: center;
+  padding: 26px;
+  border: 1px solid var(--code-line);
+  border-radius: var(--radius-medium);
+  background: var(--code-background);
+  color: var(--code-text);
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 17px;
+}
+
+.mission-kickoff-status > span {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border: 1px solid #363d4a;
+  border-radius: 16px;
+  background: var(--code-surface);
+  color: var(--code-accent);
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.mission-kickoff-status div {
+  display: grid;
+  align-content: center;
+  gap: 7px;
+}
+
+.mission-kickoff-status small {
+  color: var(--code-muted);
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mission-kickoff-status strong {
+  color: var(--code-success);
+  line-height: 1.35;
+}
+
+.signal-path-challenge {
+  margin-top: 36px;
+  padding: 28px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-large);
+  background: var(--surface);
+  box-shadow: var(--shadow-small);
+}
+
+.signal-path-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 20px;
+}
+
+.signal-path-heading .eyebrow {
+  margin-bottom: 7px;
+}
+
+.signal-path-heading h3 {
+  margin-bottom: 0;
+  font-size: 1.5rem;
+}
+
+.signal-path-heading > span {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  gap: 8px;
+}
+
+.signal-path-heading > span i {
+  color: var(--accent-dark);
+  font-style: normal;
+}
+
+.signal-path-heading > span.is-passed {
+  border-color: var(--success-line);
+  background: var(--success-surface);
+  color: var(--success-text);
+}
+
+.signal-path-instructions {
+  max-width: 65ch;
+  margin-bottom: 24px;
+  color: var(--muted);
+}
+
+.signal-path-slots {
+  display: grid;
+  margin-bottom: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.signal-path-slots > div {
+  display: grid;
+  min-height: 82px;
+  align-items: center;
+  padding: 14px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 14px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.signal-path-slots > div.is-filled {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--line));
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+.signal-path-slots span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--accent-dark);
+  font-family: var(--font-mono);
+  font-weight: 850;
+}
+
+.signal-path-slots small,
+.signal-path-slots strong {
+  line-height: 1.35;
+}
+
+.signal-path-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.signal-path-picker button {
+  display: grid;
+  min-height: 132px;
+  align-content: start;
+  padding: 18px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-medium);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+  gap: 6px;
+}
+
+.signal-path-picker button:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: translateY(-2px);
+}
+
+.signal-path-picker button.is-selected,
+.signal-path-picker button:disabled {
+  cursor: default;
+}
+
+.signal-path-picker button.is-selected {
+  border-color: var(--success-line);
+  background: var(--success-surface);
+  color: var(--success-text);
+  opacity: 1;
+}
+
+.signal-path-picker button > span {
+  margin-bottom: 10px;
+  color: var(--accent-dark);
+  font-family: var(--font-mono);
+  font-weight: 850;
+}
+
+.signal-path-picker button small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.signal-path-actions {
+  display: flex;
+  margin-top: 18px;
+  gap: 10px;
+}
+
+.signal-path-feedback {
+  display: grid;
+  align-items: start;
+  margin-top: 16px;
+  padding: 15px 16px;
+  border: 1px solid var(--warning-line);
+  border-radius: 13px;
+  background: var(--warning-surface);
+  color: var(--warning-text);
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.signal-path-feedback.is-correct {
+  border-color: var(--success-line);
+  background: var(--success-surface);
+  color: var(--success-text);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--success-line) 30%, transparent);
+}
+
+.signal-path-feedback span {
+  font-family: var(--font-mono);
+  font-weight: 900;
+}
+
+.signal-path-feedback p {
+  margin: 0;
+}
+
+.ai-claim-card {
+  display: grid;
+  align-items: center;
+  margin: 28px 0 0;
+  padding: 20px;
+  border: 1px solid var(--warning-line);
+  border-radius: var(--radius-medium);
+  background: var(--warning-surface);
+  color: var(--warning-text);
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 15px;
+}
+
+.ai-claim-card > span {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid var(--warning-line);
+  border-radius: 14px;
+  font-family: var(--font-mono);
+  font-weight: 900;
+}
+
+.ai-claim-card div {
+  display: grid;
+  gap: 4px;
+}
+
+.ai-claim-card small {
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ai-claim-card p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+/* Learning typography contract: meaningful lesson text never becomes tiny. */
+.guided-lesson-main {
+  --lesson-meta: 0.875rem;
+  --lesson-ui: 1rem;
+  --lesson-body: 1.125rem;
+}
+
+.guided-lesson-main .eyebrow,
+.guided-lesson-main small {
+  font-size: var(--lesson-meta);
+  line-height: 1.45;
+}
+
+.guided-lesson-main .breadcrumb {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  font-size: 0.9375rem;
+}
+
+.guided-lesson-main .lesson-sidebar > small,
+.guided-lesson-main .lesson-topic-summary,
+.guided-lesson-main .lesson-topic-summary strong,
+.guided-lesson-main .lesson-active-progress > div:first-child span,
+.guided-lesson-main .lesson-active-progress > div:first-child strong,
+.guided-lesson-main .lesson-active-progress > small {
+  font-size: var(--lesson-meta);
+  line-height: 1.45;
+}
+
+.guided-lesson-main .lesson-step-nav button {
+  min-height: 66px;
+  padding: 10px;
+}
+
+.guided-lesson-main .lesson-step-nav button > span:first-child {
+  font-size: 0.8125rem;
+}
+
+.guided-lesson-main .lesson-step-nav small {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+.guided-lesson-main .lesson-step-nav strong {
+  font-size: 0.9375rem;
+  line-height: 1.35;
+}
+
+.guided-lesson-main .lesson-step-nav button:disabled {
+  color: var(--muted);
+  opacity: 0.72;
+}
+
+.guided-lesson-main .lesson-reset {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  font-size: 0.9375rem;
+}
+
+.guided-lesson-main .lesson-panel-start:focus-visible {
+  border-radius: 16px;
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 4px;
+}
+
+.guided-lesson-main .lesson-section > p,
+.guided-lesson-main .mission-topic > p {
+  max-width: 65ch;
+  font-size: var(--lesson-body);
+  line-height: 1.7;
+}
+
+.guided-lesson-main .mission-lead {
+  max-width: 62ch;
+  font-size: 1.1875rem;
+  line-height: 1.7;
+}
+
+.guided-lesson-main .lesson-label,
+.guided-lesson-main .mission-objectives span,
+.guided-lesson-main .mission-goal-strip span,
+.guided-lesson-main .debug-recipe span,
+.guided-lesson-main .mission-capabilities span,
+.guided-lesson-main .practice-console-heading > span,
+.guided-lesson-main .choice-checkpoint-heading > span,
+.guided-lesson-main .practice-console-bar small,
+.guided-lesson-main .practice-editor-wrap > label,
+.guided-lesson-main .practice-output-label,
+.guided-lesson-main .lesson-complete-reward,
+.guided-lesson-main .signal-path-heading > span {
+  font-size: var(--lesson-meta);
+  line-height: 1.4;
+}
+
+.guided-lesson-main .lesson-gate-note p,
+.guided-lesson-main .lesson-ready-note p,
+.guided-lesson-main .code-anatomy p,
+.guided-lesson-main .choice-feedback p,
+.guided-lesson-main .practice-first-run-note p,
+.guided-lesson-main .practice-safety-note p,
+.guided-lesson-main .practice-hint p,
+.guided-lesson-main .mission-capabilities p,
+.guided-lesson-main .practice-output p,
+.guided-lesson-main .signal-path-feedback p,
+.guided-lesson-main .ai-claim-card p {
+  font-size: var(--lesson-ui);
+  line-height: 1.6;
+}
+
+.guided-lesson-main .mission-objectives li,
+.guided-lesson-main .practice-console-instructions,
+.guided-lesson-main .signal-path-instructions {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+.guided-lesson-main .code-anatomy code,
+.guided-lesson-main .mission-goal-strip code,
+.guided-lesson-main .choice-checkpoint legend,
+.guided-lesson-main .choice-options strong,
+.guided-lesson-main .debug-recipe strong,
+.guided-lesson-main .signal-path-picker strong {
+  font-size: 1.0625rem;
+  line-height: 1.5;
+}
+
+.guided-lesson-main .code-window figcaption {
+  font-size: var(--lesson-meta);
+}
+
+.guided-lesson-main .code-window pre,
+.guided-lesson-main .practice-editor textarea,
+.guided-lesson-main .practice-output pre {
+  font-size: var(--lesson-ui);
+  line-height: 1.75;
+}
+
+.guided-lesson-main .practice-run-button,
+.guided-lesson-main .practice-reset-button {
+  min-height: 48px;
+  font-size: var(--lesson-ui);
+}
+
+.guided-lesson-main .practice-console-actions > small,
+.guided-lesson-main .practice-empty-output {
+  color: var(--code-muted) !important;
+}
+
+.guided-lesson-main .choice-options label {
+  min-height: 60px;
+  padding-block: 12px;
+}
+
+.guided-lesson-main .guided-lesson-navigation small {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.guided-lesson-main .guided-lesson-navigation .button:disabled {
+  border-color: var(--line);
+  background: var(--surface-soft);
+  color: var(--muted);
+  opacity: 1;
+}
+
 .contribution-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4386,6 +4858,14 @@ pre {
   .mission-signal-screen {
     min-height: 190px;
   }
+
+  .mission-kickoff {
+    grid-template-columns: 1fr;
+  }
+
+  .mission-kickoff-status {
+    min-height: 130px;
+  }
 }
 
 @media (max-width: 680px) {
@@ -4600,6 +5080,75 @@ pre {
 
   .guided-lesson-panel {
     min-height: 0;
+  }
+
+  .lesson-mobile-toc > summary {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    font-size: 1rem;
+  }
+
+  .mission-kickoff {
+    padding: 28px 20px;
+    gap: 24px;
+  }
+
+  .mission-kickoff .lesson-label {
+    margin-bottom: 22px;
+  }
+
+  .mission-kickoff h2 {
+    font-size: clamp(2.35rem, 12vw, 3.6rem);
+  }
+
+  .mission-kickoff-status {
+    min-height: 120px;
+    padding: 20px;
+    grid-template-columns: 50px minmax(0, 1fr);
+  }
+
+  .mission-kickoff-status > span {
+    width: 50px;
+    height: 50px;
+  }
+
+  .signal-path-challenge {
+    padding: 22px 16px;
+  }
+
+  .signal-path-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .signal-path-slots,
+  .signal-path-picker {
+    grid-template-columns: 1fr;
+  }
+
+  .signal-path-picker button {
+    min-height: 112px;
+  }
+
+  .signal-path-actions {
+    flex-direction: column;
+  }
+
+  .signal-path-actions .button {
+    width: 100%;
+  }
+
+  .ai-claim-card {
+    align-items: start;
+    padding: 18px 16px;
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .ai-claim-card > span {
+    width: 42px;
+    height: 42px;
   }
 
   .mission-brief-topic {
@@ -4924,7 +5473,12 @@ pre {
   .practice-reset-button,
   .choice-checkpoint,
   .choice-options label,
-  .mission-brief-card {
+  .mission-brief-card,
+  .mission-kickoff,
+  .mission-kickoff-status,
+  .signal-path-challenge,
+  .signal-path-picker button,
+  .ai-claim-card {
     border: 1px solid ButtonText;
   }
 

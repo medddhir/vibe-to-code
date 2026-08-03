@@ -10,6 +10,7 @@ import {
   type GuidedLessonStep,
 } from "@/components/guided-lesson-flow";
 import { PracticeConsole } from "@/components/practice-console";
+import { SignalPathChallenge } from "@/components/signal-path-challenge";
 import { getCourse } from "@/data/curriculum";
 
 export const metadata: Metadata = {
@@ -19,21 +20,15 @@ export const metadata: Metadata = {
 
 const lessonSteps: GuidedLessonStep[] = [
   {
-    id: "brief",
-    title: "Read the mission",
-    eyebrow: "Mission brief",
-    continueLabel: "Start the mission",
-  },
-  {
-    id: "flow",
-    title: "Find the doer",
-    eyebrow: "Follow the signal",
+    id: "launch",
+    title: "Wake Byte",
+    eyebrow: "Your first win",
     requiresPractice: true,
   },
   {
-    id: "launch",
-    title: "Send the first signal",
-    eyebrow: "Run real code",
+    id: "flow",
+    title: "Build the signal path",
+    eyebrow: "Connect the system",
     requiresPractice: true,
   },
   {
@@ -44,8 +39,8 @@ const lessonSteps: GuidedLessonStep[] = [
   },
   {
     id: "remix",
-    title: "Remix one value",
-    eyebrow: "Edit and observe",
+    title: "Make it yours",
+    eyebrow: "Personalize the code",
     requiresPractice: true,
   },
   {
@@ -59,24 +54,6 @@ const lessonSteps: GuidedLessonStep[] = [
     title: "Verify before trusting",
     eyebrow: "AI builder habit",
     requiresPractice: true,
-  },
-];
-
-const flowOptions: ChoiceCheckpointOption[] = [
-  {
-    id: "source",
-    label: "Source code",
-    feedback: "Source code is the written instruction. It still needs software to run it.",
-  },
-  {
-    id: "runtime",
-    label: "Runtime",
-    feedback: "Correct—the runtime is the doer.",
-  },
-  {
-    id: "output",
-    label: "Output",
-    feedback: "Output is the result you receive after the instruction runs.",
   },
 ];
 
@@ -103,147 +80,74 @@ const predictionOptions: ChoiceCheckpointOption[] = [
   },
 ];
 
-const verificationOptions: ChoiceCheckpointOption[] = [
-  {
-    id: "trust",
-    label: "Trust it because the AI sounds confident",
-    feedback: "Confidence is not evidence. AI can explain broken code convincingly.",
-  },
-  {
-    id: "paste-more",
-    label: "Paste in more AI-generated code",
-    feedback: "More code creates more things to check. Verify the small example first.",
-  },
-  {
-    id: "run-check",
-    label: "Run it, compare the output, then test one small change",
-    feedback: "Correct—run, inspect, and test before you trust.",
-  },
-];
-
 export default function WhatIsCodeLesson() {
   const totalLessons = getCourse("foundations")?.lessonCount ?? 46;
 
   return (
     <GuidedLessonFlow
       lessonId="what-is-code"
-      lessonVersion={2}
+      lessonVersion={3}
       courseHref="/courses/foundations"
       courseName="Developer Foundations"
       levelLabel="Level 0"
       lessonNumber={1}
       totalLessons={totalLessons}
       title="What code actually is"
-      estimatedMinutes={12}
+      estimatedMinutes={10}
       steps={lessonSteps}
       stepNoun="Checkpoint"
       progressLabel="Mission progress"
       finalButtonLabel="Complete mission"
       completionEyebrow="Mission 01 complete"
-      completionTitle="You sent your first signal—and proved you understood it."
-      completionDescription="You can now read a tiny instruction, predict its result, run it, change it, and repair one bug. That is real progress."
-      completionReward="Badge earned · First Signal"
+      completionTitle="The bot is awake—and you stayed in control."
+      completionDescription="You built the path, predicted a result, ran real Python, personalized it, repaired a bug, and checked an AI claim with evidence."
+      completionReward="Skill unlocked · Code Operator"
     >
-      <div id="brief" className="guided-topic mission-brief-topic">
-        <section className="mission-brief-card">
-          <div className="mission-brief-copy">
-            <div className="lesson-label">Mission 01 · First Signal</div>
-            <p className="eyebrow">Your objective</p>
-            <h1>Make the machine say exactly what you mean.</h1>
-            <p className="mission-lead">
-              Code is a list of exact instructions. A computer follows what you write—not
-              what you meant. In the next 12 minutes, you will run code, change it, break
-              it, and fix it.
-            </p>
-
-            <ul className="mission-objectives" aria-label="Mission objectives">
-              <li><span aria-hidden="true">01</span> Read one Python instruction</li>
-              <li><span aria-hidden="true">02</span> Predict what it will display</li>
-              <li><span aria-hidden="true">03</span> Repair a real error</li>
-            </ul>
-          </div>
-
-          <div className="mission-signal-card" aria-label="System waiting for its first instruction">
-            <div className="mission-signal-bar">
-              <span>Learning runner</span>
-              <small><i aria-hidden="true" /> Online</small>
-            </div>
-            <div className="mission-signal-screen" aria-hidden="true">
-              <span className="signal-line signal-line-short" />
-              <span className="signal-line" />
-              <span className="signal-line signal-line-medium" />
-              <div className="signal-prompt">
-                <span>&gt;</span>
-                <strong>waiting for an exact instruction</strong>
-                <i />
-              </div>
-            </div>
-            <p>No installation. No setup. Your first checkpoint is ready.</p>
-          </div>
-        </section>
-
-        <div className="lesson-ready-note mission-ready-note">
-          <span aria-hidden="true">✓</span>
-          <p><strong>Safe practice space.</strong> The small runner cannot access your files or the internet.</p>
-        </div>
-      </div>
-
-      <section id="flow" className="lesson-section guided-topic mission-topic">
-        <p className="eyebrow">Follow the signal</p>
-        <h2>Every result travels through three stops.</h2>
-        <p>Keep these roles separate and error messages become much less mysterious.</p>
-
-        <div className="concept-beam" aria-label="Source code goes to a runtime, which produces output">
-          <div>
-            <span>01</span>
-            <strong>Source code</strong>
-            <p>The instruction you can read and edit.</p>
-          </div>
-          <i aria-hidden="true" />
-          <div>
-            <span>02</span>
-            <strong>Runtime</strong>
-            <p>The software that executes the instruction.</p>
-          </div>
-          <i aria-hidden="true" />
-          <div>
-            <span>03</span>
-            <strong>Output</strong>
-            <p>The text, screen, file, or action you receive.</p>
-          </div>
-        </div>
-
-        <ChoiceCheckpoint
-          stepId="flow"
-          title="Find the doer"
-          question="Which part actually runs the instruction?"
-          options={flowOptions}
-          correctId="runtime"
-          successMessage="Correct—the runtime is the doer. Source code goes in; output comes out."
-          hint="Look for the part described as software that executes the instruction."
-        />
-      </section>
-
       <section id="launch" className="lesson-section guided-topic mission-topic">
-        <p className="eyebrow">Run real code</p>
-        <h2>Send your first signal.</h2>
-        <p>This Python instruction asks the runtime to display one piece of text.</p>
-
-        <div className="code-anatomy" aria-label="Parts of a Python print instruction">
-          <article><code>print</code><p>The command that displays something.</p></article>
-          <article><code>( )</code><p>The place where you give the command information.</p></article>
-          <article><code>&quot;Hello&quot;</code><p>Text in quotes is called a string.</p></article>
+        <div className="mission-kickoff">
+          <div>
+            <div className="lesson-label">Mission 01 · Wake the bot</div>
+            <p className="eyebrow">Your first win starts now</p>
+            <h2>Make a silent bot speak.</h2>
+            <p className="mission-lead">
+              Code is an exact instruction. Change one message below and run it—Byte will
+              do precisely what you wrote.
+            </p>
+          </div>
+          <div className="mission-kickoff-status" aria-label="Byte is waiting for an instruction">
+            <span aria-hidden="true">&gt;_</span>
+            <div>
+              <small>Byte · learning bot</small>
+              <strong>Waiting for your signal</strong>
+            </div>
+          </div>
         </div>
 
         <PracticeConsole
           stepId="launch"
-          title="Make Python say hello"
-          instructions="Replace the words inside the quotation marks so the output is exactly: Hello, coder!"
-          starterCode={'print("Type your message")'}
-          expectedOutput="Hello, coder!"
-          successMessage="First signal received. You wrote source code, the runner executed it, and the output matched."
-          hint={'Use lowercase print and matching quotes: print("Hello, coder!")'}
+          title="Wake Byte with one line"
+          instructions="Change only the words inside the quotation marks. Make the output exactly: Hello, Byte!"
+          starterCode={'print("I am sleeping")'}
+          expectedOutput="Hello, Byte!"
+          successMessage="Byte is awake. You changed source code, ran it, and created a visible result."
+          hint={'Keep print and the brackets. Change the message to: print("Hello, Byte!")'}
         />
+
+        <div className="lesson-ready-note mission-ready-note">
+          <span aria-hidden="true">✓</span>
+          <p><strong>Safe practice space.</strong> This small runner cannot access your files or the internet.</p>
+        </div>
+      </section>
+
+      <section id="flow" className="lesson-section guided-topic mission-topic">
+        <p className="eyebrow">Connect the system</p>
+        <h2>You made output. Now build the path it travelled.</h2>
+        <p>
+          Three things worked together: the instruction you wrote, the software that ran it,
+          and the result you saw. Put them in order instead of memorizing a definition.
+        </p>
+
+        <SignalPathChallenge stepId="flow" />
       </section>
 
       <section id="predict" className="lesson-section guided-topic mission-topic">
@@ -268,23 +172,27 @@ export default function WhatIsCodeLesson() {
       </section>
 
       <section id="remix" className="lesson-section guided-topic mission-topic">
-        <p className="eyebrow">Edit and observe</p>
-        <h2>Change one value. Watch the result move.</h2>
-        <p>Use the smallest useful coding loop: <strong>edit → predict → run → observe.</strong></p>
+        <p className="eyebrow">Personalize the code</p>
+        <h2>Give Byte a name you actually care about.</h2>
+        <p>
+          Change the value stored in <code>name</code> to your name, nickname, or a character
+          you like. Then use the real coding loop: <strong>edit → predict → run → observe.</strong>
+        </p>
 
         <div className="mission-goal-strip">
           <span>Your goal</span>
-          <code>Hello, Ada</code>
+          <code>Hello, [a name you choose]</code>
         </div>
 
         <PracticeConsole
           stepId="remix"
-          title="Remix the stored name"
-          instructions="Change only Mira to Ada. Predict the new output, then run the code."
+          title="Make the greeting yours"
+          instructions="Replace Mira with any name you choose. Predict the result, then run the code."
           starterCode={'name = "Mira"\nprint("Hello, " + name)'}
-          expectedOutput="Hello, Ada"
-          successMessage="Remix complete. One stored value changed the output—that is the edit–run–observe loop."
-          hint={'Change the first line to name = "Ada". Leave the second line exactly as it is.'}
+          expectedOutput="Hello, followed by a name you choose"
+          validationMode="personal-greeting"
+          successMessage="That greeting is yours. One stored value changed the result without rewriting the print instruction."
+          hint={'Change only the text between quotes on line 1, for example: name = "Sam".'}
         />
       </section>
 
@@ -315,28 +223,41 @@ export default function WhatIsCodeLesson() {
       <div id="verify" className="guided-topic mission-topic mission-finish-topic">
         <section className="lesson-section">
           <p className="eyebrow">AI builder habit</p>
-          <h2>AI can suggest. You still verify.</h2>
-          <p>Generated code is a draft until you run it, inspect the result, and test what happens when something changes.</p>
+          <h2>The AI sounds sure. Catch its mistake.</h2>
+          <p>
+            An AI claims the code below greets Mira. Confidence is not evidence, so run the
+            draft, compare what it actually does, and repair it.
+          </p>
 
-          <ChoiceCheckpoint
+          <blockquote className="ai-claim-card">
+            <span aria-hidden="true">AI</span>
+            <div>
+              <small>AI-generated explanation</small>
+              <p>“This code will display <code>Hello, Mira</code>.”</p>
+            </div>
+          </blockquote>
+
+          <PracticeConsole
             stepId="verify"
-            title="Choose the trustworthy next move"
-            question="An AI says its code works. What should you do next?"
-            options={verificationOptions}
-            correctId="run-check"
-            successMessage="Correct—run, compare, and test. AI can draft the instruction; you own the evidence."
-            hint="Choose the answer that produces evidence instead of asking you to trust confidence."
+            title="Run the claim, then make it true"
+            instructions="First run the AI draft. It will run without an error—but the result is wrong. Fix the second line so the output is exactly: Hello, Mira"
+            starterCode={'name = "Mira"\nprint("Hello, name")'}
+            expectedOutput="Hello, Mira"
+            successMessage="Claim verified and repaired. You trusted the evidence, not the confident explanation."
+            hint={'Remove name from inside the quotation marks, then join the stored value: print("Hello, " + name)'}
+            requireInitialRun
           />
         </section>
 
         <section className="mission-recap" aria-labelledby="mission-recap-title">
           <p className="eyebrow">What you can do now</p>
-          <h2 id="mission-recap-title">Four abilities. One real foundation.</h2>
+          <h2 id="mission-recap-title">Five wins. One real foundation.</h2>
           <div className="mission-capabilities">
-            <article><span aria-hidden="true">01</span><p>Explain code as exact instructions.</p></article>
-            <article><span aria-hidden="true">02</span><p>Predict a tiny program&apos;s output.</p></article>
-            <article><span aria-hidden="true">03</span><p>Edit and run Python safely.</p></article>
+            <article><span aria-hidden="true">01</span><p>Turn an instruction into visible output.</p></article>
+            <article><span aria-hidden="true">02</span><p>Explain source, runtime, and output.</p></article>
+            <article><span aria-hidden="true">03</span><p>Predict and personalize a variable.</p></article>
             <article><span aria-hidden="true">04</span><p>Read an error and repair one bug.</p></article>
+            <article><span aria-hidden="true">05</span><p>Test an AI claim before trusting it.</p></article>
           </div>
         </section>
       </div>

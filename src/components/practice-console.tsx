@@ -14,6 +14,7 @@ type PracticeConsoleProps = {
   hint: string;
   successMessage?: string;
   requireInitialRun?: boolean;
+  validationMode?: "exact" | "personal-greeting";
 };
 
 type ConsoleResult =
@@ -35,6 +36,7 @@ export function PracticeConsole({
   hint,
   successMessage = "That result matches the goal. The next checkpoint is unlocked.",
   requireInitialRun = false,
+  validationMode = "exact",
 }: PracticeConsoleProps) {
   const {
     attemptsByStep,
@@ -82,12 +84,23 @@ export function PracticeConsole({
       return;
     }
 
-    if (normalizeOutput(runResult.output) !== normalizeOutput(expectedOutput)) {
+    const normalizedOutput = normalizeOutput(runResult.output);
+    const outputMatches =
+      validationMode === "personal-greeting"
+        ? /^Hello,\s+\S.*$/.test(normalizedOutput) &&
+          normalizedOutput !== "Hello, Mira" &&
+          normalizedOutput !== "Hello, name"
+        : normalizedOutput === normalizeOutput(expectedOutput);
+
+    if (!outputMatches) {
       recordFailedAttempt(stepId);
       setResult({
         kind: "wrong-output",
         output: runResult.output || "(no visible output)",
-        message: `Your code ran, but the goal is to display exactly: ${expectedOutput}`,
+        message:
+          validationMode === "personal-greeting"
+            ? "Your code ran. Make it display Hello, followed by a name you choose—not Mira and not the word name."
+            : `Your code ran, but the goal is to display exactly: ${expectedOutput}`,
       });
       return;
     }
