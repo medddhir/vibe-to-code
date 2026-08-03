@@ -15,7 +15,7 @@ import { getCourse } from "@/data/curriculum";
 
 export const metadata: Metadata = {
   title: "Mission 01: What code actually is",
-  description: "Run, change, predict, and debug your first Python instructions.",
+  description: "Wake a bot, run Python, personalize output, fix a bug, and verify an AI claim.",
 };
 
 const lessonSteps: GuidedLessonStep[] = [
