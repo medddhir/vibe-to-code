@@ -3,11 +3,11 @@ import Link from "next/link";
 import { CourseCard } from "@/components/course-card";
 import { LearningStep } from "@/components/learning-step";
 import { TerminalCard } from "@/components/terminal-card";
-import { betaLessonCount, courses } from "@/data/curriculum";
+import { coreLessonCount, courses } from "@/data/curriculum";
 
 const proofPoints = [
   { value: "₹0", label: "to start learning" },
-  { value: `${betaLessonCount}`, label: "lessons in the beta map" },
+  { value: `${coreLessonCount}`, label: "lessons in the core roadmap" },
   { value: "Open", label: "for public contribution" },
 ];
 
@@ -81,7 +81,7 @@ export default function Home() {
               do next.
             </p>
             <Link className="text-link" href="/courses/foundations">
-              See the complete first course <span aria-hidden="true">→</span>
+              See the complete first course roadmap <span aria-hidden="true">→</span>
             </Link>
           </div>
           <div className="steps-list">
@@ -104,22 +104,22 @@ export default function Home() {
       <section className="section section-dark">
         <div className="shell beta-grid">
           <div>
-            <p className="eyebrow eyebrow-light">The first complete route</p>
-            <h2>{betaLessonCount} lessons from “what is code?” to shipping safely.</h2>
+            <p className="eyebrow eyebrow-light">The first mapped route</p>
+            <h2>{coreLessonCount} lessons from first code to safe AI-assisted shipping.</h2>
             <p>
-              The public beta focuses on developer foundations, responsible AI use,
-              Python, and Git. Web development, SQL, mobile, data, and DevOps follow on
-              the same level system.
+              The roadmap covers developer foundations, responsible AI use, Python, and
+              Git. Lesson one is ready now; every planned lesson shows its purpose,
+              practice task, and common mistake before it is published.
             </p>
           </div>
           <ol className="beta-roadmap">
             <li>
-              <span>12</span>
-              <div><strong>Developer foundations</strong><small>How software and tools work</small></div>
+              <span>46</span>
+              <div><strong>Developer foundations</strong><small>From files and terminals to a shipped capstone</small></div>
             </li>
             <li>
-              <span>12</span>
-              <div><strong>AI-assisted development</strong><small>Prompt, inspect, test, decide</small></div>
+              <span>120</span>
+              <div><strong>AI-assisted development</strong><small>Prompt, build, inspect, secure, test, and ship</small></div>
             </li>
             <li>
               <span>24</span>

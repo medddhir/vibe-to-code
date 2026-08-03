@@ -48,12 +48,12 @@ No unexplained jargon. No giant theory dump. No pretending that AI output is aut
 
 ## What can I learn?
 
-The curriculum contains **220 mapped lessons** across six practical tracks. We are publishing them carefully, one beginner-tested lesson at a time.
+The curriculum contains **362 mapped lessons** across six practical tracks. We are publishing them carefully, one beginner-tested lesson at a time.
 
 | Learning track | Current stage | Scope | What you will understand |
 |---|---|---:|---|
-| **Developer Foundations** | 🟢 Learning now | 12 lessons | Computers, files, terminals, runtimes, APIs, errors, and cloud basics |
-| **AI-Assisted Development** | 🟡 In development | 12 lessons | Prompting, reviewing diffs, testing AI code, dependencies, and safety |
+| **Developer Foundations** | 🟢 Learning now | 46 lessons · 6 levels | Computers, files, terminals, runtimes, APIs, debugging, cloud basics, and a capstone |
+| **AI-Assisted Development** | 🟡 In development | 120 lessons · 12 levels | Prompting, global model choices, agents, product building, testing, security, deployment, and maintenance |
 | **Python Fundamentals** | 🟡 In development | 24 lessons | Programming logic, automation, files, data, APIs, and practical tools |
 | **Git and GitHub** | 🟡 In development | 12 lessons | Version control, branches, pull requests, collaboration, and recovery |
 | **Web Development** | 🔵 Roadmap mapped | 118 lessons | HTML, CSS, JavaScript, TypeScript, React, Next.js, and deployment |
@@ -63,6 +63,7 @@ The curriculum contains **220 mapped lessons** across six practical tracks. We a
 
 - **[Lesson 1: What code actually is](https://vibe-to-code-ten.vercel.app/lessons/what-is-code)** — a complete interactive introduction in plain English
 - **[Developer Foundations roadmap](https://vibe-to-code-ten.vercel.app/courses/foundations)** — see what comes next
+- **[AI-Assisted Development roadmap](https://vibe-to-code-ten.vercel.app/courses/ai-assisted-development)** — explore the complete 12-level path for careful vibe coding
 - **[Full curriculum](https://vibe-to-code-ten.vercel.app/learn)** — explore every mapped track and level
 
 ## New to GitHub? Start here

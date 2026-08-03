@@ -1,9 +1,30 @@
+import {
+  aiCourseGuide,
+  aiLevels,
+  foundationCourseGuide,
+  foundationLevels,
+} from "@/data/course-content";
+
 export type CourseStatus = "Available" | "In progress" | "Mapped";
 
 export type Lesson = {
   title: string;
   slug?: string;
   duration: string;
+  goal?: string;
+  practice?: string;
+  mistake?: string;
+};
+
+export type CourseSource = {
+  label: string;
+  url: string;
+  note: string;
+};
+
+export type CourseProject = {
+  title: string;
+  description: string;
 };
 
 export type CourseLevel = {
@@ -25,37 +46,14 @@ export type Course = {
   levelCount: number;
   firstLesson?: string;
   levels: CourseLevel[];
+  audience?: string;
+  timeCommitment?: string;
+  updatedAt?: string;
+  prerequisites?: string[];
+  outcomes?: string[];
+  projects?: CourseProject[];
+  sources?: CourseSource[];
 };
-
-const foundationsLessons: Lesson[] = [
-  { title: "What code actually is", slug: "what-is-code", duration: "8 min" },
-  { title: "Source code, programs, and output", duration: "9 min" },
-  { title: "Hardware, operating systems, and apps", duration: "10 min" },
-  { title: "Files, folders, extensions, and paths", duration: "12 min" },
-  { title: "Code editors and IDEs", duration: "9 min" },
-  { title: "The terminal and shell", duration: "12 min" },
-  { title: "Interpreters, compilers, and runtimes", duration: "11 min" },
-  { title: "Packages and dependencies", duration: "12 min" },
-  { title: "Versions and virtual environments", duration: "12 min" },
-  { title: "Frontend, backend, APIs, and databases", duration: "14 min" },
-  { title: "Errors, logs, tests, and debuggers", duration: "14 min" },
-  { title: "Your computer, WSL, VPS, and cloud", duration: "12 min" },
-];
-
-const aiLessons: Lesson[] = [
-  { title: "What vibe coding does well", duration: "8 min" },
-  { title: "Where vibe coding becomes dangerous", duration: "10 min" },
-  { title: "Turn an idea into clear requirements", duration: "12 min" },
-  { title: "Break big work into small tasks", duration: "10 min" },
-  { title: "Give AI useful context and constraints", duration: "12 min" },
-  { title: "Ask for a plan before code", duration: "9 min" },
-  { title: "Read unfamiliar code without panicking", duration: "14 min" },
-  { title: "Inspect an AI-generated Git diff", duration: "15 min" },
-  { title: "Catch invented packages and APIs", duration: "12 min" },
-  { title: "Test AI-generated changes", duration: "15 min" },
-  { title: "Protect secrets and production systems", duration: "14 min" },
-  { title: "Accept, correct, or reject AI code", duration: "12 min" },
-];
 
 const pythonLessons: Lesson[] = [
   { title: "Run your first Python file", duration: "10 min" },
@@ -106,20 +104,14 @@ export const courses: Course[] = [
     shortName: "Foundations",
     eyebrow: "Start here",
     description:
-      "Understand the machine, files, terminal, environments, and the parts of a modern app before syntax gets confusing.",
-    status: "Available",
+      "Learn what code is, how your computer and the web work, how to debug a small website, and how to publish it safely.",
+    status: "In progress",
     accent: "blue",
-    lessonCount: 12,
-    levelCount: 1,
+    ...foundationCourseGuide,
+    lessonCount: foundationLevels.reduce((total, level) => total + level.lessons.length, 0),
+    levelCount: foundationLevels.length,
     firstLesson: "/lessons/what-is-code",
-    levels: [
-      {
-        label: "Level 0",
-        title: "Orientation",
-        description: "Build a clear mental model of software and development tools.",
-        lessons: foundationsLessons,
-      },
-    ],
+    levels: foundationLevels,
   },
   {
     slug: "ai-assisted-development",
@@ -127,19 +119,13 @@ export const courses: Course[] = [
     shortName: "AI + Code",
     eyebrow: "Vibe safely",
     description:
-      "Use AI as a capable pair programmer while learning to inspect its plans, code, dependencies, tests, and risks.",
+      "Turn vibe coding into a disciplined skill: plan, choose models, supervise agents, build, test, secure, deploy, and maintain real products.",
     status: "In progress",
     accent: "violet",
-    lessonCount: 12,
-    levelCount: 1,
-    levels: [
-      {
-        label: "Level 1",
-        title: "Responsible Vibe Coding",
-        description: "Move from prompting blindly to reviewing every important decision.",
-        lessons: aiLessons,
-      },
-    ],
+    ...aiCourseGuide,
+    lessonCount: aiLevels.reduce((total, level) => total + level.lessons.length, 0),
+    levelCount: aiLevels.length,
+    levels: aiLevels,
   },
   {
     slug: "python",
@@ -265,7 +251,7 @@ export const courses: Course[] = [
   },
 ];
 
-export const betaLessonCount = courses
+export const coreLessonCount = courses
   .slice(0, 4)
   .reduce((total, course) => total + course.lessonCount, 0);
 

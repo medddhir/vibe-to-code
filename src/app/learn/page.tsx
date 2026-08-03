@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
 
 import { CourseCard } from "@/components/course-card";
-import { betaLessonCount, courses } from "@/data/curriculum";
+import { coreLessonCount, courses } from "@/data/curriculum";
 
 export const metadata: Metadata = {
   title: "Learn",
   description: "Explore the Vibe to Code curriculum, levels, and free learning paths.",
 };
 
-const levels = [
-  ["0", "Orientation", "What it is, why it exists, and how to run it."],
-  ["1", "Fundamentals", "Read and write the essential syntax."],
-  ["2", "Applied", "Solve useful problems with confidence."],
-  ["3", "Builder", "Create complete small applications."],
-  ["4", "Production", "Test, secure, deploy, and maintain."],
-  ["5", "Advanced", "Understand internals and architecture."],
+const learningStages = [
+  ["01", "Orient", "Understand the idea, the tools, and why they exist."],
+  ["02", "Read", "Recognise the important parts and explain what they do."],
+  ["03", "Try", "Make a small change, predict the result, and observe it."],
+  ["04", "Debug", "Use evidence to find and repair realistic mistakes."],
+  ["05", "Build", "Combine the ideas inside a useful project."],
+  ["06", "Verify", "Test, secure, publish, and explain what you made."],
 ];
 
 export default function LearnPage() {
@@ -25,8 +25,8 @@ export default function LearnPage() {
           <p className="eyebrow">The curriculum</p>
           <h1>One learning system. Every practical coding path.</h1>
           <p>
-            Begin with the {betaLessonCount}-lesson beta route, then grow through a
-            consistent six-level system without jumping randomly between tutorials.
+            Begin with the {coreLessonCount}-lesson core roadmap. Start with the published
+            lesson, then follow a visible path without jumping randomly between tutorials.
           </p>
         </div>
       </section>
@@ -35,14 +35,15 @@ export default function LearnPage() {
         <div className="shell">
           <div className="section-heading compact-heading">
             <div>
-              <p className="eyebrow">How levels work</p>
-              <h2>A visible path from zero to production.</h2>
+              <p className="eyebrow">How progress works</p>
+              <h2>Different course lengths. The same calm learning rhythm.</h2>
             </div>
+            <p>Each course uses as many levels as its subject needs, but every path repeats these six beginner-friendly stages.</p>
           </div>
           <div className="level-grid">
-            {levels.map(([number, title, description]) => (
+            {learningStages.map(([number, title, description]) => (
               <article key={number} className="level-card">
-                <span>Level {number}</span>
+                <span>Stage {number}</span>
                 <h3>{title}</h3>
                 <p>{description}</p>
               </article>
