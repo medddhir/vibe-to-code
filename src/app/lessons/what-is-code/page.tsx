@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 
+import {
+  ChoiceCheckpoint,
+  type ChoiceCheckpointOption,
+} from "@/components/choice-checkpoint";
 import { CodeWindow } from "@/components/code-window";
 import {
   GuidedLessonFlow,
@@ -9,63 +13,111 @@ import { PracticeConsole } from "@/components/practice-console";
 import { getCourse } from "@/data/curriculum";
 
 export const metadata: Metadata = {
-  title: "What code actually is",
-  description: "Understand code, programs, runtimes, and output through one calm beginner lesson.",
+  title: "Mission 01: What code actually is",
+  description: "Run, change, predict, and debug your first Python instructions.",
 };
 
-const vocabulary = [
-  ["Code", "Instructions written for a computer to process."],
-  ["Source file", "A saved text file containing code, such as hello.py."],
-  ["Runtime", "The software that reads or executes the code."],
-  ["Program", "A complete set of stored instructions designed to perform a task."],
-  ["Process", "A running instance of a program."],
-  ["Input", "Information given to a program."],
-  ["Output", "The result a program produces."],
-];
-
 const lessonSteps: GuidedLessonStep[] = [
-  { id: "idea", title: "The simple idea", eyebrow: "Start here" },
-  { id: "flow", title: "Code → runtime → output", eyebrow: "See the connection" },
   {
-    id: "example",
-    title: "Print your first message",
-    eyebrow: "Run real practice",
+    id: "brief",
+    title: "Read the mission",
+    eyebrow: "Mission brief",
+    continueLabel: "Start the mission",
+  },
+  {
+    id: "flow",
+    title: "Find the doer",
+    eyebrow: "Follow the signal",
     requiresPractice: true,
   },
-  { id: "predict", title: "Predict before running", eyebrow: "Think like a computer" },
   {
-    id: "try",
-    title: "Change one thing",
-    eyebrow: "Tiny practice",
+    id: "launch",
+    title: "Send the first signal",
+    eyebrow: "Run real code",
     requiresPractice: true,
   },
-  { id: "mistakes", title: "Normal beginner mistakes", eyebrow: "Mistake clinic" },
+  {
+    id: "predict",
+    title: "Predict the output",
+    eyebrow: "Think before running",
+    requiresPractice: true,
+  },
+  {
+    id: "remix",
+    title: "Remix one value",
+    eyebrow: "Edit and observe",
+    requiresPractice: true,
+  },
   {
     id: "debug",
-    title: "Fix broken code",
-    eyebrow: "Debug challenge",
+    title: "Repair the bug",
+    eyebrow: "Debug rescue",
     requiresPractice: true,
   },
-  { id: "vocabulary", title: "Seven starter words", eyebrow: "New vocabulary" },
-  { id: "ai", title: "Use AI, then verify", eyebrow: "Vibe coder habit" },
-  { id: "check", title: "Explain what you learned", eyebrow: "Mastery check" },
+  {
+    id: "verify",
+    title: "Verify before trusting",
+    eyebrow: "AI builder habit",
+    requiresPractice: true,
+  },
 ];
 
-const commonMistakes = [
+const flowOptions: ChoiceCheckpointOption[] = [
   {
-    title: "The file was not saved",
-    symptom: "The output still shows the old message.",
-    fix: "Save the file, then run or refresh again.",
+    id: "source",
+    label: "Source code",
+    feedback: "Source code is the written instruction. It still needs software to run it.",
   },
   {
-    title: "Capital letters changed the name",
-    symptom: "Python says Print is not defined.",
-    fix: "Use the exact lowercase name: print.",
+    id: "runtime",
+    label: "Runtime",
+    feedback: "Correct—the runtime is the doer.",
   },
   {
-    title: "A quotation mark is missing",
-    symptom: "The computer cannot tell where the text ends.",
-    fix: "Put matching quotation marks around the complete message.",
+    id: "output",
+    label: "Output",
+    feedback: "Output is the result you receive after the instruction runs.",
+  },
+];
+
+const predictionOptions: ChoiceCheckpointOption[] = [
+  {
+    id: "hello-mira",
+    label: "Hello, Mira",
+    feedback: "Exactly—the name outside quotes is replaced by its stored value.",
+  },
+  {
+    id: "hello-name",
+    label: "Hello, name",
+    feedback: "Python uses the value stored inside name, not the letters n-a-m-e.",
+  },
+  {
+    id: "mira",
+    label: "Mira",
+    feedback: "The output also includes the quoted text before the variable.",
+  },
+  {
+    id: "error",
+    label: "An error",
+    feedback: "Every name is defined and the two text values can be joined, so this code can run.",
+  },
+];
+
+const verificationOptions: ChoiceCheckpointOption[] = [
+  {
+    id: "trust",
+    label: "Trust it because the AI sounds confident",
+    feedback: "Confidence is not evidence. AI can explain broken code convincingly.",
+  },
+  {
+    id: "paste-more",
+    label: "Paste in more AI-generated code",
+    feedback: "More code creates more things to check. Verify the small example first.",
+  },
+  {
+    id: "run-check",
+    label: "Run it, compare the output, then test one small change",
+    feedback: "Correct—run, inspect, and test before you trust.",
   },
 ];
 
@@ -75,66 +127,83 @@ export default function WhatIsCodeLesson() {
   return (
     <GuidedLessonFlow
       lessonId="what-is-code"
+      lessonVersion={2}
       courseHref="/courses/foundations"
       courseName="Developer Foundations"
       levelLabel="Level 0"
       lessonNumber={1}
       totalLessons={totalLessons}
       title="What code actually is"
-      estimatedMinutes={15}
+      estimatedMinutes={12}
       steps={lessonSteps}
+      stepNoun="Checkpoint"
+      progressLabel="Mission progress"
+      finalButtonLabel="Complete mission"
+      completionEyebrow="Mission 01 complete"
+      completionTitle="You sent your first signal—and proved you understood it."
+      completionDescription="You can now read a tiny instruction, predict its result, run it, change it, and repair one bug. That is real progress."
+      completionReward="Badge earned · First Signal"
     >
-      <div id="idea" className="guided-topic guided-topic-intro">
-        <header className="lesson-header lesson-header-rich">
-          <div className="lesson-label">Lesson 01 · About 15 minutes</div>
-          <p className="lesson-one-sentence">In one sentence</p>
-          <h1>Code is a set of exact instructions.</h1>
-          <p>
-            You write the instructions, a runtime executes them, and the computer produces
-            a result. That result might be text, a webpage, a calculation, a sound, or an
-            entire app.
-          </p>
-          <div className="lesson-ready-note">
-            <span aria-hidden="true">✓</span>
-            <p><strong>No installation required.</strong> Everything you need for this lesson runs safely on this page.</p>
-          </div>
-        </header>
+      <div id="brief" className="guided-topic mission-brief-topic">
+        <section className="mission-brief-card">
+          <div className="mission-brief-copy">
+            <div className="lesson-label">Mission 01 · First Signal</div>
+            <p className="eyebrow">Your objective</p>
+            <h1>Make the machine say exactly what you mean.</h1>
+            <p className="mission-lead">
+              Code is a list of exact instructions. A computer follows what you write—not
+              what you meant. In the next 12 minutes, you will run code, change it, break
+              it, and fix it.
+            </p>
 
-        <section className="lesson-section">
-          <p className="eyebrow">Start here</p>
-          <h2>The simple idea</h2>
-          <p>
-            Imagine giving directions to a very fast assistant who follows every word
-            literally. “Make tea” is vague. A safer instruction says: fill the kettle,
-            heat the water, place tea in a cup, then pour the water.
-          </p>
-          <div className="callout callout-simple">
-            <strong>Code is the recipe. Running the program is the cooking.</strong>
-            <p>The result on your screen is the finished dish.</p>
+            <ul className="mission-objectives" aria-label="Mission objectives">
+              <li><span aria-hidden="true">01</span> Read one Python instruction</li>
+              <li><span aria-hidden="true">02</span> Predict what it will display</li>
+              <li><span aria-hidden="true">03</span> Repair a real error</li>
+            </ul>
           </div>
-          <p>
-            Programming languages such as Python and JavaScript provide agreed words and
-            grammar for those instructions. A computer is fast and consistent, but it does
-            not safely guess what you forgot to say.
-          </p>
+
+          <div className="mission-signal-card" aria-label="System waiting for its first instruction">
+            <div className="mission-signal-bar">
+              <span>Learning runner</span>
+              <small><i aria-hidden="true" /> Online</small>
+            </div>
+            <div className="mission-signal-screen" aria-hidden="true">
+              <span className="signal-line signal-line-short" />
+              <span className="signal-line" />
+              <span className="signal-line signal-line-medium" />
+              <div className="signal-prompt">
+                <span>&gt;</span>
+                <strong>waiting for an exact instruction</strong>
+                <i />
+              </div>
+            </div>
+            <p>No installation. No setup. Your first checkpoint is ready.</p>
+          </div>
         </section>
+
+        <div className="lesson-ready-note mission-ready-note">
+          <span aria-hidden="true">✓</span>
+          <p><strong>Safe practice space.</strong> The small runner cannot access your files or the internet.</p>
+        </div>
       </div>
 
-      <section id="flow" className="lesson-section guided-topic">
-        <p className="eyebrow">See the connection</p>
-        <h2>Three parts, one clear flow</h2>
-        <p>Keeping these three things separate prevents a lot of beginner confusion.</p>
+      <section id="flow" className="lesson-section guided-topic mission-topic">
+        <p className="eyebrow">Follow the signal</p>
+        <h2>Every result travels through three stops.</h2>
+        <p>Keep these roles separate and error messages become much less mysterious.</p>
+
         <div className="concept-beam" aria-label="Source code goes to a runtime, which produces output">
           <div>
             <span>01</span>
             <strong>Source code</strong>
-            <p>The instructions you can read and edit.</p>
+            <p>The instruction you can read and edit.</p>
           </div>
           <i aria-hidden="true" />
           <div>
             <span>02</span>
             <strong>Runtime</strong>
-            <p>The software that executes those instructions.</p>
+            <p>The software that executes the instruction.</p>
           </div>
           <i aria-hidden="true" />
           <div>
@@ -143,173 +212,132 @@ export default function WhatIsCodeLesson() {
             <p>The text, screen, file, or action you receive.</p>
           </div>
         </div>
-        <div className="callout callout-warning">
-          <strong>Important for vibe coders</strong>
-          <p>AI may write source code. You still need to run it, inspect the output, and decide whether the result is correct.</p>
-        </div>
-      </section>
 
-      <section id="example" className="lesson-section guided-topic">
-        <p className="eyebrow">See it, then do it</p>
-        <h2>Print your first message</h2>
-        <p>This Python instruction asks the computer to display one piece of text.</p>
-        <CodeWindow title="hello.py" code={'print("Hello, coder!")'} output="Hello, coder!" />
-        <div className="line-breakdown">
-          <div><code>print</code><p>A built-in Python function that displays something.</p></div>
-          <div><code>( )</code><p>Parentheses hold the information given to the function.</p></div>
-          <div><code>&quot;Hello, coder!&quot;</code><p>Text inside quotation marks is called a string.</p></div>
-        </div>
-
-        <PracticeConsole
-          stepId="example"
-          title="Make Python say hello"
-          instructions="Replace the words inside the quotation marks so the output is exactly: Hello, coder! Then run the code."
-          starterCode={'print("Type your message")'}
-          expectedOutput="Hello, coder!"
-          hint={'Use lowercase print, then put the exact message in matching quotes: print("Hello, coder!")'}
+        <ChoiceCheckpoint
+          stepId="flow"
+          title="Find the doer"
+          question="Which part actually runs the instruction?"
+          options={flowOptions}
+          correctId="runtime"
+          successMessage="Correct—the runtime is the doer. Source code goes in; output comes out."
+          hint="Look for the part described as software that executes the instruction."
         />
       </section>
 
-      <section id="predict" className="lesson-section guided-topic">
-        <p className="eyebrow">Predict first</p>
-        <h2>Make your brain run the code</h2>
-        <p>What will the computer display? Say your answer before opening the reveal.</p>
-        <CodeWindow title="predict.py" code={'name = "Mira"\nprint("Hello, " + name)'} />
-        <details className="answer-box">
-          <summary>Reveal the answer</summary>
-          <div>
-            <code>Hello, Mira</code>
-            <p>The variable <code>name</code> stores text. The <code>+</code> joins the two pieces.</p>
-          </div>
-        </details>
-        <div className="callout callout-simple">
-          <strong>Why predict first?</strong>
-          <p>Prediction turns you from someone watching code into someone reasoning about it.</p>
+      <section id="launch" className="lesson-section guided-topic mission-topic">
+        <p className="eyebrow">Run real code</p>
+        <h2>Send your first signal.</h2>
+        <p>This Python instruction asks the runtime to display one piece of text.</p>
+
+        <div className="code-anatomy" aria-label="Parts of a Python print instruction">
+          <article><code>print</code><p>The command that displays something.</p></article>
+          <article><code>( )</code><p>The place where you give the command information.</p></article>
+          <article><code>&quot;Hello&quot;</code><p>Text in quotes is called a string.</p></article>
         </div>
+
+        <PracticeConsole
+          stepId="launch"
+          title="Make Python say hello"
+          instructions="Replace the words inside the quotation marks so the output is exactly: Hello, coder!"
+          starterCode={'print("Type your message")'}
+          expectedOutput="Hello, coder!"
+          successMessage="First signal received. You wrote source code, the runner executed it, and the output matched."
+          hint={'Use lowercase print and matching quotes: print("Hello, coder!")'}
+        />
       </section>
 
-      <section id="try" className="lesson-section guided-topic">
-        <p className="eyebrow">Tiny practice</p>
-        <h2>Change one thing, observe one result</h2>
-        <p>You do not need to understand every word yet. Follow this small loop.</p>
-        <ol className="practice-stepper">
-          <li><span>01</span><div><strong>Keep the example visible</strong><p>Small examples are easier to reason about.</p></div></li>
-          <li><span>02</span><div><strong>Replace Mira with your name</strong><p>Change only the text between quotation marks.</p></div></li>
-          <li><span>03</span><div><strong>Predict the result</strong><p>Say what the output should be before checking.</p></div></li>
-          <li><span>04</span><div><strong>Explain the change</strong><p>Name the stored value that changed and the output it affected.</p></div></li>
-        </ol>
-        <div className="expected-output">
+      <section id="predict" className="lesson-section guided-topic mission-topic">
+        <p className="eyebrow">Think before running</p>
+        <h2>Make your brain run the code first.</h2>
+        <p>A <strong>variable</strong> is a named box that stores a value. Here, the box named <code>name</code> stores the text <code>Mira</code>.</p>
+
+        <CodeWindow
+          title="predict.py"
+          code={'name = "Mira"\nprint("Hello, " + name)'}
+        />
+
+        <ChoiceCheckpoint
+          stepId="predict"
+          title="Predict the output"
+          question="What appears when this code runs?"
+          options={predictionOptions}
+          correctId="hello-mira"
+          successMessage="Exactly—the name outside quotes is replaced by its stored value, so the result is Hello, Mira."
+          hint="Read the first line, replace name on the second line with the value it stores, then join the two pieces."
+        />
+      </section>
+
+      <section id="remix" className="lesson-section guided-topic mission-topic">
+        <p className="eyebrow">Edit and observe</p>
+        <h2>Change one value. Watch the result move.</h2>
+        <p>Use the smallest useful coding loop: <strong>edit → predict → run → observe.</strong></p>
+
+        <div className="mission-goal-strip">
           <span>Your goal</span>
           <code>Hello, Ada</code>
         </div>
+
         <PracticeConsole
-          stepId="try"
-          title="Change the stored name"
-          instructions="Change only Mira to Ada, predict the new output, then run the code."
+          stepId="remix"
+          title="Remix the stored name"
+          instructions="Change only Mira to Ada. Predict the new output, then run the code."
           starterCode={'name = "Mira"\nprint("Hello, " + name)'}
           expectedOutput="Hello, Ada"
-          hint={'Change the first line to name = "Ada". The second line can stay exactly the same.'}
+          successMessage="Remix complete. One stored value changed the output—that is the edit–run–observe loop."
+          hint={'Change the first line to name = "Ada". Leave the second line exactly as it is.'}
         />
       </section>
 
-      <section id="mistakes" className="lesson-section guided-topic">
-        <p className="eyebrow">Mistake clinic</p>
-        <h2>Three normal beginner mistakes</h2>
-        <p>A mistake is useful when you connect its symptom to a cause and a fix.</p>
-        <div className="mistake-grid">
-          {commonMistakes.map((mistake, index) => (
-            <article key={mistake.title}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <h3>{mistake.title}</h3>
-              <p><strong>What you see:</strong> {mistake.symptom}</p>
-              <p><strong>What to do:</strong> {mistake.fix}</p>
-            </article>
-          ))}
-        </div>
-        <div className="callout callout-simple">
-          <strong>Errors are information, not a verdict.</strong>
-          <p>Read the first useful line, find the location, change one thing, and run again.</p>
-        </div>
-      </section>
+      <section id="debug" className="lesson-section guided-topic mission-topic">
+        <p className="eyebrow">Debug rescue</p>
+        <h2>The code is broken. Good.</h2>
+        <p>Debugging means finding why the result is wrong and making a focused repair. Run the broken code once before changing it.</p>
 
-      <section id="debug" className="lesson-section guided-topic">
-        <p className="eyebrow">Debug challenge</p>
-        <h2>Find and fix the exact mistake</h2>
-        <p>The starter code below fails because Python cares about uppercase and lowercase letters.</p>
+        <ol className="debug-recipe" aria-label="Four-step debugging recipe">
+          <li><span>01</span><strong>Read</strong></li>
+          <li><span>02</span><strong>Locate</strong></li>
+          <li><span>03</span><strong>Change one thing</strong></li>
+          <li><span>04</span><strong>Run again</strong></li>
+        </ol>
+
         <PracticeConsole
           stepId="debug"
-          title="Repair the print instruction"
-          instructions="Run the broken code once, read the error, then change only what is wrong. Your goal output is: I am learning"
+          title="Repair one character"
+          instructions="Run the broken code, read the first useful error line, then fix it. The goal output is: I am learning"
           starterCode={'Print("I am learning")'}
           expectedOutput="I am learning"
-          hint="The built-in function begins with a lowercase p. Keep everything else the same."
+          successMessage="Bug repaired. Python names are case-sensitive, so print and Print are different names."
+          hint="The built-in command begins with a lowercase p. Keep everything else the same."
+          requireInitialRun
         />
       </section>
 
-      <section id="vocabulary" className="lesson-section guided-topic">
-        <p className="eyebrow">New words</p>
-        <h2>Your seven-word starter glossary</h2>
-        <p>You do not need to memorize these today. Recognizing them is enough.</p>
-        <div className="vocabulary-grid">
-          {vocabulary.map(([word, definition]) => (
-            <article key={word}>
-              <code>{word}</code>
-              <p>{definition}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+      <div id="verify" className="guided-topic mission-topic mission-finish-topic">
+        <section className="lesson-section">
+          <p className="eyebrow">AI builder habit</p>
+          <h2>AI can suggest. You still verify.</h2>
+          <p>Generated code is a draft until you run it, inspect the result, and test what happens when something changes.</p>
 
-      <section id="ai" className="lesson-section guided-topic">
-        <p className="eyebrow">Use AI well</p>
-        <h2>Ask for an explanation, then verify it</h2>
-        <p>A useful beginner prompt asks for one concept, one example, and one check.</p>
-        <div className="prompt-card glow-card">
-          <div className="prompt-card-bar"><span>Prompt</span><small>Copy the idea, not necessarily every word</small></div>
-          <p>
-            Explain this code to a total beginner, one part at a time. Then show the exact
-            output, give me one tiny change to try, and ask me to predict the new output.
-            Do not add packages or change any files.
-          </p>
-        </div>
-        <ul className="verify-list">
-          <li>Does the explanation match the actual code?</li>
-          <li>Does running the code produce the claimed output?</li>
-          <li>Did the AI stay inside your request?</li>
-        </ul>
-      </section>
-
-      <div id="check" className="guided-topic guided-topic-finish">
-        <section className="lesson-section lesson-recap">
-          <p className="eyebrow">Plain-English recap</p>
-          <h2>What you should remember</h2>
-          <ul>
-            <li>Code is written instructions, not the finished app.</li>
-            <li>A runtime executes the code.</li>
-            <li>Input goes in; output comes out.</li>
-            <li>Small symbols and letter case can change the meaning.</li>
-            <li>AI can write code, but you remain responsible for checking it.</li>
-          </ul>
+          <ChoiceCheckpoint
+            stepId="verify"
+            title="Choose the trustworthy next move"
+            question="An AI says its code works. What should you do next?"
+            options={verificationOptions}
+            correctId="run-check"
+            successMessage="Correct—run, compare, and test. AI can draft the instruction; you own the evidence."
+            hint="Choose the answer that produces evidence instead of asking you to trust confidence."
+          />
         </section>
 
-        <section className="lesson-section mastery-card glow-card">
-          <p className="eyebrow">Mastery check</p>
-          <h2>Can you explain it without copying?</h2>
-          <ol>
-            <li>What is the difference between source code and a running process?</li>
-            <li>What job does a runtime perform?</li>
-            <li>Why must instructions to a computer be precise?</li>
-            <li>What does <code>print()</code> do in Python?</li>
-          </ol>
-          <details className="answer-box answer-box-light">
-            <summary>Check your answers</summary>
-            <div>
-              <p><strong>1.</strong> Source code is the written instruction; a process is a running instance executing those instructions.</p>
-              <p><strong>2.</strong> It reads or executes code according to the language&apos;s rules.</p>
-              <p><strong>3.</strong> A computer follows defined grammar and cannot safely invent missing intent.</p>
-              <p><strong>4.</strong> It displays a value as output.</p>
-            </div>
-          </details>
+        <section className="mission-recap" aria-labelledby="mission-recap-title">
+          <p className="eyebrow">What you can do now</p>
+          <h2 id="mission-recap-title">Four abilities. One real foundation.</h2>
+          <div className="mission-capabilities">
+            <article><span aria-hidden="true">01</span><p>Explain code as exact instructions.</p></article>
+            <article><span aria-hidden="true">02</span><p>Predict a tiny program&apos;s output.</p></article>
+            <article><span aria-hidden="true">03</span><p>Edit and run Python safely.</p></article>
+            <article><span aria-hidden="true">04</span><p>Read an error and repair one bug.</p></article>
+          </div>
         </section>
       </div>
     </GuidedLessonFlow>

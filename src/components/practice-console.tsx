@@ -12,6 +12,8 @@ type PracticeConsoleProps = {
   starterCode: string;
   expectedOutput: string;
   hint: string;
+  successMessage?: string;
+  requireInitialRun?: boolean;
 };
 
 type ConsoleResult =
@@ -31,6 +33,8 @@ export function PracticeConsole({
   starterCode,
   expectedOutput,
   hint,
+  successMessage = "That result matches the goal. The next checkpoint is unlocked.",
+  requireInitialRun = false,
 }: PracticeConsoleProps) {
   const {
     attemptsByStep,
@@ -44,6 +48,9 @@ export function PracticeConsole({
   const attempts = attemptsByStep[stepId] ?? 0;
   const completed = practiceCompletedIds.includes(stepId);
   const [result, setResult] = useState<ConsoleResult>(null);
+  const [editingUnlocked, setEditingUnlocked] = useState(
+    () => !requireInitialRun || completed,
+  );
   const descriptionId = `${stepId}-practice-description`;
   const outputId = `${stepId}-practice-output`;
   const hintVisible = attempts >= 3 && !completed;
@@ -52,7 +59,7 @@ export function PracticeConsole({
       return "Passed";
     }
     if (result?.kind === "error" || result?.kind === "wrong-output") {
-      return "Try again";
+      return "Keep going";
     }
     return "Ready";
   }, [completed, result]);
@@ -60,6 +67,10 @@ export function PracticeConsole({
   function runCode() {
     saveCode(stepId, code);
     const runResult = runBeginnerPython(code);
+
+    if (requireInitialRun && !editingUnlocked) {
+      setEditingUnlocked(true);
+    }
 
     if (!runResult.ok) {
       recordFailedAttempt(stepId);
@@ -85,7 +96,7 @@ export function PracticeConsole({
     setResult({
       kind: "success",
       output: runResult.output,
-      message: "That is the exact result. You can move to the next topic now.",
+      message: successMessage,
     });
   }
 
@@ -100,6 +111,9 @@ export function PracticeConsole({
     setCode(starterCode);
     saveCode(stepId, starterCode);
     setResult(null);
+    if (requireInitialRun && !completed) {
+      setEditingUnlocked(false);
+    }
   }
 
   return (
@@ -117,6 +131,13 @@ export function PracticeConsole({
 
       <p id={descriptionId} className="practice-console-instructions">{instructions}</p>
 
+      {requireInitialRun && !editingUnlocked ? (
+        <div className="practice-first-run-note">
+          <span aria-hidden="true">1</span>
+          <p>Run the broken code once. The editor unlocks after the error appears.</p>
+        </div>
+      ) : null}
+
       <div className="practice-console-window">
         <div className="practice-console-bar" aria-hidden="true">
           <span />
@@ -128,14 +149,14 @@ export function PracticeConsole({
         <div className="practice-editor-wrap">
           <label htmlFor={`${stepId}-editor`}>Python code</label>
           <div className="practice-editor">
-            <span aria-hidden="true">1</span>
             <textarea
               id={`${stepId}-editor`}
               value={code}
-              rows={Math.max(3, code.split("\n").length)}
+              rows={Math.min(8, Math.max(3, code.split("\n").length))}
               spellCheck={false}
               autoCapitalize="off"
               autoCorrect="off"
+              readOnly={requireInitialRun && !editingUnlocked}
               aria-describedby={descriptionId}
               onChange={(event) => setCode(event.target.value.slice(0, 10_000))}
               onBlur={() => saveCode(stepId, code)}
@@ -147,9 +168,14 @@ export function PracticeConsole({
         <div className="practice-console-actions">
           <button className="practice-run-button" type="button" onClick={runCode}>
             <span aria-hidden="true">▶</span>
-            Run code
+            {requireInitialRun && !editingUnlocked ? "Run broken code" : "Run code"}
           </button>
-          <button className="practice-reset-button" type="button" onClick={resetCode}>
+          <button
+            className="practice-reset-button"
+            type="button"
+            disabled={requireInitialRun && !editingUnlocked}
+            onClick={resetCode}
+          >
             Reset code
           </button>
           <small>Shortcut: Ctrl/⌘ + Enter</small>
@@ -164,7 +190,7 @@ export function PracticeConsole({
         >
           <div className="practice-output-label">
             <span>Output</span>
-            {attempts > 0 && !completed ? <small>{attempts} failed {attempts === 1 ? "try" : "tries"}</small> : null}
+            {attempts > 0 && !completed ? <small>Attempt {attempts + 1} · keep going</small> : null}
           </div>
           {result ? (
             <>
@@ -181,11 +207,11 @@ export function PracticeConsole({
 
       <div className="practice-safety-note">
         <span aria-hidden="true">◎</span>
-        <p><strong>Made for learning.</strong> This fast runner understands the beginner Python used here and cannot access your files or the internet. Practice code saves on this device, so never paste passwords or API keys.</p>
+        <p><strong>Local learning runner.</strong> No file or internet access. Never paste passwords or API keys.</p>
       </div>
 
       {hintVisible ? (
-        <div className="practice-hint" role="note">
+        <div className="practice-hint" role="note" aria-live="polite">
           <span aria-hidden="true">💡</span>
           <p><strong>Hint unlocked after three tries:</strong> {hint}</p>
         </div>

@@ -17,11 +17,12 @@ export type GuidedLessonStep = {
   title: string;
   eyebrow: string;
   requiresPractice?: boolean;
+  continueLabel?: string;
 };
 
 type LessonProgress = {
   version: 1;
-  lessonVersion: 1;
+  lessonVersion: number;
   currentStepId: string;
   completedStepIds: string[];
   practiceCompletedIds: string[];
@@ -110,6 +111,7 @@ export function useLessonProgress() {
 
 type GuidedLessonFlowProps = {
   lessonId: string;
+  lessonVersion?: number;
   courseHref: string;
   courseName: string;
   levelLabel: string;
@@ -118,13 +120,23 @@ type GuidedLessonFlowProps = {
   title: string;
   estimatedMinutes: number;
   steps: GuidedLessonStep[];
+  stepNoun?: string;
+  progressLabel?: string;
+  finalButtonLabel?: string;
+  completionEyebrow?: string;
+  completionTitle?: string;
+  completionDescription?: string;
+  completionReward?: string;
   children: ReactNode;
 };
 
-function createDefaultProgress(firstStepId: string): LessonProgress {
+function createDefaultProgress(
+  firstStepId: string,
+  lessonVersion: number,
+): LessonProgress {
   return {
     version: 1,
-    lessonVersion: 1,
+    lessonVersion,
     currentStepId: firstStepId,
     completedStepIds: [],
     practiceCompletedIds: [],
@@ -146,8 +158,9 @@ function restoreProgress(
   storedValue: string | null,
   firstStepId: string,
   knownIds: Set<string>,
+  lessonVersion: number,
 ): LessonProgress {
-  const fallback = createDefaultProgress(firstStepId);
+  const fallback = createDefaultProgress(firstStepId, lessonVersion);
 
   if (!storedValue) {
     return fallback;
@@ -156,7 +169,7 @@ function restoreProgress(
   try {
     const stored = JSON.parse(storedValue) as Partial<LessonProgress>;
 
-    if (stored.version !== 1 || stored.lessonVersion !== 1) {
+    if (stored.version !== 1 || stored.lessonVersion !== lessonVersion) {
       return fallback;
     }
 
@@ -199,6 +212,7 @@ function restoreProgress(
 
 export function GuidedLessonFlow({
   lessonId,
+  lessonVersion = 1,
   courseHref,
   courseName,
   levelLabel,
@@ -207,11 +221,18 @@ export function GuidedLessonFlow({
   title,
   estimatedMinutes,
   steps,
+  stepNoun = "Topic",
+  progressLabel = "Lesson progress",
+  finalButtonLabel = "Complete lesson",
+  completionEyebrow = "Lesson complete",
+  completionTitle = "You understood your first piece of code.",
+  completionDescription = "Your progress is saved on this device. The next lesson is being prepared carefully.",
+  completionReward,
   children,
 }: GuidedLessonFlowProps) {
   const panels = Children.toArray(children);
   const firstStepId = steps[0]?.id ?? "start";
-  const storageKey = `vibe-to-code:lesson-progress:v1:${lessonId}`;
+  const storageKey = `vibe-to-code:lesson-progress:v1:${lessonId}:lesson-v${lessonVersion}`;
   const knownIds = useMemo(() => new Set(steps.map((step) => step.id)), [steps]);
   const subscribe = useCallback(
     (callback: () => void) => subscribeToProgress(storageKey, callback),
@@ -225,8 +246,8 @@ export function GuidedLessonFlow({
     getServerSnapshot,
   );
   const progress = useMemo(
-    () => restoreProgress(serializedProgress, firstStepId, knownIds),
-    [firstStepId, knownIds, serializedProgress],
+    () => restoreProgress(serializedProgress, firstStepId, knownIds, lessonVersion),
+    [firstStepId, knownIds, lessonVersion, serializedProgress],
   );
   const panelStartRef = useRef<HTMLDivElement>(null);
 
@@ -236,10 +257,11 @@ export function GuidedLessonFlow({
         readProgressSnapshot(storageKey),
         firstStepId,
         knownIds,
+        lessonVersion,
       );
       writeProgressSnapshot(storageKey, JSON.stringify(updater(current)));
     },
-    [firstStepId, knownIds, storageKey],
+    [firstStepId, knownIds, lessonVersion, storageKey],
   );
 
   const activeIndex = Math.max(
@@ -315,7 +337,14 @@ export function GuidedLessonFlow({
   }
 
   function resetProgress() {
-    writeProgressSnapshot(storageKey, JSON.stringify(createDefaultProgress(firstStepId)));
+    if (!window.confirm("Reset this lesson and erase its saved progress on this device?")) {
+      return;
+    }
+
+    writeProgressSnapshot(
+      storageKey,
+      JSON.stringify(createDefaultProgress(firstStepId, lessonVersion)),
+    );
     window.requestAnimationFrame(() => {
       panelStartRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
       panelStartRef.current?.focus({ preventScroll: true });
@@ -368,7 +397,7 @@ export function GuidedLessonFlow({
   }
 
   const stepNavigation = (
-    <nav className="lesson-step-nav" aria-label="Lesson topics">
+    <nav className="lesson-step-nav" aria-label={`${progressLabel} checkpoints`}>
       {steps.map((step, index) => {
         const complete = progress.completedStepIds.includes(step.id);
         const active = index === activeIndex;
@@ -388,7 +417,11 @@ export function GuidedLessonFlow({
               <small>{step.eyebrow}</small>
               <strong>{step.title}</strong>
             </span>
-            {!unlocked ? <i aria-label="Locked until the previous topic is complete">Locked</i> : null}
+            {!unlocked ? (
+              <i aria-label={`Locked until the previous ${stepNoun.toLowerCase()} is complete`}>
+                Locked
+              </i>
+            ) : null}
           </button>
         );
       })}
@@ -419,13 +452,13 @@ export function GuidedLessonFlow({
             <small>{lessonNumber} of {totalLessons} course lessons</small>
 
             <div className="lesson-topic-summary">
-              <span>Lesson progress</span>
+              <span>{progressLabel}</span>
               <strong>{activeIndex + 1}/{steps.length}</strong>
             </div>
             {stepNavigation}
 
             <details className="lesson-mobile-toc">
-              <summary>Topic {activeIndex + 1} of {steps.length}</summary>
+              <summary>{stepNoun} {activeIndex + 1} of {steps.length}</summary>
               {stepNavigation}
             </details>
 
@@ -435,16 +468,17 @@ export function GuidedLessonFlow({
           </aside>
 
           <article className="lesson-article guided-lesson-article">
+            <h1 className="lesson-persistent-title">{title}</h1>
             <div
               className="lesson-panel-start"
               ref={panelStartRef}
               tabIndex={-1}
-              aria-label={`Topic ${activeIndex + 1}: ${activeStep.title}`}
+              aria-label={`${stepNoun} ${activeIndex + 1}: ${activeStep.title}`}
             >
               <div className="lesson-active-progress">
                 <div>
                   <span>{activeStep.eyebrow}</span>
-                  <strong>Topic {activeIndex + 1} of {steps.length}</strong>
+                  <strong>{stepNoun} {activeIndex + 1} of {steps.length}</strong>
                 </div>
                 <div
                   className="lesson-progress"
@@ -467,7 +501,7 @@ export function GuidedLessonFlow({
             {activeStep.requiresPractice && !activePracticeComplete ? (
               <div className="lesson-gate-note" role="status">
                 <span aria-hidden="true">↳</span>
-                <p><strong>Next topic is locked for now.</strong> Run the practice successfully, then the button will unlock.</p>
+                <p><strong>The next {stepNoun.toLowerCase()} is locked for now.</strong> Clear this checkpoint, then the button will unlock.</p>
               </div>
             ) : null}
 
@@ -475,9 +509,10 @@ export function GuidedLessonFlow({
               <section className="lesson-complete-card" aria-live="polite">
                 <span aria-hidden="true">✓</span>
                 <div>
-                  <p className="eyebrow">Lesson complete</p>
-                  <h2>You understood your first piece of code.</h2>
-                  <p>Your progress is saved on this device. The next lesson is being prepared carefully.</p>
+                  <p className="eyebrow">{completionEyebrow}</p>
+                  <h2>{completionTitle}</h2>
+                  <p>{completionDescription}</p>
+                  {completionReward ? <strong className="lesson-complete-reward">{completionReward}</strong> : null}
                   <Link className="button button-primary" href={`${courseHref}#level-1`}>
                     Return to the course map
                   </Link>
@@ -494,14 +529,16 @@ export function GuidedLessonFlow({
                   ← Previous topic
                 </button>
                 <div>
-                  {!canContinue ? <small>Complete the practice above to continue</small> : null}
+                  {!canContinue ? <small>Clear the checkpoint above to continue</small> : null}
                   <button
                     className="button button-primary"
                     type="button"
                     disabled={!canContinue}
                     onClick={goForward}
                   >
-                    {isFinalStep ? "Complete lesson" : "Next topic"} →
+                    {isFinalStep
+                      ? finalButtonLabel
+                      : activeStep.continueLabel ?? `Next ${stepNoun.toLowerCase()}`} →
                   </button>
                 </div>
               </nav>
