@@ -246,6 +246,8 @@ export default function WhatIsCodeLesson() {
             successMessage="Claim verified and repaired. You trusted the evidence, not the confident explanation."
             hint={'Remove name from inside the quotation marks, then join the stored value: print("Hello, " + name)'}
             requireInitialRun
+            initialRunLabel="Run the AI draft"
+            initialRunInstructions="Run the AI draft once. The editor unlocks after you see what it actually does."
           />
         </section>
 

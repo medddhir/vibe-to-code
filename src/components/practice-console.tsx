@@ -15,6 +15,8 @@ type PracticeConsoleProps = {
   successMessage?: string;
   requireInitialRun?: boolean;
   validationMode?: "exact" | "personal-greeting";
+  initialRunLabel?: string;
+  initialRunInstructions?: string;
 };
 
 type ConsoleResult =
@@ -37,6 +39,8 @@ export function PracticeConsole({
   successMessage = "That result matches the goal. The next checkpoint is unlocked.",
   requireInitialRun = false,
   validationMode = "exact",
+  initialRunLabel = "Run broken code",
+  initialRunInstructions = "Run the broken code once. The editor unlocks after the error appears.",
 }: PracticeConsoleProps) {
   const {
     attemptsByStep,
@@ -147,7 +151,7 @@ export function PracticeConsole({
       {requireInitialRun && !editingUnlocked ? (
         <div className="practice-first-run-note">
           <span aria-hidden="true">1</span>
-          <p>Run the broken code once. The editor unlocks after the error appears.</p>
+          <p>{initialRunInstructions}</p>
         </div>
       ) : null}
 
@@ -181,7 +185,7 @@ export function PracticeConsole({
         <div className="practice-console-actions">
           <button className="practice-run-button" type="button" onClick={runCode}>
             <span aria-hidden="true">▶</span>
-            {requireInitialRun && !editingUnlocked ? "Run broken code" : "Run code"}
+            {requireInitialRun && !editingUnlocked ? initialRunLabel : "Run code"}
           </button>
           <button
             className="practice-reset-button"
