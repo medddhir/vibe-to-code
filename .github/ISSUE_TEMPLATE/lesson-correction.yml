@@ -1,0 +1,36 @@
+name: Lesson correction
+description: Report something inaccurate, confusing, inaccessible, or difficult to follow.
+title: "Lesson: "
+labels:
+  - content
+body:
+  - type: input
+    id: lesson
+    attributes:
+      label: Lesson or page
+      description: Add the lesson name and URL.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What needs improvement?
+      description: Tell us what you expected to understand and where you got stuck.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested wording or example
+      description: Optional, but especially helpful for content corrections.
+  - type: dropdown
+    id: experience
+    attributes:
+      label: Your coding experience
+      options:
+        - Completely new
+        - Beginner
+        - Intermediate
+        - Experienced
+    validations:
+      required: true

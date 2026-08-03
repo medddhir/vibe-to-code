@@ -1,0 +1,32 @@
+name: New course proposal
+description: Propose a language, tool, or practical learning track.
+title: "Course: "
+labels:
+  - curriculum
+body:
+  - type: input
+    id: topic
+    attributes:
+      label: Course topic
+      placeholder: JavaScript basics
+    validations:
+      required: true
+  - type: textarea
+    id: learner
+    attributes:
+      label: Who is this for, and what should they be able to build?
+    validations:
+      required: true
+  - type: textarea
+    id: outline
+    attributes:
+      label: Suggested lesson outline
+      description: List the smallest useful concepts in a sensible order.
+    validations:
+      required: true
+  - type: textarea
+    id: project
+    attributes:
+      label: Suggested final project
+    validations:
+      required: true
