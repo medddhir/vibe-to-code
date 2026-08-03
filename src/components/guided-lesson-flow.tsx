@@ -259,7 +259,7 @@ export function GuidedLessonFlow({
   const moveToStep = useCallback((stepId: string) => {
     updateProgress((current) => ({ ...current, currentStepId: stepId }));
     window.requestAnimationFrame(() => {
-      panelStartRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      panelStartRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
       panelStartRef.current?.focus({ preventScroll: true });
     });
   }, [updateProgress]);
@@ -308,7 +308,7 @@ export function GuidedLessonFlow({
 
     if (!isFinalStep) {
       window.requestAnimationFrame(() => {
-        panelStartRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        panelStartRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
         panelStartRef.current?.focus({ preventScroll: true });
       });
     }
@@ -317,7 +317,7 @@ export function GuidedLessonFlow({
   function resetProgress() {
     writeProgressSnapshot(storageKey, JSON.stringify(createDefaultProgress(firstStepId)));
     window.requestAnimationFrame(() => {
-      panelStartRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      panelStartRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
       panelStartRef.current?.focus({ preventScroll: true });
     });
   }
