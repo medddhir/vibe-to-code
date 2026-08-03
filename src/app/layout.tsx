@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 
+import { RepoStarCta } from "@/components/repo-star-cta";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
@@ -40,19 +42,45 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#f7f7f2",
-  colorScheme: "light",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7f7f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d0f14" },
+  ],
+  colorScheme: "light dark",
 };
+
+const themeInitScript = `
+  (function () {
+    var key = "vibe-to-code:theme:v1";
+    var theme = "light";
+    try {
+      var saved = localStorage.getItem(key);
+      theme = saved === "dark" || saved === "light"
+        ? saved
+        : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    } catch (error) {
+      theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    document.documentElement.dataset.theme = theme;
+    document.querySelectorAll('meta[name="theme-color"]').forEach(function (meta) {
+      meta.setAttribute("content", theme === "dark" ? "#0d0f14" : "#f7f7f2");
+    });
+  })();
+`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
+        <Script id="vibe-to-code-theme" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
         <SiteHeader />
         {children}
+        <RepoStarCta />
         <SiteFooter />
       </body>
     </html>

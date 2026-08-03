@@ -61,7 +61,7 @@ The curriculum contains **362 mapped lessons** across six practical tracks. We a
 
 ### Available right now
 
-- **[Lesson 1: What code actually is](https://vibe-to-code-ten.vercel.app/lessons/what-is-code)** — a complete interactive introduction in plain English
+- **[Lesson 1: What code actually is](https://vibe-to-code-ten.vercel.app/lessons/what-is-code)** — guided topics, safe in-page Python practice, useful errors, hints, and saved progress
 - **[Developer Foundations roadmap](https://vibe-to-code-ten.vercel.app/courses/foundations)** — see what comes next
 - **[AI-Assisted Development roadmap](https://vibe-to-code-ten.vercel.app/courses/ai-assisted-development)** — explore the complete 12-level path for careful vibe coding
 - **[Full curriculum](https://vibe-to-code-ten.vercel.app/learn)** — explore every mapped track and level
@@ -97,6 +97,7 @@ Every published lesson should be:
 |---|---|
 | Learning website | [Next.js](https://nextjs.org/) and [React](https://react.dev/) |
 | Language | [TypeScript](https://www.typescriptlang.org/) |
+| Beginner practice | A deliberately limited browser-side runner — no server shell, files, or network access |
 | Hosting and automatic deployments | [Vercel](https://vercel.com/) |
 | Source, issues, and contributions | [GitHub](https://github.com/) |
 | License | [MIT](./LICENSE) |

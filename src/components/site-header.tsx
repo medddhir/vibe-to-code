@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { BrandMark } from "@/components/brand-mark";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navigation = [
   { href: "/learn", label: "Learn" },
@@ -32,6 +33,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="header-actions">
+          <ThemeToggle />
           <Link className="button button-small" href="/lessons/what-is-code">
             Start free
           </Link>
