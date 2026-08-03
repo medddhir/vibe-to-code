@@ -402,12 +402,15 @@ export function GuidedLessonFlow({
         const complete = progress.completedStepIds.includes(step.id);
         const active = index === activeIndex;
         const unlocked = isStepUnlocked(index);
+        const stateClassName = [active ? "is-active" : "", complete ? "is-complete" : ""]
+          .filter(Boolean)
+          .join(" ");
 
         return (
           <button
             key={step.id}
             type="button"
-            className={active ? "is-active" : complete ? "is-complete" : undefined}
+            className={stateClassName || undefined}
             disabled={!unlocked}
             aria-current={active ? "step" : undefined}
             onClick={() => moveToStep(step.id)}
