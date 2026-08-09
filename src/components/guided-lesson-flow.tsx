@@ -70,15 +70,11 @@ function getRequiredActivityIds(step: GuidedLessonStep) {
 }
 
 export function isActivityCompleteForStep(
-  step: GuidedLessonStep,
+  _step: GuidedLessonStep,
   practiceCompletedIds: readonly string[],
   activityId: string,
 ) {
-  if (practiceCompletedIds.includes(activityId)) {
-    return true;
-  }
-
-  return activityId !== step.id && practiceCompletedIds.includes(step.id);
+  return practiceCompletedIds.includes(activityId);
 }
 
 export function isStepPracticeActivitiesComplete(
@@ -189,6 +185,8 @@ type GuidedLessonFlowProps = {
   levelLabel: string;
   lessonNumber: number;
   totalLessons: number;
+  courseLessonNumber?: number;
+  courseTotalLessons?: number;
   title: string;
   estimatedMinutes: number;
   steps: GuidedLessonStep[];
@@ -311,6 +309,8 @@ export function GuidedLessonFlow({
   completionTitle = "You understood your first piece of code.",
   completionDescription = "Your progress is saved on this device. The next lesson is being prepared carefully.",
   completionReward,
+  courseLessonNumber,
+  courseTotalLessons,
   courseSlug,
   lessonProgressSlug,
   children,
@@ -348,8 +348,11 @@ export function GuidedLessonFlow({
       );
       writeProgressSnapshot(storageKey, JSON.stringify(updater(current)));
     },
-    [firstStepId, knownIds, lessonVersion, storageKey],
+    [firstStepId, knownIds, lessonVersion, storageKey, steps],
   );
+
+  const courseLessonProgressValue = courseLessonNumber ?? lessonNumber;
+  const courseLessonTotalValue = courseTotalLessons ?? totalLessons;
 
   const activeIndex = Math.max(
     0,
@@ -575,7 +578,9 @@ export function GuidedLessonFlow({
             <Link className="breadcrumb" href={courseHref}>
               ← {courseName}
             </Link>
-            <p className="eyebrow">{levelLabel} · Lesson {lessonNumber}</p>
+            <p className="eyebrow">
+              {levelLabel} · Lesson {lessonNumber} of {totalLessons}
+            </p>
             <p className="lesson-sidebar-title">{title}</p>
             <div
               className="lesson-progress"
@@ -584,11 +589,13 @@ export function GuidedLessonFlow({
               aria-valuemin={0}
               aria-valuemax={totalLessons}
               aria-valuenow={lessonNumber}
-              aria-valuetext={`Lesson ${lessonNumber} of ${totalLessons}`}
+              aria-valuetext={`Lesson ${lessonNumber} of ${totalLessons} in ${levelLabel}`}
             >
               <span style={{ width: `${coursePercent}%` }} />
             </div>
-            <small>{lessonNumber} of {totalLessons} course lessons</small>
+            <small>
+              Course lesson {courseLessonProgressValue} of {courseLessonTotalValue}
+            </small>
 
             <div className="lesson-topic-summary">
               <span>{progressLabel}</span>

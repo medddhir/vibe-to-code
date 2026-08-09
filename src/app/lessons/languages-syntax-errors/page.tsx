@@ -11,10 +11,13 @@ import { LanguageSyntaxLab } from "@/components/foundations/language-syntax-lab"
 import {
   getFoundationsLessonNumber,
   FOUNDATION_TOTAL_LESSONS,
+  getFoundationsCourseLessonNumber,
+  FOUNDATION_LEVEL1_TOTAL_LESSONS,
 } from "@/data/foundations-level1";
 
 const lessonSlug = "languages-syntax-errors";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 4;
+const courseLessonNumber = getFoundationsCourseLessonNumber(lessonSlug) ?? 4;
 
 const lessonSteps: GuidedLessonStep[] = [
   {
@@ -137,7 +140,7 @@ const languageErrorChoices: ChoiceCheckpointOption[] = [
 ];
 
 export const metadata: Metadata = {
-  title: "Lesson 4: Languages, syntax, and error messages",
+  title: `Level 1 · Lesson ${lessonNumber} of ${FOUNDATION_LEVEL1_TOTAL_LESSONS}: Languages, syntax, and error messages`,
   description:
     "Compare HTML, CSS, and JavaScript roles and fix grammar and syntax issues in a safe in-browser simulator.",
 };
@@ -149,7 +152,9 @@ export default function LanguagesSyntaxErrorsLesson() {
       lessonNumber={lessonNumber}
       lessonTitle="Languages, syntax, and error messages"
       levelTitle="Level 1"
-      totalLessons={FOUNDATION_TOTAL_LESSONS}
+      totalLessons={FOUNDATION_LEVEL1_TOTAL_LESSONS}
+      courseLessonNumber={courseLessonNumber}
+      courseTotalLessons={FOUNDATION_TOTAL_LESSONS}
       estimatedMinutes={10}
       steps={lessonSteps}
     >

@@ -1343,6 +1343,7 @@ pre {
   margin: 9px 0 18px;
   color: var(--muted);
   font-size: 1.125rem;
+  line-height: 1.6;
 }
 
 .foundation-progress-bar {
@@ -1402,7 +1403,7 @@ pre {
   border-radius: 11px;
   background: var(--surface);
   color: var(--accent-dark);
-  font-size: 1rem;
+  font-size: 1.125rem;
   font-weight: 800;
 }
 
@@ -3848,7 +3849,7 @@ pre {
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: 1rem;
-  line-height: 1.45;
+  line-height: 1.6;
 }
 
 .file-preview-wrap {
@@ -3882,7 +3883,7 @@ pre {
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-size: 1rem;
+  font-size: 1.125rem;
   line-height: 1.45;
 }
 
@@ -3914,7 +3915,7 @@ pre {
   color: var(--code-accent);
   font-family: var(--font-mono);
   font-size: 1rem;
-  line-height: 1.45;
+  line-height: 1.55;
   white-space: pre;
 }
 
@@ -4102,6 +4103,11 @@ pre {
   padding: 10px;
   color: var(--ink-soft);
   font-size: 1rem;
+  line-height: 1.5;
+}
+
+.foundation-progress-item .button-small {
+  min-height: 44px;
 }
 
 .journey-steps p,

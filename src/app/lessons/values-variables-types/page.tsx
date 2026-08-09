@@ -8,13 +8,16 @@ import { CodeWindow } from "@/components/code-window";
 import { FoundationLessonPage } from "@/components/foundations/foundation-lesson-page";
 import {
   getFoundationsLessonNumber,
+  getFoundationsCourseLessonNumber,
   FOUNDATION_TOTAL_LESSONS,
+  FOUNDATION_LEVEL1_TOTAL_LESSONS,
 } from "@/data/foundations-level1";
 import { type GuidedLessonStep } from "@/components/guided-lesson-flow";
 import { PracticeConsole } from "@/components/practice-console";
 
 const lessonSlug = "values-variables-types";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 1;
+const courseLessonNumber = getFoundationsCourseLessonNumber(lessonSlug) ?? 1;
 
 const lessonSteps: GuidedLessonStep[] = [
   {
@@ -89,7 +92,7 @@ const kindOptions: ChoiceCheckpointOption[] = [
 ];
 
 export const metadata: Metadata = {
-  title: "Lesson 1: Values, variables, and types",
+  title: `Level 1 · Lesson ${lessonNumber} of ${FOUNDATION_LEVEL1_TOTAL_LESSONS}: Values, variables, and types`,
   description:
     "Build a small value lab with Python and watch variable kinds, live memory, and mistakes you can fix for real.",
 };
@@ -101,7 +104,9 @@ export default function ValuesVariablesTypesLesson() {
       lessonNumber={lessonNumber}
       lessonTitle="Values, variables, and types"
       levelTitle="Level 1"
-      totalLessons={FOUNDATION_TOTAL_LESSONS}
+      totalLessons={FOUNDATION_LEVEL1_TOTAL_LESSONS}
+      courseLessonNumber={courseLessonNumber}
+      courseTotalLessons={FOUNDATION_TOTAL_LESSONS}
       estimatedMinutes={12}
       steps={lessonSteps}
     >

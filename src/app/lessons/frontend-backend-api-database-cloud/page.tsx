@@ -7,10 +7,13 @@ import { FrontendJourneyLab } from "@/components/foundations/frontend-journey-la
 import {
   getFoundationsLessonNumber,
   FOUNDATION_TOTAL_LESSONS,
+  getFoundationsCourseLessonNumber,
+  FOUNDATION_LEVEL1_TOTAL_LESSONS,
 } from "@/data/foundations-level1";
 
 const lessonSlug = "frontend-backend-api-database-cloud";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 7;
+const courseLessonNumber = getFoundationsCourseLessonNumber(lessonSlug) ?? 7;
 
 const lessonSteps: GuidedLessonStep[] = [
   {
@@ -115,7 +118,7 @@ const secretChoice: ChoiceCheckpointOption[] = [
 const repairPayload = `{"userId":"a","amount":50}`;
 
 export const metadata: Metadata = {
-  title: "Lesson 7: Frontend, backend, API, database, and cloud",
+  title: `Level 1 · Lesson ${lessonNumber} of ${FOUNDATION_LEVEL1_TOTAL_LESSONS}: Frontend, backend, API, database, and cloud`,
   description:
     "Follow a browser click through request preparation, API validation, DB read/write and UI state update.",
 };
@@ -127,7 +130,9 @@ export default function FrontendBackendApiDatabaseCloudLesson() {
       lessonNumber={lessonNumber}
       lessonTitle="Frontend, backend, API, database, and cloud"
       levelTitle="Level 1"
-      totalLessons={FOUNDATION_TOTAL_LESSONS}
+      totalLessons={FOUNDATION_LEVEL1_TOTAL_LESSONS}
+      courseLessonNumber={courseLessonNumber}
+      courseTotalLessons={FOUNDATION_TOTAL_LESSONS}
       estimatedMinutes={16}
       steps={lessonSteps}
     >

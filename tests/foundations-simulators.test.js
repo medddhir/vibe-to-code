@@ -142,6 +142,16 @@ describe("Foundations simulators", () => {
     assert.match(preview, /<body>[\s\S]*<p>Hi<\/p>/);
   });
 
+  it("keeps ordinary safe css rendering", () => {
+    const preview = buildLanguagePreview({
+      html: "<body><div class=\"card\">Safe</div></body>",
+      css: "body { margin: 0; }\n.card { color: blue; padding: 16px; background-color: white; }",
+      javascript: "console.log('ignore me')",
+    });
+
+    assert.match(preview, /<style>[\s\S]*body \{ margin: 0; \}[\s\S]*\.card \{ color: blue; padding: 16px; background-color: white; \}/);
+  });
+
   it("builds previews without mixed-case or unclosed script tags", () => {
     const preview = buildLanguagePreview({
       html: "<body><p>Safe</p><ScRiPt>window.top.alert('x')</ScRipT><div>after</div></body>",
@@ -204,6 +214,63 @@ describe("Foundations simulators", () => {
 
     assert.equal(preview.includes("@import"), false);
     assert.equal(preview.includes("url("), false);
+  });
+
+  it("rejects escaped URL keywords in css", () => {
+    const preview = buildLanguagePreview({
+      html: "<body><p>Theme</p></body>",
+      css: "body { background: u\\72l(\"https://evil.example/pixel.png\"); }",
+      javascript: "",
+    });
+
+    assert.equal(preview.includes("<style"), true);
+    assert.equal(preview.includes("u\\72l"), false);
+    assert.equal(preview.includes("https://evil.example/pixel.png"), false);
+    assert.equal(preview.includes("background"), false);
+  });
+
+  it("rejects image-set values and external URLs before render", () => {
+    const preview = buildLanguagePreview({
+      html: "<body><p>Image</p></body>",
+      css: 'body { background-image: image-set("https://evil.example/pixel.png" 1x); }',
+      javascript: "",
+    });
+
+    assert.equal(preview.includes("image-set"), false);
+    assert.equal(preview.includes("https://"), false);
+    assert.equal(preview.includes("pixel.png"), false);
+  });
+
+  it("rejects escaped @import and comment-obfuscated bypasses", () => {
+    const preview = buildLanguagePreview({
+      html: "<body><p>Theme</p></body>",
+      css: "@iMpoRt \"https://evil.example/theme.css\";\nbody { color: blue; }\nbody { background: u/*x*/rl(\"https://evil.example/img.png\"); }",
+      javascript: "",
+    });
+
+    assert.equal(preview.includes("@import"), false);
+    assert.equal(preview.includes("url("), false);
+    assert.equal(preview.includes("background"), false);
+    assert.equal(preview.includes("https://"), false);
+  });
+
+  it("rejects protocol-relative and data/blob/file-like css", () => {
+    const preview = buildLanguagePreview({
+      html: "<body><p>Policy</p></body>",
+      css: [
+        "body { background: url(//evil.example/pixel.png); }",
+        "body { background: data:text/css,color:red; }",
+        "body { background: blob:http://evil.example/token; }",
+        "body { background: file:///tmp/x; }",
+      ].join("\n"),
+      javascript: "",
+    });
+
+    assert.equal(preview.includes("url"), false);
+    assert.equal(preview.includes("data:"), false);
+    assert.equal(preview.includes("blob:"), false);
+    assert.equal(preview.includes("file://"), false);
+    assert.equal(preview.includes("//evil.example"), false);
   });
 
   it("blocks style tag breakout attempts and keeps content visible", () => {

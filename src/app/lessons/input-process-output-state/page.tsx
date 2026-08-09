@@ -8,10 +8,13 @@ import { StateLab } from "@/components/foundations/state-lab";
 import {
   getFoundationsLessonNumber,
   FOUNDATION_TOTAL_LESSONS,
+  getFoundationsCourseLessonNumber,
+  FOUNDATION_LEVEL1_TOTAL_LESSONS,
 } from "@/data/foundations-level1";
 
 const lessonSlug = "input-process-output-state";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 3;
+const courseLessonNumber = getFoundationsCourseLessonNumber(lessonSlug) ?? 3;
 
 const lessonSteps: GuidedLessonStep[] = [
   {
@@ -92,7 +95,7 @@ const summaryChoices: ChoiceCheckpointOption[] = [
 ];
 
 export const metadata: Metadata = {
-  title: "Lesson 3: Input, process, output, and state",
+  title: `Level 1 · Lesson ${lessonNumber} of ${FOUNDATION_LEVEL1_TOTAL_LESSONS}: Input, process, output, and state`,
   description:
     "Trace a counter-style interaction through input, processing, state updates, and visible screen output.",
 };
@@ -104,7 +107,9 @@ export default function InputProcessOutputStateLesson() {
       lessonNumber={lessonNumber}
       lessonTitle="Input, process, output, and state"
       levelTitle="Level 1"
-      totalLessons={FOUNDATION_TOTAL_LESSONS}
+      totalLessons={FOUNDATION_LEVEL1_TOTAL_LESSONS}
+      courseLessonNumber={courseLessonNumber}
+      courseTotalLessons={FOUNDATION_TOTAL_LESSONS}
       estimatedMinutes={12}
       steps={lessonSteps}
     >

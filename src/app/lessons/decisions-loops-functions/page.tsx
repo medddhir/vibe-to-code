@@ -10,10 +10,13 @@ import { DecisionFunctionLab, DecisionScriptLab } from "@/components/foundations
 import {
   getFoundationsLessonNumber,
   FOUNDATION_TOTAL_LESSONS,
+  getFoundationsCourseLessonNumber,
+  FOUNDATION_LEVEL1_TOTAL_LESSONS,
 } from "@/data/foundations-level1";
 
 const lessonSlug = "decisions-loops-functions";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 2;
+const courseLessonNumber = getFoundationsCourseLessonNumber(lessonSlug) ?? 2;
 
 const lessonSteps: GuidedLessonStep[] = [
   {
@@ -94,7 +97,7 @@ const predictChoices: ChoiceCheckpointOption[] = [
 ];
 
 export const metadata: Metadata = {
-  title: "Lesson 2: Decisions, repetition, and functions",
+  title: `Level 1 · Lesson ${lessonNumber} of ${FOUNDATION_LEVEL1_TOTAL_LESSONS}: Decisions, repetition, and functions`,
   description:
     "Use conditions, one safe loop, and small reusable formula rules to see how program control works.",
 };
@@ -106,7 +109,9 @@ export default function DecisionsLoopsFunctionsLesson() {
       lessonNumber={lessonNumber}
       lessonTitle="Decisions, repetition, and functions"
       levelTitle="Level 1"
-      totalLessons={FOUNDATION_TOTAL_LESSONS}
+      totalLessons={FOUNDATION_LEVEL1_TOTAL_LESSONS}
+      courseLessonNumber={courseLessonNumber}
+      courseTotalLessons={FOUNDATION_TOTAL_LESSONS}
       estimatedMinutes={14}
       steps={lessonSteps}
     >

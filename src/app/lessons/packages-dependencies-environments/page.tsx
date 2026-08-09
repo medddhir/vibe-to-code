@@ -7,10 +7,13 @@ import { PackageDependencyLab } from "@/components/foundations/package-dependenc
 import {
   getFoundationsLessonNumber,
   FOUNDATION_TOTAL_LESSONS,
+  getFoundationsCourseLessonNumber,
+  FOUNDATION_LEVEL1_TOTAL_LESSONS,
 } from "@/data/foundations-level1";
 
 const lessonSlug = "packages-dependencies-environments";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 6;
+const courseLessonNumber = getFoundationsCourseLessonNumber(lessonSlug) ?? 6;
 
 const starterManifest = {
   react: "18.1.0",
@@ -148,7 +151,7 @@ const securityChoices: ChoiceCheckpointOption[] = [
 ];
 
 export const metadata: Metadata = {
-  title: "Lesson 6: Packages, dependencies, versions, and environments",
+  title: `Level 1 · Lesson ${lessonNumber} of ${FOUNDATION_LEVEL1_TOTAL_LESSONS}: Packages, dependencies, versions, and environments`,
   description:
     "Learn why package manifests and lockfiles matter by running a controlled dependency and environment simulator.",
 };
@@ -160,7 +163,9 @@ export default function PackagesDependenciesEnvironmentsLesson() {
       lessonNumber={lessonNumber}
       lessonTitle="Packages, dependencies, versions, and environments"
       levelTitle="Level 1"
-      totalLessons={FOUNDATION_TOTAL_LESSONS}
+      totalLessons={FOUNDATION_LEVEL1_TOTAL_LESSONS}
+      courseLessonNumber={courseLessonNumber}
+      courseTotalLessons={FOUNDATION_TOTAL_LESSONS}
       estimatedMinutes={14}
       steps={lessonSteps}
     >

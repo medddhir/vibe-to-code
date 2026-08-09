@@ -724,10 +724,88 @@ const PREVIEW_DANGEROUS_VALUE_PATTERNS = [
   /@import/i,
 ];
 
+const ALLOWED_CSS_SELECTORS = new Set([
+  "body",
+  ".card",
+  ".banner",
+  ".status",
+  "p",
+  "button",
+  "main",
+]);
+
+const SAFE_COLOR_VALUE = /^(?:[a-z]+|#[0-9a-f]{3}|#[0-9a-f]{6})$/i;
+const SAFE_KEYWORD_COLOR_VALUE = /^(transparent|inherit|initial|currentColor)$/i;
+const SAFE_UNIT_VALUE = /^(?:0|(?:-?\d+(?:\.\d+)?)(?:px|rem|em|%))$/i;
+const SAFE_LENGTH_LIST_VALUE = new RegExp(
+  `^(?:${SAFE_UNIT_VALUE.source}|0)(?:\\s+(?:${SAFE_UNIT_VALUE.source}|0)){0,3}$`,
+  "i",
+);
+const SAFE_FONT_FAMILY_VALUE = /^[a-z0-9\\-\\s,'"]+$/i;
+
+const ALLOWED_CSS_PROPERTY_VALIDATORS: Record<string, RegExp> = {
+  color: new RegExp(`^(?:${SAFE_COLOR_VALUE.source}|${SAFE_KEYWORD_COLOR_VALUE.source})$`, "i"),
+  "background-color": new RegExp(`^(?:${SAFE_COLOR_VALUE.source}|${SAFE_KEYWORD_COLOR_VALUE.source}|none)$`, "i"),
+  background: new RegExp(`^(?:${SAFE_COLOR_VALUE.source}|${SAFE_KEYWORD_COLOR_VALUE.source}|none)$`, "i"),
+  margin: SAFE_LENGTH_LIST_VALUE,
+  "margin-top": SAFE_UNIT_VALUE,
+  "margin-right": SAFE_UNIT_VALUE,
+  "margin-bottom": SAFE_UNIT_VALUE,
+  "margin-left": SAFE_UNIT_VALUE,
+  padding: SAFE_LENGTH_LIST_VALUE,
+  "padding-top": SAFE_UNIT_VALUE,
+  "padding-right": SAFE_UNIT_VALUE,
+  "padding-bottom": SAFE_UNIT_VALUE,
+  "padding-left": SAFE_UNIT_VALUE,
+  "font-family": SAFE_FONT_FAMILY_VALUE,
+  "font-weight": /^(?:normal|bold|bolder|lighter|[1-9]00)$/i,
+  "font-size": SAFE_UNIT_VALUE,
+  "text-align": /^(?:left|center|right|justify)$/i,
+  display: /^(?:block|inline|inline-block|flex|grid|none)$/i,
+  width: new RegExp(`^(?:${SAFE_UNIT_VALUE.source}|auto)$`, "i"),
+  "max-width": new RegExp(`^(?:${SAFE_UNIT_VALUE.source}|none|auto)$`, "i"),
+  "min-width": new RegExp(`^(?:${SAFE_UNIT_VALUE.source}|0|auto)$`, "i"),
+  height: new RegExp(`^(?:${SAFE_UNIT_VALUE.source}|auto)$`, "i"),
+  "min-height": new RegExp(`^(?:${SAFE_UNIT_VALUE.source}|0|auto)$`, "i"),
+  "max-height": new RegExp(`^(?:${SAFE_UNIT_VALUE.source}|none|auto)$`, "i"),
+  "line-height": SAFE_UNIT_VALUE,
+  gap: SAFE_UNIT_VALUE,
+  "border-radius": SAFE_UNIT_VALUE,
+  "box-sizing": /^(?:content-box|border-box)$/i,
+};
+
+const CSS_FORBIDDEN_PATTERNS = [
+  /\/\*[\s\S]*?\*\//,
+  /\\(?:\r?\n)?/,
+  /@/,
+  /</,
+  />/,
+  /javascript:/i,
+  /vbscript:/i,
+  /data:/i,
+  /blob:/i,
+  /file:/i,
+  /\/\/\s*[^\s"]+/,
+  /http:\/\//i,
+  /https:\/\//i,
+  /\/\/[^\s"']+/,
+  /expression\s*\(/i,
+  /url\s*\(/i,
+  /image-set\s*\(/i,
+  /-webkit-image-set\s*\(/i,
+  /cross-fade\s*\(/i,
+  /element\s*\(/i,
+  /paint\s*\(/i,
+  /behavior/i,
+  /binding/i,
+];
+
 function stripUnsafeTagBlocks(source: string) {
   const stripped = source
     .replace(/<script\b[^>]*>[\s\S]*?(<\/script\s*>|$)/gi, "")
     .replace(/<style\b[^>]*>[\s\S]*?(<\/style\s*>|$)/gi, "")
+    .replace(/<\/?style\b[^>]*>/gi, "")
+    .replace(/<\/?script\b[^>]*>/gi, "")
     .replace(/<iframe\b[^>]*>[\s\S]*?(<\/iframe\s*>|$)/gi, "")
     .replace(/<img\b[^>]*>/gi, "")
     .replace(/<object\b[^>]*>[\s\S]*?(<\/object\s*>|$)/gi, "")
@@ -829,18 +907,103 @@ function collectHeadStyles(markup: string) {
 }
 
 function sanitizeCssForPreview(css: string) {
-  return css
-    .replace(/<\/?style[^>]*>/gi, "")
-    .replace(/@import\b[^;]*;?/gi, "")
-    .replace(/expression\s*\(/gi, "")
-    .replace(/url\s*\([^)]*\)/gi, "")
-    .replace(/javascript:/gi, "")
-    .replace(/<\/?script[^>]*>/gi, "")
-    .replace(/<[^>]+>/g, "")
-    .replace(/<\/?style/gi, "")
-    .replace(/[\u2028\u2029]/g, "")
-    .replace(/<[^>]+>/g, "")
-    .trim();
+  if (!css) {
+    return "";
+  }
+
+  if (css.length > 1200) {
+    return "";
+  }
+
+  if (CSS_FORBIDDEN_PATTERNS.some((pattern) => pattern.test(css))) {
+    return "";
+  }
+
+  const safeRules: string[] = [];
+  let cursor = 0;
+  const totalLength = css.length;
+
+  while (cursor < totalLength) {
+    const nextOpen = css.indexOf("{", cursor);
+    if (nextOpen === -1) {
+      break;
+    }
+
+    const selectorRaw = css.slice(cursor, nextOpen).trim();
+    if (!selectorRaw) {
+      return "";
+    }
+
+    const nextClose = css.indexOf("}", nextOpen + 1);
+    if (nextClose === -1) {
+      return "";
+    }
+
+    const declarationBlock = css.slice(nextOpen + 1, nextClose).trim();
+    const declarationParts = declarationBlock
+      .split(";")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+
+    if (!declarationParts.length) {
+      return "";
+    }
+
+    if (declarationBlock.includes("{") || declarationBlock.includes("}")) {
+      return "";
+    }
+
+    const sanitizedSelector = sanitizeCssSelector(selectorRaw);
+    if (!sanitizedSelector) {
+      return "";
+    }
+
+    const safeDeclarations = declarationParts.map((declaration) => {
+      const [rawProperty, ...restValue] = declaration.split(":");
+      if (!rawProperty || restValue.length === 0) {
+        return "";
+      }
+
+      const property = rawProperty.trim().toLowerCase();
+      const value = restValue.join(":").trim();
+
+      const validator = ALLOWED_CSS_PROPERTY_VALIDATORS[property];
+      if (!validator || !validator.test(value)) {
+        return "";
+      }
+
+      return `${property}: ${value}`;
+    });
+
+    if (safeDeclarations.some((entry) => !entry)) {
+      return "";
+    }
+
+    safeRules.push(`${sanitizedSelector} { ${safeDeclarations.join("; ")}; }`);
+
+    cursor = nextClose + 1;
+  }
+
+  if (!safeRules.length) {
+    return "";
+  }
+
+  const trailing = css.slice(cursor).trim();
+  if (trailing) {
+    return "";
+  }
+
+  return safeRules.join("\n");
+}
+
+function sanitizeCssSelector(selector: string) {
+  const normalized = selector.trim();
+
+  if (!ALLOWED_CSS_SELECTORS.has(normalized)) {
+    return "";
+  }
+
+  return normalized;
 }
 
 export function buildLanguagePreview(pack: LanguagePreviewPack) {

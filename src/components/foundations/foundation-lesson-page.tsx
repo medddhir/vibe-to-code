@@ -9,15 +9,21 @@ import {
 import { useFoundationLessonState } from "@/components/foundations/lesson-state";
 import { FOUNDATION_LEVEL1_BY_SLUG, FOUNDATION_LEVEL1_LESSONS } from "@/data/foundations-level1";
 
-function LessonLockedFallback({ lessonNumber, title, reason }: { lessonNumber: number; title: string; reason: string }) {
+function LessonLockedFallback({
+  lessonNumber,
+  reason,
+}: {
+  lessonNumber: number;
+  reason: string;
+}) {
   return (
     <main id="main-content" className="lesson-main guided-lesson-main">
       <section className="shell">
         <div className="lesson-locked-view">
           <p className="eyebrow">Level 1 lesson lock</p>
-          <h1>Lesson {lessonNumber} not available yet</h1>
+          <h1>Lesson {lessonNumber} is locked</h1>
           <p>
-            <strong>{title}</strong> is locked. {reason}
+            {reason}
           </p>
           <Link className="button button-primary" href="/courses/foundations">
             Return to Developer Foundations map
@@ -34,6 +40,8 @@ type FoundationLessonPageProps = {
   lessonTitle: string;
   levelTitle: string;
   totalLessons: number;
+  courseLessonNumber?: number;
+  courseTotalLessons?: number;
   estimatedMinutes: number;
   steps: GuidedLessonStep[];
   children: ReactNode;
@@ -46,6 +54,8 @@ export function FoundationLessonPage({
   levelTitle,
   totalLessons,
   estimatedMinutes,
+  courseLessonNumber,
+  courseTotalLessons,
   steps,
   children,
 }: FoundationLessonPageProps) {
@@ -58,14 +68,13 @@ export function FoundationLessonPage({
       : null;
   const requiredLevelLessonLabel =
     lessonNumberInLevel && lessonNumberInLevel > 1
-      ? `Complete "${previousLevelLesson?.title ?? `Lesson ${lessonNumberInLevel - 1}`}" first so you can move in sequence safely.`
-      : "Start with Lesson 1 of Developer Foundations level 1 before moving to this lesson.";
+      ? `Complete "${previousLevelLesson?.title ?? `Lesson ${lessonNumberInLevel - 1}`}" to unlock this lesson.`
+      : `Start with "${FOUNDATION_LEVEL1_LESSONS[0]?.title ?? "Values, variables, and types"}" to unlock this lesson.`;
 
   if (!isUnlocked) {
     return (
       <LessonLockedFallback
         lessonNumber={lessonNumber}
-        title={lessonTitle}
         reason={requiredLevelLessonLabel}
       />
     );
@@ -85,6 +94,8 @@ export function FoundationLessonPage({
       levelLabel={levelTitle}
       lessonNumber={lessonNumber}
       totalLessons={totalLessons}
+      courseLessonNumber={courseLessonNumber}
+      courseTotalLessons={courseTotalLessons}
       title={lessonTitle}
       estimatedMinutes={estimatedMinutes}
       steps={steps}

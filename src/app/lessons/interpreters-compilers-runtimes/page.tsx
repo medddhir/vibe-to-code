@@ -10,10 +10,13 @@ import { CodeJourneyLab } from "@/components/foundations/code-journey-lab";
 import {
   getFoundationsLessonNumber,
   FOUNDATION_TOTAL_LESSONS,
+  getFoundationsCourseLessonNumber,
+  FOUNDATION_LEVEL1_TOTAL_LESSONS,
 } from "@/data/foundations-level1";
 
 const lessonSlug = "interpreters-compilers-runtimes";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 5;
+const courseLessonNumber = getFoundationsCourseLessonNumber(lessonSlug) ?? 5;
 
 const lessonSteps: GuidedLessonStep[] = [
   {
@@ -91,7 +94,7 @@ const compareChoices: ChoiceCheckpointOption[] = [
 ];
 
 export const metadata: Metadata = {
-  title: "Lesson 5: Interpreters, compilers, and runtimes",
+  title: `Level 1 · Lesson ${lessonNumber} of ${FOUNDATION_LEVEL1_TOTAL_LESSONS}: Interpreters, compilers, and runtimes`,
   description:
     "Trace how source passes through interpreters, compilers, runtimes, and output in three different styles.",
 };
@@ -103,7 +106,9 @@ export default function InterpretersCompilersRuntimesLesson() {
       lessonNumber={lessonNumber}
       lessonTitle="Interpreters, compilers, and runtimes"
       levelTitle="Level 1"
-      totalLessons={FOUNDATION_TOTAL_LESSONS}
+      totalLessons={FOUNDATION_LEVEL1_TOTAL_LESSONS}
+      courseLessonNumber={courseLessonNumber}
+      courseTotalLessons={FOUNDATION_TOTAL_LESSONS}
       estimatedMinutes={12}
       steps={lessonSteps}
     >
