@@ -43,6 +43,10 @@ const foundationLessonPageSource = fs.readFileSync(
   lessonPath("src/components/foundations/foundation-lesson-page.tsx"),
   "utf8",
 );
+const foundationCourseProgressPanelSource = fs.readFileSync(
+  lessonPath("src/components/foundations/foundation-course-progress-panel.tsx"),
+  "utf8",
+);
 const { isStepPracticeActivitiesComplete } = require("../src/components/guided-lesson-flow.tsx");
 
 function extractStepIds(source) {
@@ -217,6 +221,26 @@ describe("Level 1 content and interaction regressions", () => {
   it("LanguageSyntaxLab preview uses sandbox-only iframe settings and no learner script injection path", () => {
     assert.ok(!languageLabSource.includes('sandbox="allow-scripts"'));
     assert.ok(languageLabSource.includes('sandbox=""'));
+  });
+
+  it("course progress uses a stable external-store snapshot", () => {
+    assert.ok(foundationCourseProgressPanelSource.includes("cachedCourseFingerprint"));
+    assert.ok(foundationCourseProgressPanelSource.includes("readServerCourseSnapshot"));
+    assert.ok(
+      /useSyncExternalStore\([\s\S]*?readCourseSnapshot,[\s\S]*?readServerCourseSnapshot,[\s\S]*?\)/m.test(
+        foundationCourseProgressPanelSource,
+      ),
+    );
+    assert.ok(
+      !foundationCourseProgressPanelSource.includes(
+        "useSyncExternalStore(subscribe, readCourseSnapshot, readCourseSnapshot)",
+      ),
+    );
+    assert.ok(
+      foundationCourseProgressPanelSource.includes(
+        "getLessonRowState(snapshot, slug)",
+      ),
+    );
   });
 
   it("course lesson lock messaging names the immediate previous lesson", () => {
