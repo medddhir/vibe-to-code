@@ -6,11 +6,12 @@ import { useMemo, useSyncExternalStore } from "react";
 import {
   getCourseProgressSnapshot,
   getCourseStorageKey,
-  getLessonUnlockState,
   resetCourseProgress,
   resetLessonProgress,
+  type CourseProgressSnapshot,
   type LessonProgressStatus,
   subscribeToCourseProgress,
+  foundationLevel1Order,
 } from "@/lib/course-progress";
 import type { Lesson as CourseLesson } from "@/data/curriculum";
 import { FOUNDATION_LEVEL1_BY_SLUG } from "@/data/foundations-level1";
@@ -25,8 +26,72 @@ type LessonRowState = {
   progress: LessonProgressStatus | null;
 };
 
+const EMPTY_LESSON_PROGRESS: LessonProgressStatus = {
+  completed: false,
+  currentCheckpoint: null,
+  completedCheckpointCount: 0,
+  totalAttempts: 0,
+  totalHints: 0,
+};
+
+const EMPTY_COURSE_SNAPSHOT: CourseProgressSnapshot = {
+  version: 1,
+  courseVersion: 1,
+  lastVisitedLesson: null,
+  lessonOrder: [...foundationLevel1Order],
+  lessons: Object.fromEntries(
+    foundationLevel1Order.map((slug) => [slug, { ...EMPTY_LESSON_PROGRESS }]),
+  ),
+  completedLessons: [],
+  coursePercent: 0,
+};
+
+let cachedCourseSnapshot = EMPTY_COURSE_SNAPSHOT;
+let cachedCourseFingerprint = JSON.stringify(EMPTY_COURSE_SNAPSHOT);
+
 function readCourseSnapshot() {
-  return getCourseProgressSnapshot("foundations");
+  const nextSnapshot = getCourseProgressSnapshot("foundations");
+  const nextFingerprint = JSON.stringify(nextSnapshot);
+
+  if (nextFingerprint !== cachedCourseFingerprint) {
+    cachedCourseSnapshot = nextSnapshot;
+    cachedCourseFingerprint = nextFingerprint;
+  }
+
+  return cachedCourseSnapshot;
+}
+
+function readServerCourseSnapshot() {
+  return EMPTY_COURSE_SNAPSHOT;
+}
+
+function getLessonRowState(
+  snapshot: CourseProgressSnapshot,
+  lessonSlug: string,
+): LessonRowState["state"] {
+  const progress = snapshot.lessons[lessonSlug];
+
+  if (!progress) {
+    return "locked";
+  }
+
+  if (progress.completed) {
+    return "completed";
+  }
+
+  const lessonIndex = snapshot.lessonOrder.indexOf(lessonSlug);
+  if (lessonIndex < 0) {
+    return "locked";
+  }
+
+  if (
+    lessonIndex > 0 &&
+    !snapshot.lessons[snapshot.lessonOrder[lessonIndex - 1]]?.completed
+  ) {
+    return "locked";
+  }
+
+  return snapshot.lastVisitedLesson === lessonSlug ? "current" : "unlocked";
 }
 
 function subscribe(callback: () => void) {
@@ -34,7 +99,11 @@ function subscribe(callback: () => void) {
 }
 
 export function FoundationCourseProgressPanel({ lessons }: FoundationCourseProgressPanelProps) {
-  const snapshot = useSyncExternalStore(subscribe, readCourseSnapshot, readCourseSnapshot);
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    readCourseSnapshot,
+    readServerCourseSnapshot,
+  );
   const lessonRows = useMemo(() => {
     return lessons.map((lesson) => {
       const slug = lesson.slug;
@@ -44,7 +113,7 @@ export function FoundationCourseProgressPanel({ lessons }: FoundationCourseProgr
       };
 
       if (slug) {
-        row.state = getLessonUnlockState("foundations", slug);
+        row.state = getLessonRowState(snapshot, slug);
       }
 
       return { lesson, row };
