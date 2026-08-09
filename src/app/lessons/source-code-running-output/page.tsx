@@ -46,7 +46,7 @@ export default function SourceCodeRunningOutputLesson() {
         <p className="eyebrow">One program · three forms</p>
         <h2>Do not mix up the recipe, the cook, and the result.</h2>
         <p>
-          <strong>Source code</strong> is the instruction you can read and edit. A <strong>runtime</strong>
+          <strong>Source code</strong> is the instruction you can read and edit. A <strong>runtime</strong>{" "}
           reads that saved instruction and performs it. <strong>Output</strong> is the result you can observe.
           They belong together, but they are not the same thing.
         </p>
