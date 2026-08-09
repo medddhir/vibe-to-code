@@ -80,6 +80,7 @@ export const foundationLevels: CourseLevel[] = [
         "See variables as clear names attached to values of different kinds.",
         "Store a score and add two, then compare the number 3 with the text \"3\".",
         "Expecting text and numbers to behave exactly the same.",
+        "values-variables-types",
       ),
       lesson(
         "Decisions, repetition, and functions",
@@ -87,6 +88,7 @@ export const foundationLevels: CourseLevel[] = [
         "Recognize conditions, loops, and reusable actions.",
         "Write pseudocode that returns Pass when a score reaches five.",
         "Confusing assignment with comparison or creating an endless loop.",
+        "decisions-loops-functions",
       ),
       lesson(
         "Input, process, output, and state",
@@ -94,6 +96,7 @@ export const foundationLevels: CourseLevel[] = [
         "Trace what software receives, changes, remembers, and displays.",
         "Follow a counter click from zero to one and label each stage.",
         "Thinking the screen changes without underlying data changing.",
+        "input-process-output-state",
       ),
       lesson(
         "Languages, syntax, and error messages",
@@ -101,6 +104,7 @@ export const foundationLevels: CourseLevel[] = [
         "Understand that languages have different jobs and grammar rules.",
         "Match an HTML tag, a CSS selector, and a JavaScript statement to their files.",
         "Mixing syntax from different languages in the same file.",
+        "languages-syntax-errors",
       ),
       lesson(
         "Interpreters, compilers, and runtimes",
@@ -108,6 +112,7 @@ export const foundationLevels: CourseLevel[] = [
         "Understand what turns source code into work the computer can perform.",
         "Match browser to JavaScript, Python to its runtime, and a compiled app to machine instructions.",
         "Assuming a computer directly understands every source file.",
+        "interpreters-compilers-runtimes",
       ),
       lesson(
         "Packages, dependencies, versions, and environments",
@@ -115,6 +120,7 @@ export const foundationLevels: CourseLevel[] = [
         "Understand reused code and why projects lock compatible versions.",
         "Find a package name, version, and lockfile in a sample project.",
         "Blindly installing the newest or an invented package.",
+        "packages-dependencies-environments",
       ),
       lesson(
         "Frontend, backend, API, database, and cloud",
@@ -122,6 +128,7 @@ export const foundationLevels: CourseLevel[] = [
         "Build one complete mental picture of a modern app.",
         "Trace a button through the frontend, API, database, response, and updated screen.",
         "Putting secrets in frontend code or treating an API as a database.",
+        "frontend-backend-api-database-cloud",
       ),
     ],
   },

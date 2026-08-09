@@ -9,9 +9,25 @@ export type BeginnerPythonResult =
       friendlyMessage: string;
     };
 
-type PythonValue =
+export type BeginnerPythonValue =
   | { type: "string"; value: string }
-  | { type: "number"; value: number };
+  | { type: "number"; value: number }
+  | { type: "boolean"; value: boolean };
+
+export type BeginnerPythonTraceStep = {
+  lineNumber: number;
+  sourceLine: string;
+  action: "assignment" | "print";
+  memory: Record<string, BeginnerPythonValue>;
+  output?: string;
+};
+
+export type BeginnerPythonTraceResult = BeginnerPythonResult & {
+  memory?: Record<string, BeginnerPythonValue>;
+  trace?: BeginnerPythonTraceStep[];
+};
+
+type PythonValue = BeginnerPythonValue;
 
 type Variables = Map<string, PythonValue>;
 
@@ -139,6 +155,15 @@ function splitOutsideStrings(value: string, separator: "+" | ",", line: number) 
   return parts;
 }
 
+function splitOutsideStringsByOperator(value: string, operator: "==" | "!=") {
+  const left = value.split(operator);
+  if (left.length !== 2) {
+    return [];
+  }
+
+  return [left[0].trim(), left[1].trim()];
+}
+
 function stripInlineComment(value: string) {
   let quote: "'" | '"' | null = null;
   let escaped = false;
@@ -223,6 +248,28 @@ function evaluateAtom(atom: string, variables: Variables, line: number): PythonV
 }
 
 function evaluateExpression(expression: string, variables: Variables, line: number) {
+  const hasEquality = expression.includes("==") || expression.includes("!=");
+
+  if (hasEquality) {
+    const operator = expression.includes("==") ? "==" : "!=";
+    const parts = splitOutsideStringsByOperator(expression, operator);
+    if (parts.length !== 2) {
+      syntaxError(
+        line,
+        "unsupported comparison expression",
+        "Use one comparison like value == value. Keep it to one operator in this lesson runner.",
+      );
+    }
+
+    const left = evaluateAtom(parts[0], variables, line);
+    const right = evaluateAtom(parts[1], variables, line);
+    const isEqual = left.type === right.type && left.value === right.value;
+    return {
+      type: "boolean" as const,
+      value: operator === "==" ? isEqual : !isEqual,
+    };
+  }
+
   const atoms = splitOutsideStrings(expression, "+", line);
   let result = evaluateAtom(atoms[0], variables, line);
 
@@ -249,17 +296,40 @@ function evaluateExpression(expression: string, variables: Variables, line: numb
 }
 
 function renderValue(value: PythonValue) {
+  if (value.type === "boolean") {
+    return value.value ? "True" : "False";
+  }
+
   return String(value.value);
 }
+
+function cloneMemory(variables: Variables) {
+  const memory: Record<string, PythonValue> = {};
+
+  for (const [name, value] of variables.entries()) {
+    memory[name] = value;
+  }
+
+  return memory;
+}
+
+type RunOptions = {
+  includeTrace?: boolean;
+};
 
 /**
  * Runs a deliberately tiny, deterministic subset of Python for early lessons.
  * It never evaluates JavaScript, starts a process, accesses files, or uses the network.
  */
-export function runBeginnerPython(source: string): BeginnerPythonResult {
-  const variables: Variables = new Map();
+export function runBeginnerPythonWithTrace(
+  source: string,
+  options: RunOptions = {},
+): BeginnerPythonTraceResult {
+    const variables: Variables = new Map();
   const output: string[] = [];
   const lines = source.replace(/\r\n?/g, "\n").split("\n");
+  const includeTrace = options.includeTrace ?? false;
+  const trace: BeginnerPythonTraceStep[] = [];
 
   try {
     if (!source.trim()) {
@@ -299,6 +369,15 @@ export function runBeginnerPython(source: string): BeginnerPythonResult {
           assignment[1],
           evaluateExpression(assignment[2], variables, lineNumber),
         );
+        if (includeTrace) {
+          trace.push({
+            lineNumber,
+            sourceLine: line,
+            action: "assignment",
+            memory: cloneMemory(variables),
+          });
+        }
+
         return;
       }
 
@@ -330,13 +409,33 @@ export function runBeginnerPython(source: string): BeginnerPythonResult {
         const expression = line.replace(/^print\s*\(/, "").slice(0, -1).trim();
         if (!expression) {
           output.push("");
+          if (includeTrace) {
+            trace.push({
+              lineNumber,
+              sourceLine: line,
+              action: "print",
+              memory: cloneMemory(variables),
+              output: "",
+            });
+          }
+
           return;
         }
 
         const values = splitOutsideStrings(expression, ",", lineNumber).map((part) =>
           evaluateExpression(part, variables, lineNumber),
         );
-        output.push(values.map(renderValue).join(" "));
+        const lineOutput = values.map(renderValue).join(" ");
+        output.push(lineOutput);
+        if (includeTrace) {
+          trace.push({
+            lineNumber,
+            sourceLine: line,
+            action: "print",
+            memory: cloneMemory(variables),
+            output: lineOutput,
+          });
+        }
         return;
       }
 
@@ -354,14 +453,14 @@ export function runBeginnerPython(source: string): BeginnerPythonResult {
         "This lesson runner currently understands text variables and print(...). Try one of those patterns.",
       );
     });
-
-    return { ok: true, output: output.join("\n") };
   } catch (error) {
     if (error instanceof BeginnerPythonError) {
       return {
         ok: false,
         error: error.message,
         friendlyMessage: error.friendlyMessage,
+        memory: cloneMemory(variables),
+        trace,
       };
     }
 
@@ -369,6 +468,23 @@ export function runBeginnerPython(source: string): BeginnerPythonResult {
       ok: false,
       error: "PracticeRunnerError: the instruction could not be checked",
       friendlyMessage: "Something unexpected happened in the lesson runner. Reset the code and try again.",
+      memory: cloneMemory(variables),
+      trace,
     };
   }
+
+  return {
+    ok: true,
+    output: output.join("\n"),
+    ...(includeTrace
+      ? {
+          memory: cloneMemory(variables),
+          trace,
+        }
+      : {}),
+  };
+}
+
+export function runBeginnerPython(source: string): BeginnerPythonResult {
+  return runBeginnerPythonWithTrace(source);
 }

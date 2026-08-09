@@ -1,9 +1,20 @@
 "use client";
 
-import { useMemo, useState, type KeyboardEvent } from "react";
+import {
+  useMemo,
+  useState,
+  type KeyboardEvent,
+} from "react";
 
 import { useLessonProgress } from "@/components/guided-lesson-flow";
-import { runBeginnerPython } from "@/lib/beginner-python";
+import {
+  runBeginnerPython,
+  runBeginnerPythonWithTrace,
+  type BeginnerPythonTraceResult,
+} from "@/lib/beginner-python";
+import { ExecutionTrace } from "@/components/foundations/execution-trace";
+
+type PracticeRunnerMode = "python" | "python-with-trace";
 
 type PracticeConsoleProps = {
   stepId: string;
@@ -17,6 +28,8 @@ type PracticeConsoleProps = {
   validationMode?: "exact" | "personal-greeting";
   initialRunLabel?: string;
   initialRunInstructions?: string;
+  runnerMode?: PracticeRunnerMode;
+  showTrace?: boolean;
 };
 
 type ConsoleResult =
@@ -41,6 +54,8 @@ export function PracticeConsole({
   validationMode = "exact",
   initialRunLabel = "Run broken code",
   initialRunInstructions = "Run the broken code once. The editor unlocks after the error appears.",
+  runnerMode = "python",
+  showTrace = false,
 }: PracticeConsoleProps) {
   const {
     attemptsByStep,
@@ -48,12 +63,14 @@ export function PracticeConsole({
     practiceCompletedIds,
     completePractice,
     recordFailedAttempt,
+    recordHintUsage,
     saveCode,
   } = useLessonProgress();
   const [code, setCode] = useState(() => savedCodeByStep[stepId] ?? starterCode);
   const attempts = attemptsByStep[stepId] ?? 0;
   const completed = practiceCompletedIds.includes(stepId);
   const [result, setResult] = useState<ConsoleResult>(null);
+  const [runResult, setRunResult] = useState<BeginnerPythonTraceResult | null>(null);
   const [editingUnlocked, setEditingUnlocked] = useState(
     () => !requireInitialRun || completed,
   );
@@ -70,25 +87,49 @@ export function PracticeConsole({
     return "Ready";
   }, [completed, result]);
 
+  const runner = runnerMode === "python-with-trace" ? runBeginnerPythonWithTrace : runBeginnerPython;
+
+  function buildTrace(result: BeginnerPythonTraceResult) {
+    if (!result.trace || result.trace.length === 0) {
+      return null;
+    }
+
+    return {
+      label: "Code memory trace",
+      entries: result.trace.map((entry) => ({
+        phase: entry.action === "assignment" ? `Assignment · line ${entry.lineNumber}` : `Print · line ${entry.lineNumber}`,
+        detail: entry.action === "assignment" ? `Executed ${entry.sourceLine}` : `Printed: ${entry.output ?? ""}`,
+        memory: entry.memory,
+        output: entry.output,
+      })),
+    };
+  }
+
+  const latestTrace = runResult ? buildTrace(runResult) : null;
+
   function runCode() {
     saveCode(stepId, code);
-    const runResult = runBeginnerPython(code);
+    const latestResult = runner(code);
+    setRunResult(latestResult);
 
     if (requireInitialRun && !editingUnlocked) {
       setEditingUnlocked(true);
     }
 
-    if (!runResult.ok) {
+    if (!latestResult.ok) {
       recordFailedAttempt(stepId);
+      if (!completed && attempts === 2) {
+        recordHintUsage(stepId);
+      }
       setResult({
         kind: "error",
-        output: runResult.error,
-        message: runResult.friendlyMessage,
+        output: latestResult.error,
+        message: latestResult.friendlyMessage,
       });
       return;
     }
 
-    const normalizedOutput = normalizeOutput(runResult.output);
+    const normalizedOutput = normalizeOutput(latestResult.output);
     const outputMatches =
       validationMode === "personal-greeting"
         ? /^Hello,\s+\S.*$/.test(normalizedOutput) &&
@@ -98,9 +139,12 @@ export function PracticeConsole({
 
     if (!outputMatches) {
       recordFailedAttempt(stepId);
+      if (!completed && attempts === 2) {
+        recordHintUsage(stepId);
+      }
       setResult({
         kind: "wrong-output",
-        output: runResult.output || "(no visible output)",
+        output: latestResult.output || "(no visible output)",
         message:
           validationMode === "personal-greeting"
             ? "Your code ran. Make it display Hello, followed by a name you choose—not Mira and not the word name."
@@ -112,7 +156,7 @@ export function PracticeConsole({
     completePractice(stepId);
     setResult({
       kind: "success",
-      output: runResult.output,
+      output: latestResult.output,
       message: successMessage,
     });
   }
@@ -128,6 +172,7 @@ export function PracticeConsole({
     setCode(starterCode);
     saveCode(stepId, starterCode);
     setResult(null);
+    setRunResult(null);
     if (requireInitialRun && !completed) {
       setEditingUnlocked(false);
     }
@@ -146,7 +191,9 @@ export function PracticeConsole({
         </span>
       </div>
 
-      <p id={descriptionId} className="practice-console-instructions">{instructions}</p>
+      <p id={descriptionId} className="practice-console-instructions">
+        {instructions}
+      </p>
 
       {requireInitialRun && !editingUnlocked ? (
         <div className="practice-first-run-note">
@@ -210,10 +257,11 @@ export function PracticeConsole({
             {attempts > 0 && !completed ? <small>Attempt {attempts + 1} · keep going</small> : null}
           </div>
           {result ? (
-            <>
-              <p>{result.message}</p>
-              <pre>{result.output}</pre>
-            </>
+	            <>
+	              <p>{result.message}</p>
+	              <pre>{result.output}</pre>
+	              {showTrace && latestTrace ? <ExecutionTrace {...latestTrace} /> : null}
+	            </>
           ) : completed ? (
             <p className="practice-completed-note">✓ Completed earlier. You can run the code again anytime.</p>
           ) : (
@@ -224,7 +272,10 @@ export function PracticeConsole({
 
       <div className="practice-safety-note">
         <span aria-hidden="true">◎</span>
-        <p><strong>Local learning runner.</strong> No file or internet access. Never paste passwords or API keys.</p>
+        <p>
+          <strong>Local learning runner.</strong> No file or internet access. Never paste
+          passwords or API keys.
+        </p>
       </div>
 
       {hintVisible ? (
