@@ -8,8 +8,14 @@ const { describe, it } = require("node:test");
 
 const lessonPath = (relativePath) => path.join(process.cwd(), relativePath);
 
-const level1LessonPaths = [
+const publishedFoundationLessonPaths = [
   "src/app/lessons/what-is-code/page.tsx",
+  "src/app/lessons/source-code-running-output/page.tsx",
+  "src/app/lessons/hardware-operating-systems-apps/page.tsx",
+  "src/app/lessons/files-folders-extensions/page.tsx",
+  "src/app/lessons/paths-current-folder/page.tsx",
+  "src/app/lessons/vscode-without-getting-lost/page.tsx",
+  "src/app/lessons/terminal-without-fear/page.tsx",
   "src/app/lessons/values-variables-types/page.tsx",
   "src/app/lessons/decisions-loops-functions/page.tsx",
   "src/app/lessons/input-process-output-state/page.tsx",
@@ -57,9 +63,9 @@ function extractStepIds(source) {
   return [...source.matchAll(/stepId=\"([^\"]+)\"/g)].map((match) => match[1]);
 }
 
-describe("Level 1 content and interaction regressions", () => {
-  it("all Level 1 lesson pages use unique interactive step IDs", () => {
-    for (const lesson of level1LessonPaths) {
+describe("Published Foundation content and interaction regressions", () => {
+  it("all published Foundation lesson pages use unique interactive step IDs", () => {
+    for (const lesson of publishedFoundationLessonPaths) {
       const source = fs.readFileSync(lessonPath(lesson), "utf8");
       const ids = extractStepIds(source);
       const unique = new Set(ids);
@@ -262,16 +268,27 @@ describe("Level 1 content and interaction regressions", () => {
     );
     assert.ok(
       foundationLessonStateSource.includes(
-        "isLessonUnlockedFromSnapshot(snapshot, lessonSlug)",
+        "isLessonUnlockedInSnapshot(snapshot, lessonSlug)",
       ),
     );
   });
 
   it("course lesson lock messaging names the immediate previous lesson", () => {
-    assert.ok(foundationLessonPageSource.includes("previousLevelLesson"));
-    assert.ok(foundationLessonPageSource.includes("requiredLevelLessonLabel"));
-    assert.ok(foundationLessonPageSource.includes('previousLevelLesson?.title'));
+    assert.ok(foundationLessonPageSource.includes("previousPublishedLesson"));
+    assert.ok(foundationLessonPageSource.includes("requiredLessonLabel"));
+    assert.ok(foundationLessonPageSource.includes('previousPublishedLesson.title'));
     assert.ok(foundationLessonPageSource.includes("to unlock this lesson."));
     assert.ok(!foundationLessonPageSource.includes("Complete Lesson 1"));
+  });
+
+  it("ships all seven Level 0 lesson routes with five gated learning checkpoints each", () => {
+    const level0Paths = publishedFoundationLessonPaths.slice(0, 7);
+
+    for (const lesson of level0Paths) {
+      const source = fs.readFileSync(lessonPath(lesson), "utf8");
+      const declaredSteps = [...source.matchAll(/requiresPractice: true/g)];
+      assert.equal(declaredSteps.length >= 5, true, `${lesson} needs at least five gated checkpoints`);
+      assert.ok(source.includes('levelTitle="Level 0"') || lesson.endsWith("what-is-code/page.tsx"));
+    }
   });
 });

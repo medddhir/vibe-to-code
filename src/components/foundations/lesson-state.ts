@@ -8,8 +8,9 @@ import {
   getCourseStorageKey,
   type CourseProgressSnapshot,
   type LessonProgressStatus,
+  isLessonUnlockedInSnapshot,
   subscribeToCourseProgress,
-  foundationLevel1Order,
+  foundationPublishedOrder,
 } from "@/lib/course-progress";
 
 export type LessonAccessState = {
@@ -31,11 +32,12 @@ const EMPTY_LESSON_PROGRESS: LessonProgressStatus = {
 
 const EMPTY_COURSE_SNAPSHOT: CourseProgressSnapshot = {
   version: 1,
-  courseVersion: 1,
+  courseVersion: 2,
+  legacyLevel1Access: false,
   lastVisitedLesson: null,
-  lessonOrder: [...foundationLevel1Order],
+  lessonOrder: [...foundationPublishedOrder],
   lessons: Object.fromEntries(
-    foundationLevel1Order.map((slug) => [slug, { ...EMPTY_LESSON_PROGRESS }]),
+    foundationPublishedOrder.map((slug) => [slug, { ...EMPTY_LESSON_PROGRESS }]),
   ),
   completedLessons: [],
   coursePercent: 0,
@@ -60,24 +62,6 @@ function readServerSnapshot() {
   return EMPTY_COURSE_SNAPSHOT;
 }
 
-function isLessonUnlockedFromSnapshot(
-  snapshot: CourseProgressSnapshot,
-  lessonSlug: string,
-) {
-  const lessonIndex = snapshot.lessonOrder.indexOf(lessonSlug);
-
-  if (lessonIndex < 0) {
-    return false;
-  }
-
-  if (lessonIndex === 0) {
-    return true;
-  }
-
-  const previousLessonSlug = snapshot.lessonOrder[lessonIndex - 1];
-  return Boolean(snapshot.lessons[previousLessonSlug]?.completed);
-}
-
 function subscribe(callback: () => void) {
   return subscribeToCourseProgress(getCourseStorageKey("foundations"), callback);
 }
@@ -93,7 +77,7 @@ export function useFoundationLessonState(lessonSlug: string) {
     const lesson = snapshot.lessons[lessonSlug];
 
     return {
-      isUnlocked: isLessonUnlockedFromSnapshot(snapshot, lessonSlug),
+      isUnlocked: isLessonUnlockedInSnapshot(snapshot, lessonSlug),
       isCompleted: Boolean(lesson?.completed),
       isCurrent: snapshot.lastVisitedLesson === lessonSlug,
       attempts: lesson?.totalAttempts ?? 0,

@@ -31,6 +31,7 @@ export const foundationLevels: CourseLevel[] = [
         "Understand the edit, save, run, and observe loop.",
         "Change a greeting, save the file, run it again, and confirm the output changed.",
         "Editing without saving or looking at an older running version.",
+        "source-code-running-output",
       ),
       lesson(
         "Hardware, operating systems, and apps",
@@ -38,6 +39,7 @@ export const foundationLevels: CourseLevel[] = [
         "See the layers between a physical machine and the software you use.",
         "Sort a keyboard, Windows, Chrome, and a website into the correct layers.",
         "Calling Windows the computer or confusing a browser with a website.",
+        "hardware-operating-systems-apps",
       ),
       lesson(
         "Files, folders, and extensions",
@@ -45,6 +47,7 @@ export const foundationLevels: CourseLevel[] = [
         "Create a tidy project and recognize common file types.",
         "Create my-first-site/index.html and confirm the editor recognizes HTML.",
         "Creating index.html.txt or scattering project files across Downloads.",
+        "files-folders-extensions",
       ),
       lesson(
         "Paths and your current folder",
@@ -52,6 +55,7 @@ export const foundationLevels: CourseLevel[] = [
         "Read relative and absolute paths and know which folder a command uses.",
         "Connect index.html to images/logo.svg and make the image load.",
         "Using the wrong slash, letter case, or working directory.",
+        "paths-current-folder",
       ),
       lesson(
         "VS Code without getting lost",
@@ -59,6 +63,7 @@ export const foundationLevels: CourseLevel[] = [
         "Use Explorer, Search, Problems, the editor, and the integrated terminal.",
         "Open a whole project folder and make one saved heading change.",
         "Opening one loose file instead of the project folder.",
+        "vscode-without-getting-lost",
       ),
       lesson(
         "The terminal without fear",
@@ -66,6 +71,7 @@ export const foundationLevels: CourseLevel[] = [
         "Read a shell prompt and run safe navigation commands.",
         "Use pwd, ls, mkdir, and cd to create and enter a practice folder.",
         "Copying the $ prompt, using the wrong shell command, or assuming silence means failure.",
+        "terminal-without-fear",
       ),
     ],
   },

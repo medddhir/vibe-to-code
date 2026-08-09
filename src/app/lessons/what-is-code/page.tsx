@@ -11,10 +11,13 @@ import {
 } from "@/components/guided-lesson-flow";
 import { PracticeConsole } from "@/components/practice-console";
 import { SignalPathChallenge } from "@/components/signal-path-challenge";
-import { getCourse } from "@/data/curriculum";
+import {
+  FOUNDATION_LEVEL0_TOTAL_LESSONS,
+  FOUNDATION_TOTAL_LESSONS,
+} from "@/data/foundations-level1";
 
 export const metadata: Metadata = {
-  title: "Mission 01: What code actually is",
+  title: `Level 0 · Lesson 1 of ${FOUNDATION_LEVEL0_TOTAL_LESSONS}: What code actually is`,
   description: "Wake a bot, run Python, personalize output, fix a bug, and verify an AI claim.",
 };
 
@@ -81,8 +84,6 @@ const predictionOptions: ChoiceCheckpointOption[] = [
 ];
 
 export default function WhatIsCodeLesson() {
-  const totalLessons = getCourse("foundations")?.lessonCount ?? 46;
-
   return (
     <GuidedLessonFlow
       lessonId="what-is-code"
@@ -91,7 +92,9 @@ export default function WhatIsCodeLesson() {
       courseName="Developer Foundations"
       levelLabel="Level 0"
       lessonNumber={1}
-      totalLessons={totalLessons}
+      totalLessons={FOUNDATION_LEVEL0_TOTAL_LESSONS}
+      courseLessonNumber={1}
+      courseTotalLessons={FOUNDATION_TOTAL_LESSONS}
       title="What code actually is"
       estimatedMinutes={10}
       steps={lessonSteps}
@@ -102,6 +105,8 @@ export default function WhatIsCodeLesson() {
       completionTitle="The bot is awake—and you stayed in control."
       completionDescription="You built the path, predicted a result, ran real Python, personalized it, repaired a bug, and checked an AI claim with evidence."
       completionReward="Skill unlocked · Code Operator"
+      courseSlug="foundations"
+      lessonProgressSlug="what-is-code"
     >
       <section id="launch" className="lesson-section guided-topic mission-topic">
         <div className="mission-kickoff">
