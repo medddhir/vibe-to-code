@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { modelFamilies } from "@/data/course-content";
 import type { Course } from "@/data/curriculum";
+import { FoundationCourseProgressPanel } from "@/components/foundations/foundation-course-progress-panel";
 
 const learningLoop = [
   { number: "01", title: "Understand", description: "Start with one plain-English mental model." },
@@ -375,6 +376,14 @@ function DetailedCourse({ course }: { course: Course }) {
           </div>
         </div>
       </section>
+
+      {course.slug === "foundations" ? (
+        <section className="section section-soft course-progress-section">
+          <div className="shell">
+            <FoundationCourseProgressPanel lessons={course.levels[1]?.lessons ?? []} />
+          </div>
+        </section>
+      ) : null}
     </>
   );
 }

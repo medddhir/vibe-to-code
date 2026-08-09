@@ -6,17 +6,29 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
 
+import {
+  markLessonCompleted,
+  recordCompletedCheckpoint,
+  recordLessonAttempt,
+  recordLessonHint,
+  resetLessonProgress,
+  setCurrentCheckpoint,
+  setCurrentLesson,
+} from "@/lib/course-progress";
+
 export type GuidedLessonStep = {
   id: string;
   title: string;
   eyebrow: string;
   requiresPractice?: boolean;
+  requiredActivityIds?: string[];
   continueLabel?: string;
 };
 
@@ -37,6 +49,7 @@ type LessonProgressContextValue = {
   practiceCompletedIds: string[];
   completePractice: (stepId: string) => void;
   recordFailedAttempt: (stepId: string) => void;
+  recordHintUsage: (stepId: string) => void;
   saveCode: (stepId: string, code: string) => void;
 };
 
@@ -44,6 +57,61 @@ const LessonProgressContext = createContext<LessonProgressContextValue | null>(n
 const inMemoryProgress = new Map<string, string>();
 const memoryOnlyProgress = new Set<string>();
 const lessonProgressEvent = "vibe-to-code:lesson-progress";
+
+export const getLessonStorageKey = (lessonId: string, lessonVersion: number) =>
+  `vibe-to-code:lesson-progress:v1:${lessonId}:lesson-v${lessonVersion}`;
+
+function getRequiredActivityIds(step: GuidedLessonStep) {
+  return step.requiresPractice
+    ? step.requiredActivityIds?.length
+      ? [...new Set(step.requiredActivityIds)]
+      : [step.id]
+    : [];
+}
+
+export function isActivityCompleteForStep(
+  _step: GuidedLessonStep,
+  practiceCompletedIds: readonly string[],
+  activityId: string,
+) {
+  return practiceCompletedIds.includes(activityId);
+}
+
+export function isStepPracticeActivitiesComplete(
+  step: GuidedLessonStep,
+  practiceCompletedIds: readonly string[],
+) {
+  return getRequiredActivityIds(step).every((activityId) =>
+    isActivityCompleteForStep(step, practiceCompletedIds, activityId),
+  );
+}
+
+function collectKnownIds(steps: GuidedLessonStep[]) {
+  const knownIds = new Set<string>();
+  steps.forEach((step) => {
+    knownIds.add(step.id);
+    step.requiredActivityIds?.forEach((id) => knownIds.add(id));
+  });
+  return knownIds;
+}
+
+function migrateLegacyStepCompletion(
+  step: GuidedLessonStep,
+  practiceCompletedIds: string[],
+) {
+  const requiredIds = getRequiredActivityIds(step);
+  if (!requiredIds.length || !practiceCompletedIds.includes(step.id)) {
+    return practiceCompletedIds;
+  }
+
+  if (requiredIds.every((id) => practiceCompletedIds.includes(id))) {
+    return practiceCompletedIds;
+  }
+
+  const next = new Set(practiceCompletedIds);
+  requiredIds.forEach((id) => next.add(id));
+  return [...next];
+}
 
 function readProgressSnapshot(storageKey: string) {
   if (typeof window === "undefined") {
@@ -117,6 +185,8 @@ type GuidedLessonFlowProps = {
   levelLabel: string;
   lessonNumber: number;
   totalLessons: number;
+  courseLessonNumber?: number;
+  courseTotalLessons?: number;
   title: string;
   estimatedMinutes: number;
   steps: GuidedLessonStep[];
@@ -127,6 +197,8 @@ type GuidedLessonFlowProps = {
   completionTitle?: string;
   completionDescription?: string;
   completionReward?: string;
+  courseSlug?: string;
+  lessonProgressSlug?: string;
   children: ReactNode;
 };
 
@@ -159,6 +231,7 @@ function restoreProgress(
   firstStepId: string,
   knownIds: Set<string>,
   lessonVersion: number,
+  stepDefinitions: GuidedLessonStep[],
 ): LessonProgress {
   const fallback = createDefaultProgress(firstStepId, lessonVersion);
 
@@ -178,7 +251,7 @@ function restoreProgress(
         ? stored.currentStepId
         : firstStepId;
 
-    return {
+    const baseProgress = {
       ...fallback,
       currentStepId,
       completedStepIds: uniqueKnownIds(stored.completedStepIds, knownIds),
@@ -205,6 +278,14 @@ function restoreProgress(
           : {},
       completedAt: typeof stored.completedAt === "string" ? stored.completedAt : null,
     };
+
+    return {
+      ...baseProgress,
+      practiceCompletedIds: uniqueKnownIds(
+        stepDefinitions.reduce((acc, step) => migrateLegacyStepCompletion(step, acc), baseProgress.practiceCompletedIds),
+        knownIds,
+      ),
+    };
   } catch {
     return fallback;
   }
@@ -228,12 +309,17 @@ export function GuidedLessonFlow({
   completionTitle = "You understood your first piece of code.",
   completionDescription = "Your progress is saved on this device. The next lesson is being prepared carefully.",
   completionReward,
+  courseLessonNumber,
+  courseTotalLessons,
+  courseSlug,
+  lessonProgressSlug,
   children,
 }: GuidedLessonFlowProps) {
   const panels = Children.toArray(children);
   const firstStepId = steps[0]?.id ?? "start";
-  const storageKey = `vibe-to-code:lesson-progress:v1:${lessonId}:lesson-v${lessonVersion}`;
-  const knownIds = useMemo(() => new Set(steps.map((step) => step.id)), [steps]);
+  const storageKey = getLessonStorageKey(lessonId, lessonVersion);
+  const hasCourseTracking = Boolean(courseSlug && lessonProgressSlug);
+  const knownIds = useMemo(() => collectKnownIds(steps), [steps]);
   const subscribe = useCallback(
     (callback: () => void) => subscribeToProgress(storageKey, callback),
     [storageKey],
@@ -246,8 +332,8 @@ export function GuidedLessonFlow({
     getServerSnapshot,
   );
   const progress = useMemo(
-    () => restoreProgress(serializedProgress, firstStepId, knownIds, lessonVersion),
-    [firstStepId, knownIds, lessonVersion, serializedProgress],
+    () => restoreProgress(serializedProgress, firstStepId, knownIds, lessonVersion, steps),
+    [firstStepId, knownIds, lessonVersion, serializedProgress, steps],
   );
   const panelStartRef = useRef<HTMLDivElement>(null);
 
@@ -258,11 +344,15 @@ export function GuidedLessonFlow({
         firstStepId,
         knownIds,
         lessonVersion,
+        steps,
       );
       writeProgressSnapshot(storageKey, JSON.stringify(updater(current)));
     },
-    [firstStepId, knownIds, lessonVersion, storageKey],
+    [firstStepId, knownIds, lessonVersion, storageKey, steps],
   );
+
+  const courseLessonProgressValue = courseLessonNumber ?? lessonNumber;
+  const courseLessonTotalValue = courseTotalLessons ?? totalLessons;
 
   const activeIndex = Math.max(
     0,
@@ -270,7 +360,7 @@ export function GuidedLessonFlow({
   );
   const activeStep = steps[activeIndex] ?? steps[0];
   const activePracticeComplete = activeStep
-    ? progress.practiceCompletedIds.includes(activeStep.id)
+    ? isStepPracticeActivitiesComplete(activeStep, progress.practiceCompletedIds)
     : true;
   const canContinue = !activeStep?.requiresPractice || activePracticeComplete;
   const isFinalStep = activeIndex === steps.length - 1;
@@ -278,13 +368,32 @@ export function GuidedLessonFlow({
   const lessonStepPercent = steps.length ? ((activeIndex + 1) / steps.length) * 100 : 0;
   const coursePercent = (lessonNumber / totalLessons) * 100;
 
+  const trackCourseStep = useCallback(
+    (stepId: string) => {
+      if (!hasCourseTracking || !courseSlug || !lessonProgressSlug) {
+        return;
+      }
+
+      setCurrentCheckpoint(courseSlug, lessonProgressSlug, stepId);
+      setCurrentLesson(courseSlug, lessonProgressSlug);
+    },
+    [courseSlug, hasCourseTracking, lessonProgressSlug],
+  );
+
+  useEffect(() => {
+    if (activeStep && hasCourseTracking) {
+      trackCourseStep(activeStep.id);
+    }
+  }, [activeStep, hasCourseTracking, trackCourseStep]);
+
   const moveToStep = useCallback((stepId: string) => {
     updateProgress((current) => ({ ...current, currentStepId: stepId }));
+    trackCourseStep(stepId);
     window.requestAnimationFrame(() => {
       panelStartRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
       panelStartRef.current?.focus({ preventScroll: true });
     });
-  }, [updateProgress]);
+  }, [trackCourseStep, updateProgress]);
 
   const isStepUnlocked = useCallback(
     (index: number) => {
@@ -314,6 +423,10 @@ export function GuidedLessonFlow({
         : [...current.completedStepIds, activeStep.id];
 
       if (isFinalStep) {
+        if (courseSlug && lessonProgressSlug) {
+          markLessonCompleted(courseSlug, lessonProgressSlug, activeStep.id);
+        }
+
         return {
           ...current,
           completedStepIds,
@@ -345,6 +458,9 @@ export function GuidedLessonFlow({
       storageKey,
       JSON.stringify(createDefaultProgress(firstStepId, lessonVersion)),
     );
+    if (courseSlug && lessonProgressSlug) {
+      resetLessonProgress(courseSlug, lessonProgressSlug);
+    }
     window.requestAnimationFrame(() => {
       panelStartRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
       panelStartRef.current?.focus({ preventScroll: true });
@@ -366,6 +482,10 @@ export function GuidedLessonFlow({
             ? current.practiceCompletedIds
             : [...current.practiceCompletedIds, stepId],
         }));
+
+        if (courseSlug && lessonProgressSlug) {
+          recordCompletedCheckpoint(courseSlug, lessonProgressSlug, stepId);
+        }
       },
       recordFailedAttempt: (stepId) => {
         if (!knownIds.has(stepId)) {
@@ -378,6 +498,17 @@ export function GuidedLessonFlow({
             [stepId]: (current.attemptsByStep[stepId] ?? 0) + 1,
           },
         }));
+
+        if (courseSlug && lessonProgressSlug) {
+          recordLessonAttempt(courseSlug, lessonProgressSlug, stepId);
+        }
+      },
+      recordHintUsage: (stepId) => {
+        if (!knownIds.has(stepId) || !courseSlug || !lessonProgressSlug) {
+          return;
+        }
+
+        recordLessonHint(courseSlug, lessonProgressSlug, stepId);
       },
       saveCode: (stepId, code) => {
         if (!knownIds.has(stepId)) {
@@ -389,7 +520,15 @@ export function GuidedLessonFlow({
         }));
       },
     }),
-    [knownIds, progress.attemptsByStep, progress.practiceCompletedIds, progress.savedCodeByStep, updateProgress],
+    [
+      knownIds,
+      courseSlug,
+      lessonProgressSlug,
+      progress.attemptsByStep,
+      progress.practiceCompletedIds,
+      progress.savedCodeByStep,
+      updateProgress,
+    ],
   );
 
   if (!activeStep || panels.length !== steps.length) {
@@ -439,7 +578,9 @@ export function GuidedLessonFlow({
             <Link className="breadcrumb" href={courseHref}>
               ← {courseName}
             </Link>
-            <p className="eyebrow">{levelLabel} · Lesson {lessonNumber}</p>
+            <p className="eyebrow">
+              {levelLabel} · Lesson {lessonNumber} of {totalLessons}
+            </p>
             <p className="lesson-sidebar-title">{title}</p>
             <div
               className="lesson-progress"
@@ -448,11 +589,13 @@ export function GuidedLessonFlow({
               aria-valuemin={0}
               aria-valuemax={totalLessons}
               aria-valuenow={lessonNumber}
-              aria-valuetext={`Lesson ${lessonNumber} of ${totalLessons}`}
+              aria-valuetext={`Lesson ${lessonNumber} of ${totalLessons} in ${levelLabel}`}
             >
               <span style={{ width: `${coursePercent}%` }} />
             </div>
-            <small>{lessonNumber} of {totalLessons} course lessons</small>
+            <small>
+              Course lesson {courseLessonProgressValue} of {courseLessonTotalValue}
+            </small>
 
             <div className="lesson-topic-summary">
               <span>{progressLabel}</span>
