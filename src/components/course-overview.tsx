@@ -380,7 +380,7 @@ function DetailedCourse({ course }: { course: Course }) {
       {course.slug === "foundations" ? (
         <section className="section section-soft course-progress-section">
           <div className="shell">
-            <FoundationCourseProgressPanel lessons={course.levels[1]?.lessons ?? []} />
+            <FoundationCourseProgressPanel levels={course.levels.slice(0, 2)} />
           </div>
         </section>
       ) : null}

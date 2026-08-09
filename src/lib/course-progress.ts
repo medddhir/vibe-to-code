@@ -19,6 +19,7 @@ export type LessonProgressStatus = {
 type CourseProgressRecord = {
   version: 1;
   courseVersion: number;
+  legacyLevel1Access: boolean;
   lastVisitedLesson: string | null;
   lessonOrder: string[];
   lessons: Record<string, LessonProgressRecord>;
@@ -28,6 +29,7 @@ type CourseProgressRecord = {
 export type CourseProgressSnapshot = {
   version: number;
   courseVersion: number;
+  legacyLevel1Access: boolean;
   lastVisitedLesson: string | null;
   lessonOrder: string[];
   lessons: Record<string, LessonProgressStatus>;
@@ -39,17 +41,27 @@ export type LessonUnlockState = "locked" | "unlocked" | "current" | "completed";
 
 const COURSE_PROGRESS_EVENT = "vibe-to-code:course-progress";
 const COURSE_PROGRESS_VERSION = 1;
+const FOUNDATION_COURSE_VERSION = 2;
 const STORAGE_PREFIX = "vibe-to-code:course-progress:v1";
 
 const inMemoryCourseProgress = new Map<string, string>();
 const memoryOnlyCourses = new Set<string>();
 
-const FOUNDATION_LEVELS = foundationLevels[1]?.lessons
+const FOUNDATION_LEVEL0_ORDER = foundationLevels[0]?.lessons
   ?.map((lesson) => lesson.slug)
   .filter((slug): slug is string => typeof slug === "string") ?? [];
 
+const FOUNDATION_LEVEL1_ORDER = foundationLevels[1]?.lessons
+  ?.map((lesson) => lesson.slug)
+  .filter((slug): slug is string => typeof slug === "string") ?? [];
+
+const FOUNDATION_PUBLISHED_ORDER = [
+  ...FOUNDATION_LEVEL0_ORDER,
+  ...FOUNDATION_LEVEL1_ORDER,
+];
+
 function getFoundationLessonOrder() {
-  return [...FOUNDATION_LEVELS];
+  return [...FOUNDATION_PUBLISHED_ORDER];
 }
 
 function makeEmptyLessonRecord(): LessonProgressRecord {
@@ -68,7 +80,8 @@ function createDefaultCourseRecord(courseSlug: string): CourseProgressRecord {
 
   return {
     version: COURSE_PROGRESS_VERSION,
-    courseVersion: 1,
+    courseVersion: FOUNDATION_COURSE_VERSION,
+    legacyLevel1Access: false,
     lastVisitedLesson: null,
     lessonOrder,
     lessons: lessonOrder.reduce<Record<string, LessonProgressRecord>>((acc, lessonSlug) => {
@@ -105,6 +118,7 @@ function createProgressSnapshot(raw: CourseProgressRecord): CourseProgressSnapsh
   return {
     version: raw.version,
     courseVersion: raw.courseVersion,
+    legacyLevel1Access: raw.legacyLevel1Access,
     lastVisitedLesson: raw.lastVisitedLesson,
     lessonOrder,
     lessons: lessonStatuses,
@@ -162,13 +176,14 @@ function normalizeCourseRecord(raw: string | null, courseSlug: string): CoursePr
   try {
     const parsed = JSON.parse(raw) as Partial<CourseProgressRecord>;
 
-    if (parsed.version !== COURSE_PROGRESS_VERSION || parsed.courseVersion !== 1) {
+    if (
+      parsed.version !== COURSE_PROGRESS_VERSION ||
+      (parsed.courseVersion !== 1 && parsed.courseVersion !== FOUNDATION_COURSE_VERSION)
+    ) {
       return fallback;
     }
 
-    const lessonOrder = Array.isArray(parsed.lessonOrder)
-      ? parsed.lessonOrder.filter((slug): slug is string => typeof slug === "string")
-      : createDefaultCourseRecord(courseSlug).lessonOrder;
+    const lessonOrder = createDefaultCourseRecord(courseSlug).lessonOrder;
 
     const lessons = lessonOrder.reduce<Record<string, LessonProgressRecord>>(
       (acc, slug) => {
@@ -210,11 +225,33 @@ function normalizeCourseRecord(raw: string | null, courseSlug: string): CoursePr
       {},
     );
 
+    const hadLegacyLevel1Activity =
+      parsed.courseVersion === 1 &&
+      (FOUNDATION_LEVEL1_ORDER.some((slug) => {
+        const lesson = parsed.lessons?.[slug];
+        return Boolean(
+          lesson?.completedAt ||
+            lesson?.currentCheckpoint ||
+            lesson?.completedCheckpointIds?.length ||
+            Object.keys(lesson?.stepAttempts ?? {}).length ||
+            Object.keys(lesson?.stepHints ?? {}).length,
+        );
+      }) ||
+        (typeof parsed.lastVisitedLesson === "string" &&
+          FOUNDATION_LEVEL1_ORDER.includes(parsed.lastVisitedLesson)));
+
     return {
       version: COURSE_PROGRESS_VERSION,
-      courseVersion: 1,
+      courseVersion: FOUNDATION_COURSE_VERSION,
+      legacyLevel1Access:
+        typeof parsed.legacyLevel1Access === "boolean"
+          ? parsed.legacyLevel1Access
+          : hadLegacyLevel1Activity,
       lastVisitedLesson:
-        typeof parsed.lastVisitedLesson === "string" ? parsed.lastVisitedLesson : null,
+        typeof parsed.lastVisitedLesson === "string" &&
+        lessonOrder.includes(parsed.lastVisitedLesson)
+          ? parsed.lastVisitedLesson
+          : null,
       lessonOrder,
       lessons,
       updatedAt:
@@ -252,10 +289,11 @@ export function getCourseProgressSnapshot(courseSlug: string): CourseProgressSna
   return createProgressSnapshot(readCourseProgress(courseSlug));
 }
 
-export function isLessonUnlocked(courseSlug: string, lessonSlug: string) {
-  const progress = readCourseProgress(courseSlug);
-  const order = progress.lessonOrder;
-  const index = order.indexOf(lessonSlug);
+export function isLessonUnlockedInSnapshot(
+  snapshot: CourseProgressSnapshot,
+  lessonSlug: string,
+) {
+  const index = snapshot.lessonOrder.indexOf(lessonSlug);
 
   if (index < 0) {
     return false;
@@ -265,27 +303,41 @@ export function isLessonUnlocked(courseSlug: string, lessonSlug: string) {
     return true;
   }
 
-  const previous = order[index - 1];
-  return Boolean(progress.lessons[previous]?.completedAt);
+  if (
+    index === FOUNDATION_LEVEL0_ORDER.length &&
+    snapshot.legacyLevel1Access
+  ) {
+    return true;
+  }
+
+  const previous = snapshot.lessonOrder[index - 1];
+  return Boolean(snapshot.lessons[previous]?.completed);
+}
+
+export function isLessonUnlocked(courseSlug: string, lessonSlug: string) {
+  return isLessonUnlockedInSnapshot(
+    getCourseProgressSnapshot(courseSlug),
+    lessonSlug,
+  );
 }
 
 export function getLessonUnlockState(courseSlug: string, lessonSlug: string): LessonUnlockState {
-  const progress = readCourseProgress(courseSlug);
-  const lesson = progress.lessons[lessonSlug];
+  const snapshot = getCourseProgressSnapshot(courseSlug);
+  const lesson = snapshot.lessons[lessonSlug];
 
   if (!lesson) {
     return "locked";
   }
 
-  if (lesson.completedAt) {
+  if (lesson.completed) {
     return "completed";
   }
 
-  if (!isLessonUnlocked(courseSlug, lessonSlug)) {
+  if (!isLessonUnlockedInSnapshot(snapshot, lessonSlug)) {
     return "locked";
   }
 
-  if (progress.lastVisitedLesson === lessonSlug) {
+  if (snapshot.lastVisitedLesson === lessonSlug) {
     return "current";
   }
 
@@ -509,4 +561,6 @@ export function getCourseStorageKey(courseSlug: string) {
   return getStorageKey(courseSlug);
 }
 
-export const foundationLevel1Order = getFoundationLessonOrder();
+export const foundationLevel0Order = [...FOUNDATION_LEVEL0_ORDER];
+export const foundationLevel1Order = [...FOUNDATION_LEVEL1_ORDER];
+export const foundationPublishedOrder = getFoundationLessonOrder();

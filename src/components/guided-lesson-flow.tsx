@@ -386,6 +386,24 @@ export function GuidedLessonFlow({
     }
   }, [activeStep, hasCourseTracking, trackCourseStep]);
 
+  const finalStepId = steps.at(-1)?.id;
+
+  useEffect(() => {
+    if (
+      lessonCompleted &&
+      finalStepId &&
+      courseSlug &&
+      lessonProgressSlug
+    ) {
+      markLessonCompleted(courseSlug, lessonProgressSlug, finalStepId);
+    }
+  }, [
+    courseSlug,
+    finalStepId,
+    lessonCompleted,
+    lessonProgressSlug,
+  ]);
+
   const moveToStep = useCallback((stepId: string) => {
     updateProgress((current) => ({ ...current, currentStepId: stepId }));
     trackCourseStep(stepId);

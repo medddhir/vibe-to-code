@@ -7,21 +7,26 @@ import {
   type GuidedLessonStep,
 } from "@/components/guided-lesson-flow";
 import { useFoundationLessonState } from "@/components/foundations/lesson-state";
-import { FOUNDATION_LEVEL1_BY_SLUG, FOUNDATION_LEVEL1_LESSONS } from "@/data/foundations-level1";
+import {
+  FOUNDATION_PUBLISHED_LESSONS,
+  getFoundationLessonSlot,
+} from "@/data/foundations-level1";
 
 function LessonLockedFallback({
   lessonNumber,
+  levelLabel,
   reason,
 }: {
   lessonNumber: number;
+  levelLabel: string;
   reason: string;
 }) {
   return (
     <main id="main-content" className="lesson-main guided-lesson-main">
       <section className="shell">
         <div className="lesson-locked-view">
-          <p className="eyebrow">Level 1 lesson lock</p>
-          <h1>Lesson {lessonNumber} is locked</h1>
+          <p className="eyebrow">{levelLabel} lesson lock</p>
+          <h1>{levelLabel} · Lesson {lessonNumber} is locked</h1>
           <p>
             {reason}
           </p>
@@ -42,6 +47,7 @@ type FoundationLessonPageProps = {
   totalLessons: number;
   courseLessonNumber?: number;
   courseTotalLessons?: number;
+  lessonVersion?: number;
   estimatedMinutes: number;
   steps: GuidedLessonStep[];
   children: ReactNode;
@@ -56,26 +62,25 @@ export function FoundationLessonPage({
   estimatedMinutes,
   courseLessonNumber,
   courseTotalLessons,
+  lessonVersion = 1,
   steps,
   children,
 }: FoundationLessonPageProps) {
   const { isUnlocked, isCompleted } = useFoundationLessonState(lessonSlug);
-  const levelSlot = FOUNDATION_LEVEL1_BY_SLUG[lessonSlug];
-  const lessonNumberInLevel = levelSlot?.index !== undefined ? levelSlot.index + 1 : null;
-  const previousLevelLesson =
-    lessonNumberInLevel && lessonNumberInLevel > 1
-      ? FOUNDATION_LEVEL1_LESSONS[lessonNumberInLevel - 2]
-      : null;
-  const requiredLevelLessonLabel =
-    lessonNumberInLevel && lessonNumberInLevel > 1
-      ? `Complete "${previousLevelLesson?.title ?? `Lesson ${lessonNumberInLevel - 1}`}" to unlock this lesson.`
-      : `Start with "${FOUNDATION_LEVEL1_LESSONS[0]?.title ?? "Values, variables, and types"}" to unlock this lesson.`;
+  const lessonSlot = getFoundationLessonSlot(lessonSlug);
+  const previousPublishedLesson = lessonSlot?.courseNumber
+    ? FOUNDATION_PUBLISHED_LESSONS[lessonSlot.courseNumber - 2]
+    : null;
+  const requiredLessonLabel = previousPublishedLesson
+    ? `Complete "${previousPublishedLesson.title}" to unlock this lesson.`
+    : `Start with "${FOUNDATION_PUBLISHED_LESSONS[0]?.title ?? "What code actually is"}" to unlock this lesson.`;
 
   if (!isUnlocked) {
     return (
       <LessonLockedFallback
         lessonNumber={lessonNumber}
-        reason={requiredLevelLessonLabel}
+        levelLabel={levelTitle}
+        reason={requiredLessonLabel}
       />
     );
   }
@@ -88,7 +93,7 @@ export function FoundationLessonPage({
   return (
     <GuidedLessonFlow
       lessonId={lessonSlug}
-      lessonVersion={1}
+      lessonVersion={lessonVersion}
       courseHref="/courses/foundations"
       courseName="Developer Foundations"
       levelLabel={levelTitle}
@@ -103,7 +108,7 @@ export function FoundationLessonPage({
       progressLabel="Lesson progress"
       completionDescription={completionDescription}
       completionTitle="Lesson complete"
-      completionEyebrow="Level 1 checkpoint"
+      completionEyebrow={`${levelTitle} checkpoint`}
       completionReward="Foundation path unlocked"
       courseSlug="foundations"
       lessonProgressSlug={lessonSlug}
