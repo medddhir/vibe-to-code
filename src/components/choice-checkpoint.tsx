@@ -33,6 +33,7 @@ export function ChoiceCheckpoint({
     attemptsByStep,
     practiceCompletedIds,
     completePractice,
+    recordHintUsage,
     recordFailedAttempt,
   } = useLessonProgress();
   const groupId = useId();
@@ -61,6 +62,9 @@ export function ChoiceCheckpoint({
 
     const selectedOption = options.find((option) => option.id === selectedId);
     recordFailedAttempt(stepId);
+    if (attempts === 2) {
+      recordHintUsage(stepId);
+    }
     setAnswerCorrect(false);
     setFeedback(selectedOption?.feedback ?? "Look at the lesson clue and try once more.");
   }

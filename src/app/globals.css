@@ -1342,7 +1342,7 @@ pre {
 .foundation-progress-text {
   margin: 9px 0 18px;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 1.125rem;
 }
 
 .foundation-progress-bar {
@@ -1402,7 +1402,7 @@ pre {
   border-radius: 11px;
   background: var(--surface);
   color: var(--accent-dark);
-  font-size: 0.75rem;
+  font-size: 1rem;
   font-weight: 800;
 }
 
@@ -3727,7 +3727,7 @@ pre {
   margin: 0;
   padding: 16px 14px;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .trace-list {
@@ -3758,7 +3758,7 @@ pre {
 
 .trace-list p {
   color: var(--muted);
-  font-size: 0.92rem;
+  font-size: 1rem;
 }
 
 .trace-list code {
@@ -3786,7 +3786,7 @@ pre {
   align-items: center;
   gap: 7px;
   color: var(--success-text);
-  font-size: 0.93rem;
+  font-size: 1rem;
 }
 
 .file-tabs {
@@ -3830,7 +3830,7 @@ pre {
   display: block;
   margin-bottom: 9px;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   font-family: var(--font-mono);
 }
 
@@ -3877,7 +3877,7 @@ pre {
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-size: 0.76rem;
+  font-size: 0.875rem;
 }
 
 .package-file-card ul {
@@ -3907,7 +3907,7 @@ pre {
   background: var(--surface-soft);
   color: var(--code-accent);
   font-family: var(--font-mono);
-  font-size: 0.84rem;
+  font-size: 1rem;
   line-height: 1.45;
   white-space: pre;
 }
@@ -4083,7 +4083,7 @@ pre {
 
 .rr-card code {
   color: var(--accent-dark);
-  font-size: 0.84rem;
+  font-size: 1rem;
   display: inline-block;
   margin-bottom: 9px;
 }
@@ -4095,7 +4095,26 @@ pre {
   border-radius: 10px;
   padding: 10px;
   color: var(--ink-soft);
-  font-size: 0.8rem;
+  font-size: 1rem;
+}
+
+.journey-steps p,
+.journey-steps small,
+.journey-steps li > span,
+.comparison-card p,
+.comparison-card small,
+.code-comparison,
+.trace-list li > div,
+.trace-summary strong,
+.trace-summary small {
+  font-size: 1rem;
+}
+
+.code-comparison .comparison-card,
+.request-response-inspector .rr-header strong,
+.request-response-inspector .rr-grid,
+.request-response-inspector .rr-header {
+  font-size: 1rem;
 }
 
 .rr-card.has-status strong {
