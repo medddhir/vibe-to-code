@@ -67,6 +67,14 @@ if (!Module._extensions[".ts"]) {
   };
 }
 
+if (!Module._extensions[".tsx"]) {
+  Module._extensions[".tsx"] = function (module, filename) {
+    const source = fs.readFileSync(filename, "utf8");
+    const js = compileWithTypeScript(source);
+    module._compile(js, filename);
+  };
+}
+
 const originalResolveFilename = Module._resolveFilename;
 
 Module._resolveFilename = function (request, parent, isMain, options) {

@@ -142,6 +142,85 @@ describe("Foundations simulators", () => {
     assert.match(preview, /<body>[\s\S]*<p>Hi<\/p>/);
   });
 
+  it("builds previews without mixed-case or unclosed script tags", () => {
+    const preview = buildLanguagePreview({
+      html: "<body><p>Safe</p><ScRiPt>window.top.alert('x')</ScRipT><div>after</div></body>",
+      css: "body { color: green; }",
+      javascript: "console.log('never shown')",
+    });
+
+    assert.equal(preview.includes("<script"), false);
+    assert.equal(preview.includes("window.top"), false);
+    assert.equal(preview.includes("never shown"), false);
+    assert.ok(/<body>[\s\S]*<p>Safe<\/p>[\s\S]*<div>after<\/div>[\s\S]*<\/body>/.test(preview));
+  });
+
+  it("builds previews without event handler attributes", () => {
+    const preview = buildLanguagePreview({
+      html:
+        "<body><button onclick=\"alert('x')\" onmouseover=alert('y')>Run</button><p>ok</p></body>",
+      css: "button { color: red; }",
+      javascript: "console.log('nope')",
+    });
+
+    assert.equal(preview.includes("onclick"), false);
+    assert.equal(preview.includes("onmouseover"), false);
+    assert.equal(preview.includes("alert("), false);
+  });
+
+  it("removes image and frame based tags from learner HTML", () => {
+    const preview = buildLanguagePreview({
+      html: `<body><img src="https://evil.example/pixel.png" /><iframe src="https://evil.example/app"></iframe><p>Visible</p></body>`,
+      css: "p { color: blue; }",
+      javascript: "console.log('drop')",
+    });
+
+    assert.equal(preview.includes("<img"), false);
+    assert.equal(preview.includes("<iframe"), false);
+    assert.equal(preview.includes("https://evil.example"), false);
+    assert.match(preview, /<body>[\s\S]*<p>Visible<\/p>[\s\S]*<\/body>/);
+  });
+
+  it("removes embedded form and refresh metadata constructs", () => {
+    const preview = buildLanguagePreview({
+      html:
+        "<head><meta http-equiv=\"refresh\" content=\"0;url=https://evil.example\"></head><body><form action=\"https://evil.example/submit\"><input value=\"x\"><button formaction=\"https://evil.example/alt\">send</button></form><p>State</p></body>",
+      css: "p { color: navy; }",
+      javascript: "console.log('hidden')",
+    });
+
+    assert.equal(preview.includes("<form"), false);
+    assert.equal(preview.includes("http-equiv"), false);
+    assert.equal(preview.includes("action"), false);
+    assert.match(preview, /<body>[\s\S]*<p>State<\/p>[\s\S]*<\/body>/);
+  });
+
+  it("strips CSS import and URL escapes from preview style", () => {
+    const preview = buildLanguagePreview({
+      html: "<body><p>Theme</p></body>",
+      css: '@import "https://evil.example/theme.css"; body { background: url("https://evil.example/img.png"); }',
+      javascript: "",
+    });
+
+    assert.equal(preview.includes("@import"), false);
+    assert.equal(preview.includes("url("), false);
+  });
+
+  it("blocks style tag breakout attempts and keeps content visible", () => {
+    const preview = buildLanguagePreview({
+      html: "<body><p>Outer</p></style><script>alert(1)</script><style>p{color:red}</style><p>After</p></body>",
+      css: "",
+      javascript: "console.log('no')",
+    });
+
+    assert.equal(preview.includes("<script"), false);
+    assert.equal(preview.includes("alert(1)"), false);
+    const [, bodySection] = preview.split("</head>");
+    assert.equal(bodySection.includes("<style"), false);
+    assert.equal(bodySection.includes("</style"), false);
+    assert.match(preview, /<body>[\s\S]*<p>Outer<\/p>[\s\S]*<p>After<\/p>[\s\S]*<\/body>/);
+  });
+
   it("builds different simulator routes by language", () => {
     const python = simulateCodeJourney("python");
     const compiled = simulateCodeJourney("compiled");

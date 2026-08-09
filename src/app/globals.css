@@ -3805,6 +3805,8 @@ pre {
 
 .file-tab-row button {
   min-height: 48px;
+  font-size: 1rem;
+  line-height: 1.4;
   border: 0;
   border-right: 1px solid var(--line);
   background: var(--surface-soft);
@@ -3830,8 +3832,9 @@ pre {
   display: block;
   margin-bottom: 9px;
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-family: var(--font-mono);
+  line-height: 1.45;
 }
 
 .file-tab-content textarea {
@@ -3844,6 +3847,8 @@ pre {
   background: var(--surface-soft);
   color: var(--ink);
   font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1.45;
 }
 
 .file-preview-wrap {
@@ -3877,7 +3882,8 @@ pre {
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-size: 0.875rem;
+  font-size: 1rem;
+  line-height: 1.45;
 }
 
 .package-file-card ul {
@@ -4078,7 +4084,7 @@ pre {
 .rr-card h4 {
   margin-top: 0;
   margin-bottom: 8px;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .rr-card code {

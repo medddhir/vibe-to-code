@@ -21,18 +21,21 @@ const lessonSteps: GuidedLessonStep[] = [
     title: "Build path logic",
     eyebrow: "Condition",
     requiresPractice: true,
+    requiredActivityIds: ["if-logic-simulator", "if-logic-check"],
   },
   {
     id: "loop-iteration",
     title: "See every loop step",
     eyebrow: "Loop trace",
     requiresPractice: true,
+    requiredActivityIds: ["loop-iteration-simulator", "loop-iteration-check"],
   },
   {
     id: "broken-loop",
     title: "Break and fix an endless loop",
     eyebrow: "Safety",
     requiresPractice: true,
+    requiredActivityIds: ["broken-loop-simulator", "broken-loop-check"],
   },
   {
     id: "predict-path",
@@ -122,7 +125,7 @@ export default function DecisionsLoopsFunctionsLesson() {
         />
 
         <DecisionScriptLab
-          stepId="if-logic"
+          stepId="if-logic-simulator"
           title="Fix comparison and path"
           instructions='Change the script so the condition is true and the outcome becomes "Pass". Keep one `if` and one `else`.'
           starterCode={'score = 4\nif score = 5:\noutcome = "Pass"\nelse:\noutcome = "Retry"'}
@@ -132,15 +135,8 @@ export default function DecisionsLoopsFunctionsLesson() {
           stepByStep={false}
         />
 
-        <div className="choice-checkpoint" style={{ marginTop: 16 }}>
-          <div className="choice-checkpoint-heading">
-            <div>
-              <p className="eyebrow">Quick reflection</p>
-              <h3>Read before run</h3>
-            </div>
-          </div>
         <ChoiceCheckpoint
-          stepId="if-logic"
+          stepId="if-logic-check"
           title="What makes a path decision?"
           question="What causes a branch to run, and when is `==` needed?"
           options={conditionChoices}
@@ -148,7 +144,6 @@ export default function DecisionsLoopsFunctionsLesson() {
           successMessage="Great. Assignment (`=`) sets a variable; comparison (`==`) reads a question."
             hint="Keep one variable, one `if` line, and one exact operator.">
           </ChoiceCheckpoint>
-        </div>
       </section>
 
       <section id="loop-iteration" className="lesson-section guided-topic mission-topic">
@@ -160,7 +155,7 @@ export default function DecisionsLoopsFunctionsLesson() {
         </p>
 
         <DecisionScriptLab
-          stepId="loop-iteration"
+          stepId="loop-iteration-simulator"
           title="Build a bounded loop"
           instructions='Use `while` and `score = score + 1` only. The target end score is 3.'
           starterCode={'score = 0\nwhile score < 3:\nscore = score + 1\noutcome = "Retry"'}
@@ -171,7 +166,7 @@ export default function DecisionsLoopsFunctionsLesson() {
         />
 
         <ChoiceCheckpoint
-          stepId="loop-iteration"
+          stepId="loop-iteration-check"
           title="How many loop steps happened?"
           question="For `while score < 3` starting at 0, how many body iterations happen, and how many guard checks occur?"
           options={predictChoices}
@@ -190,7 +185,7 @@ export default function DecisionsLoopsFunctionsLesson() {
         </p>
 
         <DecisionScriptLab
-          stepId="broken-loop"
+          stepId="broken-loop-simulator"
           title="Repair an endless loop"
           instructions='Change the `while` condition so execution stops safely. Keep body `score = score + 1`.'
           starterCode={'score = 0\nwhile score >= 0:\nscore = score + 1\noutcome = "Retry"'}
@@ -200,7 +195,7 @@ export default function DecisionsLoopsFunctionsLesson() {
         />
 
         <ChoiceCheckpoint
-          stepId="broken-loop"
+          stepId="broken-loop-check"
           title="Why was it dangerous?"
           question="The loop was endless because the condition was:"
           options={[

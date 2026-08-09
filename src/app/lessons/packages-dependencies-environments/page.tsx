@@ -75,6 +75,7 @@ const lessonSteps: GuidedLessonStep[] = [
     title: "Protect against fake package names",
     eyebrow: "Safety",
     requiresPractice: true,
+    requiredActivityIds: ["security-verification-simulator", "security-verification-check"],
   },
   {
     id: "package-mission",
@@ -96,9 +97,11 @@ const fileRoleChoices: ChoiceCheckpointOption[] = [
     feedback: "Correct. It is the manifest for your project intent.",
   },
   {
-    id: "lockfile",
-    label: "package-lock.json is optional and never needed to run the same result twice.",
-    feedback: "Lockfiles keep exact dependency trees stable. They are important for reproducibility.",
+    id: "lockfile-reproducible",
+    label:
+      "package-lock.json records exact resolved dependency versions and the full dependency tree so installs are repeatable.",
+    feedback:
+      "Correct. Lockfiles keep exact resolution results, preventing one machine from installing a different tree.",
   },
 ];
 
@@ -169,7 +172,7 @@ export default function PackagesDependenciesEnvironmentsLesson() {
           title="Choose the manifest role"
           question="Why is package-lock.json usually stored with package.json?"
           options={fileRoleChoices}
-          correctId="package-json"
+          correctId="lockfile-reproducible"
           successMessage="Great. You identified the two key package files in dependency management."
           hint="One file is declarative intent; the other is resolved reality."
         />
@@ -227,7 +230,7 @@ export default function PackagesDependenciesEnvironmentsLesson() {
         <p className="eyebrow">Safety checkpoint</p>
         <h2>Challenge: protect yourself from invented package names.</h2>
         <PackageDependencyLab
-          stepId="security-verification"
+          stepId="security-verification-simulator"
           title="Unknown package should fail"
           instructions="Run a suspicious package name and confirm the simulator rejects it."
           starterManifest={starterManifest}
@@ -241,7 +244,7 @@ export default function PackagesDependenciesEnvironmentsLesson() {
           successMessage="Great. Safe simulator blocked unknown package names."
         />
         <ChoiceCheckpoint
-          stepId="security-verification"
+          stepId="security-verification-check"
           title="Choose a safety rule"
           question="What is the safest habit in this lab?"
           options={securityChoices}

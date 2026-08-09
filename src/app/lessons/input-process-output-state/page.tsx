@@ -25,6 +25,7 @@ const lessonSteps: GuidedLessonStep[] = [
     title: "Process one click",
     eyebrow: "State update",
     requiresPractice: true,
+    requiredActivityIds: ["state-journey-simulator", "state-journey-check"],
   },
   {
     id: "broken-update",
@@ -37,12 +38,14 @@ const lessonSteps: GuidedLessonStep[] = [
     title: "Trace event to output",
     eyebrow: "Observation",
     requiresPractice: true,
+    requiredActivityIds: ["trace-observe-simulator", "trace-observe-check"],
   },
   {
     id: "predict-repeat",
     title: "Mini challenge",
     eyebrow: "Transfer",
     requiresPractice: true,
+    requiredActivityIds: ["predict-repeat-simulator", "predict-repeat-check"],
   },
   {
     id: "recap",
@@ -134,7 +137,7 @@ export default function InputProcessOutputStateLesson() {
         <p className="eyebrow">Live state laboratory</p>
         <h2>Run one click and observe event flow.</h2>
         <StateLab
-          stepId="state-journey"
+          stepId="state-journey-simulator"
           title="State update lab"
           instructions="Use `state = state + input` and choose input so output reaches 3."
           starterInput={1}
@@ -146,7 +149,7 @@ export default function InputProcessOutputStateLesson() {
         />
 
         <ChoiceCheckpoint
-          stepId="state-journey"
+          stepId="state-journey-check"
           title="State checkpoint check"
           question="If input is 3 and state starts at 0, what should screen show after one click?"
           options={[
@@ -187,7 +190,7 @@ export default function InputProcessOutputStateLesson() {
         <h2>Predict each stage before every run.</h2>
 
         <StateLab
-          stepId="trace-observe"
+          stepId="trace-observe-simulator"
           title="Multi-step chain"
           instructions="You have 2 clicks available. Try input 1 twice, then target should be 2."
           starterInput={1}
@@ -198,27 +201,19 @@ export default function InputProcessOutputStateLesson() {
           successMessage="Nice. You can see event -> process -> state -> output on each run."
         />
 
-        <div className="choice-checkpoint" aria-live="polite" style={{ marginTop: 16 }}>
-          <div className="choice-checkpoint-heading">
-            <div>
-              <p className="eyebrow">Trace checkpoint</p>
-              <h3>What changed between click one and click two?</h3>
-            </div>
-          </div>
-          <ChoiceCheckpoint
-            stepId="trace-observe"
-            title=""
-            question="After two valid clicks with input 1 from 0 state, what was total state update?"
-            options={[
-              { id: "t1", label: "2", feedback: "Correct: +1 then +1 becomes +2 total." },
-              { id: "t2", label: "1", feedback: "That would mean only one click took effect." },
-              { id: "t3", label: "0", feedback: "State needs a process rule to change." },
-            ]}
-            correctId="t1"
-            successMessage="Exactly. Every click reuses the latest state and applies the same process rule."
-            hint="Add input on both clicks, not reset state between clicks."
-          />
-        </div>
+        <ChoiceCheckpoint
+          stepId="trace-observe-check"
+          title="Trace checkpoint"
+          question="After two valid clicks with input 1 from 0 state, what was total state update?"
+          options={[
+            { id: "t1", label: "2", feedback: "Correct: +1 then +1 becomes +2 total." },
+            { id: "t2", label: "1", feedback: "That would mean only one click took effect." },
+            { id: "t3", label: "0", feedback: "State needs a process rule to change." },
+          ]}
+          correctId="t1"
+          successMessage="Exactly. Every click reuses the latest state and applies the same process rule."
+          hint="Add input on both clicks, not reset state between clicks."
+        />
       </section>
 
       <section id="predict-repeat" className="lesson-section guided-topic mission-topic">
@@ -226,7 +221,7 @@ export default function InputProcessOutputStateLesson() {
         <h2>Build a tiny reward score update.</h2>
 
         <StateLab
-          stepId="predict-repeat"
+          stepId="predict-repeat-simulator"
           title="Reward mission"
           instructions="Set input and formula so target becomes 10 from a start of 6 in one click."
           starterInput={2}
@@ -238,7 +233,7 @@ export default function InputProcessOutputStateLesson() {
         />
 
         <ChoiceCheckpoint
-          stepId="predict-repeat"
+          stepId="predict-repeat-check"
           title="Say it back"
           question="In one sentence, what changed in each click?"
           options={summaryChoices}

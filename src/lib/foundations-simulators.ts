@@ -641,39 +641,221 @@ export type LanguagePreviewPack = {
   javascript: string;
 };
 
-function sanitizeStyleForPreview(markup: string) {
-  return markup
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gi, "$1")
+const ALLOWED_PREVIEW_TAGS = new Set([
+  "html",
+  "head",
+  "body",
+  "main",
+  "section",
+  "article",
+  "p",
+  "div",
+  "span",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "ul",
+  "ol",
+  "li",
+  "strong",
+  "em",
+  "b",
+  "i",
+  "small",
+  "code",
+  "pre",
+  "button",
+  "label",
+  "input",
+  "a",
+  "br",
+]);
+
+const PREVIEW_ALLOWED_ATTRIBUTES = new Set([
+  "id",
+  "class",
+  "type",
+  "name",
+  "value",
+  "for",
+  "disabled",
+  "readonly",
+  "placeholder",
+  "maxlength",
+  "min",
+  "max",
+  "step",
+  "title",
+  "aria-label",
+  "role",
+]);
+
+const PREVIEW_BAD_ATTRIBUTE_PREFIXES = [
+  "on",
+];
+
+const PREVIEW_BAD_ATTRIBUTE_NAMES = new Set([
+  "style",
+  "src",
+  "href",
+  "action",
+  "formaction",
+  "xlink:href",
+  "srcset",
+  "poster",
+  "background",
+  "data",
+  "dynsrc",
+  "lowsrc",
+  "longdesc",
+]);
+
+const PREVIEW_DANGEROUS_VALUE_PATTERNS = [
+  /javascript:/i,
+  /vbscript:/i,
+  /data:/i,
+  /file:/i,
+  /\/\/./i,
+  /expression\s*\(/i,
+  /url\s*\(/i,
+  /@import/i,
+];
+
+function stripUnsafeTagBlocks(source: string) {
+  const stripped = source
+    .replace(/<script\b[^>]*>[\s\S]*?(<\/script\s*>|$)/gi, "")
+    .replace(/<style\b[^>]*>[\s\S]*?(<\/style\s*>|$)/gi, "")
+    .replace(/<iframe\b[^>]*>[\s\S]*?(<\/iframe\s*>|$)/gi, "")
+    .replace(/<img\b[^>]*>/gi, "")
+    .replace(/<object\b[^>]*>[\s\S]*?(<\/object\s*>|$)/gi, "")
+    .replace(/<embed\b[^>]*>/gi, "")
+    .replace(/<link\b[^>]*>/gi, "")
+    .replace(/<meta\b[^>]*>/gi, "")
+    .replace(/<form\b[^>]*>[\s\S]*?(<\/form\s*>|$)/gi, "")
+    .replace(/<\/?script\b[^>]*>/gi, "");
+  return stripped;
+}
+
+function sanitizeAttrValue(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/"/g, "&quot;")
     .trim();
+}
+
+function sanitizeHtmlAttribute(rawName: string, rawValue: string | undefined) {
+  const name = rawName.toLowerCase();
+
+  if (PREVIEW_BAD_ATTRIBUTE_NAMES.has(name) || name.startsWith("data-")) {
+    return "";
+  }
+
+  const hasBadPrefix = PREVIEW_BAD_ATTRIBUTE_PREFIXES.some((prefix) =>
+    name.startsWith(prefix),
+  );
+  if (hasBadPrefix) {
+    return "";
+  }
+
+  if (!PREVIEW_ALLOWED_ATTRIBUTES.has(name)) {
+    return "";
+  }
+
+  if (rawValue === undefined) {
+    return ` ${name}`;
+  }
+
+  if (PREVIEW_DANGEROUS_VALUE_PATTERNS.some((pattern) => pattern.test(rawValue))) {
+    return "";
+  }
+
+  return ` ${name}="${sanitizeAttrValue(rawValue)}"`;
+}
+
+function sanitizeTagMarkup(tag: string) {
+  const closeMatch = /^<\s*\/\s*([a-z][\w:-]*)\s*>$/i.exec(tag);
+  if (closeMatch) {
+    const closingTag = closeMatch[1].toLowerCase();
+    return ALLOWED_PREVIEW_TAGS.has(closingTag) ? `</${closingTag}>` : "";
+  }
+
+  const openMatch = /^<\s*([a-z][\w:-]*)([^>]*)\/?\s*>$/i.exec(tag);
+  if (!openMatch) {
+    return "";
+  }
+
+  const tagName = openMatch[1].toLowerCase();
+  const rawAttrs = openMatch[2] ?? "";
+
+  if (!ALLOWED_PREVIEW_TAGS.has(tagName)) {
+    return "";
+  }
+
+  const attrs = Array.from(rawAttrs.matchAll(/\s+([^\s=>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>/`]+)))?/gi))
+    .map((match) => sanitizeHtmlAttribute(match[1], match[2] ?? match[3] ?? match[4]))
+    .filter(Boolean)
+    .join("");
+
+  return `<${tagName}${attrs}>`;
+}
+
+function sanitizeMarkupForPreview(markup: string) {
+  const safeMarkup = stripUnsafeTagBlocks(markup);
+  const tokenPattern = /<[^>]*>|[^<]+/g;
+  const sanitized = [];
+  let match = tokenPattern.exec(safeMarkup);
+
+  while (match !== null) {
+    const token = match[0];
+    if (token.startsWith("<")) {
+      sanitized.push(sanitizeTagMarkup(token));
+    } else {
+      sanitized.push(token);
+    }
+
+    match = tokenPattern.exec(safeMarkup);
+  }
+
+  return sanitized.join("");
+}
+
+function collectHeadStyles(markup: string) {
+  const matches = Array.from(markup.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi));
+  return matches.map((entry) => sanitizeCssForPreview(entry[1] ?? "")).join("\n");
 }
 
 function sanitizeCssForPreview(css: string) {
   return css
     .replace(/<\/?style[^>]*>/gi, "")
+    .replace(/@import\b[^;]*;?/gi, "")
+    .replace(/expression\s*\(/gi, "")
+    .replace(/url\s*\([^)]*\)/gi, "")
+    .replace(/javascript:/gi, "")
+    .replace(/<\/?script[^>]*>/gi, "")
     .replace(/<[^>]+>/g, "")
-    .trim();
-}
-
-function sanitizeMarkupForPreview(markup: string) {
-  return markup
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/\son\w+\s*=\s*["'][^"']*["']/gi, "")
+    .replace(/<\/?style/gi, "")
+    .replace(/[\u2028\u2029]/g, "")
+    .replace(/<[^>]+>/g, "")
     .trim();
 }
 
 export function buildLanguagePreview(pack: LanguagePreviewPack) {
   const bodyMatch = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(pack.html);
   const headMatch = /<head[^>]*>([\s\S]*?)<\/head>/i.exec(pack.html);
-  const body = bodyMatch ? sanitizeMarkupForPreview(bodyMatch[1]) : "<p>Missing body, add content.</p>";
-  const headStyle = sanitizeStyleForPreview(headMatch ? headMatch[1] : "");
-  const css = sanitizeCssForPreview(pack.css);
+  const bodySource = bodyMatch ? bodyMatch[1] : "<p>Missing body, add content.</p>";
+  const headSource = headMatch ? headMatch[1] : "";
+  const body = sanitizeMarkupForPreview(bodySource);
+  const headStyle = collectHeadStyles(headSource);
+  const css = sanitizeCssForPreview(`${headStyle}\n${pack.css}`);
 
   return `<!doctype html>
 <html>
 <head>
 <meta charset="UTF-8" />
-${headStyle}
 <style>${css}</style>
 </head>
 <body>

@@ -28,6 +28,7 @@ export type GuidedLessonStep = {
   title: string;
   eyebrow: string;
   requiresPractice?: boolean;
+  requiredActivityIds?: string[];
   continueLabel?: string;
 };
 
@@ -59,6 +60,62 @@ const lessonProgressEvent = "vibe-to-code:lesson-progress";
 
 export const getLessonStorageKey = (lessonId: string, lessonVersion: number) =>
   `vibe-to-code:lesson-progress:v1:${lessonId}:lesson-v${lessonVersion}`;
+
+function getRequiredActivityIds(step: GuidedLessonStep) {
+  return step.requiresPractice
+    ? step.requiredActivityIds?.length
+      ? [...new Set(step.requiredActivityIds)]
+      : [step.id]
+    : [];
+}
+
+export function isActivityCompleteForStep(
+  step: GuidedLessonStep,
+  practiceCompletedIds: readonly string[],
+  activityId: string,
+) {
+  if (practiceCompletedIds.includes(activityId)) {
+    return true;
+  }
+
+  return activityId !== step.id && practiceCompletedIds.includes(step.id);
+}
+
+export function isStepPracticeActivitiesComplete(
+  step: GuidedLessonStep,
+  practiceCompletedIds: readonly string[],
+) {
+  return getRequiredActivityIds(step).every((activityId) =>
+    isActivityCompleteForStep(step, practiceCompletedIds, activityId),
+  );
+}
+
+function collectKnownIds(steps: GuidedLessonStep[]) {
+  const knownIds = new Set<string>();
+  steps.forEach((step) => {
+    knownIds.add(step.id);
+    step.requiredActivityIds?.forEach((id) => knownIds.add(id));
+  });
+  return knownIds;
+}
+
+function migrateLegacyStepCompletion(
+  step: GuidedLessonStep,
+  practiceCompletedIds: string[],
+) {
+  const requiredIds = getRequiredActivityIds(step);
+  if (!requiredIds.length || !practiceCompletedIds.includes(step.id)) {
+    return practiceCompletedIds;
+  }
+
+  if (requiredIds.every((id) => practiceCompletedIds.includes(id))) {
+    return practiceCompletedIds;
+  }
+
+  const next = new Set(practiceCompletedIds);
+  requiredIds.forEach((id) => next.add(id));
+  return [...next];
+}
 
 function readProgressSnapshot(storageKey: string) {
   if (typeof window === "undefined") {
@@ -176,6 +233,7 @@ function restoreProgress(
   firstStepId: string,
   knownIds: Set<string>,
   lessonVersion: number,
+  stepDefinitions: GuidedLessonStep[],
 ): LessonProgress {
   const fallback = createDefaultProgress(firstStepId, lessonVersion);
 
@@ -195,7 +253,7 @@ function restoreProgress(
         ? stored.currentStepId
         : firstStepId;
 
-    return {
+    const baseProgress = {
       ...fallback,
       currentStepId,
       completedStepIds: uniqueKnownIds(stored.completedStepIds, knownIds),
@@ -221,6 +279,14 @@ function restoreProgress(
             )
           : {},
       completedAt: typeof stored.completedAt === "string" ? stored.completedAt : null,
+    };
+
+    return {
+      ...baseProgress,
+      practiceCompletedIds: uniqueKnownIds(
+        stepDefinitions.reduce((acc, step) => migrateLegacyStepCompletion(step, acc), baseProgress.practiceCompletedIds),
+        knownIds,
+      ),
     };
   } catch {
     return fallback;
@@ -253,7 +319,7 @@ export function GuidedLessonFlow({
   const firstStepId = steps[0]?.id ?? "start";
   const storageKey = getLessonStorageKey(lessonId, lessonVersion);
   const hasCourseTracking = Boolean(courseSlug && lessonProgressSlug);
-  const knownIds = useMemo(() => new Set(steps.map((step) => step.id)), [steps]);
+  const knownIds = useMemo(() => collectKnownIds(steps), [steps]);
   const subscribe = useCallback(
     (callback: () => void) => subscribeToProgress(storageKey, callback),
     [storageKey],
@@ -266,8 +332,8 @@ export function GuidedLessonFlow({
     getServerSnapshot,
   );
   const progress = useMemo(
-    () => restoreProgress(serializedProgress, firstStepId, knownIds, lessonVersion),
-    [firstStepId, knownIds, lessonVersion, serializedProgress],
+    () => restoreProgress(serializedProgress, firstStepId, knownIds, lessonVersion, steps),
+    [firstStepId, knownIds, lessonVersion, serializedProgress, steps],
   );
   const panelStartRef = useRef<HTMLDivElement>(null);
 
@@ -278,6 +344,7 @@ export function GuidedLessonFlow({
         firstStepId,
         knownIds,
         lessonVersion,
+        steps,
       );
       writeProgressSnapshot(storageKey, JSON.stringify(updater(current)));
     },
@@ -290,7 +357,7 @@ export function GuidedLessonFlow({
   );
   const activeStep = steps[activeIndex] ?? steps[0];
   const activePracticeComplete = activeStep
-    ? progress.practiceCompletedIds.includes(activeStep.id)
+    ? isStepPracticeActivitiesComplete(activeStep, progress.practiceCompletedIds)
     : true;
   const canContinue = !activeStep?.requiresPractice || activePracticeComplete;
   const isFinalStep = activeIndex === steps.length - 1;

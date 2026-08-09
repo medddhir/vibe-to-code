@@ -30,12 +30,14 @@ const lessonSteps: GuidedLessonStep[] = [
     title: "Diagnose invalid input",
     eyebrow: "Debug",
     requiresPractice: true,
+    requiredActivityIds: ["backend-validation-simulator", "backend-validation-check"],
   },
   {
     id: "secret-placement",
     title: "Protect secrets",
     eyebrow: "Safety",
     requiresPractice: true,
+    requiredActivityIds: ["secret-placement-simulator", "secret-placement-check"],
   },
   {
     id: "journey-repair",
@@ -171,7 +173,7 @@ export default function FrontendBackendApiDatabaseCloudLesson() {
         <p>Start with a short user id and fix it so the simulator returns success.</p>
 
         <FrontendJourneyLab
-          stepId="backend-validation"
+          stepId="backend-validation-simulator"
           title="Repair request validation"
           instructions="Run with an invalid payload, fix what the backend flagged, then get a 200 response."
           starterPayload={repairPayload}
@@ -185,7 +187,7 @@ export default function FrontendBackendApiDatabaseCloudLesson() {
         />
 
         <ChoiceCheckpoint
-          stepId="backend-validation"
+          stepId="backend-validation-check"
           title="Validation checkpoint"
           question="Which validation occurs before DB write in this simulator?"
           options={validationChoices}
@@ -199,7 +201,7 @@ export default function FrontendBackendApiDatabaseCloudLesson() {
         <p className="eyebrow">Safety checkpoint</p>
         <h2>Find the safer payload shape for secrets.</h2>
         <FrontendJourneyLab
-          stepId="secret-placement"
+          stepId="secret-placement-simulator"
           title="Keep secrets out of payload"
           instructions="Run with a payload that includes secret-like text and then move it out."
           starterPayload={`{"userId":"Maya","amount":12,"api_key":"sk_live_example"}`}
@@ -213,7 +215,7 @@ export default function FrontendBackendApiDatabaseCloudLesson() {
         />
 
         <ChoiceCheckpoint
-          stepId="secret-placement"
+          stepId="secret-placement-check"
           title="Choose a safe secret strategy"
           question="Which is the safest approach in this model?"
           options={secretChoice}

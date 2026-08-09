@@ -7,7 +7,7 @@ import {
   type GuidedLessonStep,
 } from "@/components/guided-lesson-flow";
 import { useFoundationLessonState } from "@/components/foundations/lesson-state";
-import { FOUNDATION_LEVEL1_BY_SLUG } from "@/data/foundations-level1";
+import { FOUNDATION_LEVEL1_BY_SLUG, FOUNDATION_LEVEL1_LESSONS } from "@/data/foundations-level1";
 
 function LessonLockedFallback({ lessonNumber, title, reason }: { lessonNumber: number; title: string; reason: string }) {
   return (
@@ -52,9 +52,13 @@ export function FoundationLessonPage({
   const { isUnlocked, isCompleted } = useFoundationLessonState(lessonSlug);
   const levelSlot = FOUNDATION_LEVEL1_BY_SLUG[lessonSlug];
   const lessonNumberInLevel = levelSlot?.index !== undefined ? levelSlot.index + 1 : null;
+  const previousLevelLesson =
+    lessonNumberInLevel && lessonNumberInLevel > 1
+      ? FOUNDATION_LEVEL1_LESSONS[lessonNumberInLevel - 2]
+      : null;
   const requiredLevelLessonLabel =
     lessonNumberInLevel && lessonNumberInLevel > 1
-      ? `Complete Lesson ${lessonNumberInLevel - 1} of this level first so you can move in sequence safely.`
+      ? `Complete "${previousLevelLesson?.title ?? `Lesson ${lessonNumberInLevel - 1}`}" first so you can move in sequence safely.`
       : "Start with Lesson 1 of Developer Foundations level 1 before moving to this lesson.";
 
   if (!isUnlocked) {
