@@ -47,6 +47,10 @@ const foundationCourseProgressPanelSource = fs.readFileSync(
   lessonPath("src/components/foundations/foundation-course-progress-panel.tsx"),
   "utf8",
 );
+const foundationLessonStateSource = fs.readFileSync(
+  lessonPath("src/components/foundations/lesson-state.ts"),
+  "utf8",
+);
 const { isStepPracticeActivitiesComplete } = require("../src/components/guided-lesson-flow.tsx");
 
 function extractStepIds(source) {
@@ -239,6 +243,26 @@ describe("Level 1 content and interaction regressions", () => {
     assert.ok(
       foundationCourseProgressPanelSource.includes(
         "getLessonRowState(snapshot, slug)",
+      ),
+    );
+  });
+
+  it("lesson access state uses a stable external-store snapshot", () => {
+    assert.ok(foundationLessonStateSource.includes("cachedCourseFingerprint"));
+    assert.ok(foundationLessonStateSource.includes("readServerSnapshot"));
+    assert.ok(
+      /useSyncExternalStore\([\s\S]*?readSnapshot,[\s\S]*?readServerSnapshot,[\s\S]*?\)/m.test(
+        foundationLessonStateSource,
+      ),
+    );
+    assert.ok(
+      !foundationLessonStateSource.includes(
+        "useSyncExternalStore(subscribe, readSnapshot, readSnapshot)",
+      ),
+    );
+    assert.ok(
+      foundationLessonStateSource.includes(
+        "isLessonUnlockedFromSnapshot(snapshot, lessonSlug)",
       ),
     );
   });
