@@ -2,6 +2,11 @@
   "name": "vibe-to-code",
   "version": "0.1.0",
   "private": false,
+  "homepage": "https://vibe-to-code.tech",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/medddhir/vibe-to-code.git"
+  },
   "description": "A free, open-source learning platform that helps vibe coders understand, verify, debug, and ship code with confidence.",
   "scripts": {
     "dev": "next dev",

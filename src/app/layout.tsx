@@ -9,6 +9,7 @@ import { siteConfig } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.url),
   title: {
     default: "Vibe to Code — Learn what your code actually does",
     template: "%s · Vibe to Code",
@@ -31,6 +32,7 @@ export const metadata: Metadata = {
     description: siteConfig.description,
     type: "website",
     siteName: siteConfig.name,
+    url: siteConfig.url,
   },
   twitter: {
     card: "summary",
