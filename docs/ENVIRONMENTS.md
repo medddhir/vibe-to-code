@@ -1,0 +1,22 @@
+# Deployment environments
+
+Vibe to Code uses one GitHub repository with isolated Vercel environments.
+
+| Environment | Git branch | Domain | Purpose |
+| --- | --- | --- | --- |
+| Production | `main` | `https://vibe-to-code.tech` | Stable public website |
+| Staging | `develop` | `https://staging.vibe-to-code.tech` | Integration, design, authentication, and release testing |
+| Feature preview | `feature/*` or `agent/*` | Vercel-generated preview URL | Review one focused change before staging |
+
+## Release flow
+
+1. Build each change on a feature branch.
+2. Open a pull request into `develop`.
+3. Validate the Vercel preview and the stable staging domain.
+4. Open a release pull request from `develop` into `main`.
+5. Merge only after staging passes.
+6. Verify the production deployment on `https://vibe-to-code.tech`.
+
+Production and staging must use separate environment variables, OAuth clients, and data stores whenever user accounts or persistent data are involved. Secrets must never be committed to this repository.
+
+The production admin application will use a separate protected Vercel project before `admin.vibe-to-code.tech` is attached.
