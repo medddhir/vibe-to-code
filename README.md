@@ -12,9 +12,9 @@
 </p>
 
 <p align="center">
-  <a href="https://vibe-to-code-ten.vercel.app"><strong>Start learning →</strong></a>
+  <a href="https://vibe-to-code.tech"><strong>Start learning →</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://vibe-to-code-ten.vercel.app/learn">Explore the curriculum</a>
+  <a href="https://vibe-to-code.tech/learn">Explore the curriculum</a>
   &nbsp;·&nbsp;
   <a href="./CONTRIBUTING.md">Contribute</a>
 </p>
@@ -29,7 +29,7 @@
 
 > [!IMPORTANT]
 > **Just here to learn?** You do not need to install anything or understand GitHub.
-> Open the **[live learning website](https://vibe-to-code-ten.vercel.app)** and begin with the first lesson.
+> Open the **[live learning website](https://vibe-to-code.tech)** and begin with the first lesson.
 
 ## Why Vibe to Code exists
 
@@ -61,10 +61,10 @@ The curriculum contains **362 mapped lessons** across six practical tracks. We a
 
 ### Available right now
 
-- **[Lesson 1: What code actually is](https://vibe-to-code-ten.vercel.app/lessons/what-is-code)** — guided topics, safe in-page Python practice, useful errors, hints, and saved progress
-- **[Developer Foundations roadmap](https://vibe-to-code-ten.vercel.app/courses/foundations)** — see what comes next
-- **[AI-Assisted Development roadmap](https://vibe-to-code-ten.vercel.app/courses/ai-assisted-development)** — explore the complete 12-level path for careful vibe coding
-- **[Full curriculum](https://vibe-to-code-ten.vercel.app/learn)** — explore every mapped track and level
+- **[Lesson 1: What code actually is](https://vibe-to-code.tech/lessons/what-is-code)** — guided topics, safe in-page Python practice, useful errors, hints, and saved progress
+- **[Developer Foundations roadmap](https://vibe-to-code.tech/courses/foundations)** — see what comes next
+- **[AI-Assisted Development roadmap](https://vibe-to-code.tech/courses/ai-assisted-development)** — explore the complete 12-level path for careful vibe coding
+- **[Full curriculum](https://vibe-to-code.tech/learn)** — explore every mapped track and level
 
 ## New to GitHub? Start here
 
@@ -72,7 +72,7 @@ GitHub is the public home of this project's source code and history. Think of it
 
 | If you want to... | Use this |
 |---|---|
-| Learn coding | Visit the **[learning website](https://vibe-to-code-ten.vercel.app)** — no GitHub account required |
+| Learn coding | Visit the **[learning website](https://vibe-to-code.tech)** — no GitHub account required |
 | Report a confusing lesson or typo | **[Open a beginner-friendly issue](https://github.com/medddhir/vibe-to-code/issues/new/choose)** |
 | Suggest a new course or exercise | Use the **[course proposal template](https://github.com/medddhir/vibe-to-code/issues/new/choose)** |
 | Improve the project | Read the **[contribution guide](./CONTRIBUTING.md)** |
@@ -153,7 +153,7 @@ Vibe to Code is free and open source under the **[MIT License](./LICENSE)**.
   <br />
   A <a href="https://turbo-pay.in"><strong>TurboPay Technologies</strong></a> initiative
   <br /><br />
-  <a href="https://vibe-to-code-ten.vercel.app">Website</a>
+  <a href="https://vibe-to-code.tech">Website</a>
   &nbsp;·&nbsp;
   <a href="https://github.com/medddhir/vibe-to-code/issues">Issues</a>
   &nbsp;·&nbsp;
