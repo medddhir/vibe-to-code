@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { CourseCard } from "@/components/course-card";
 import { coreLessonCount, courses } from "@/data/curriculum";
+import { FOUNDATION_PUBLISHED_TOTAL_LESSONS } from "@/data/foundations-level1";
 
 export const metadata: Metadata = {
   title: "Learn",
@@ -22,11 +23,11 @@ export default function LearnPage() {
     <main id="main-content">
       <section className="page-hero section">
         <div className="shell narrow-shell">
-          <p className="eyebrow">The curriculum</p>
-          <h1>One learning system. Every practical coding path.</h1>
+          <h1>The complete learning route.</h1>
           <p>
-            Begin with the {coreLessonCount}-lesson core roadmap. Start with the published
-            lesson, then follow a visible path without jumping randomly between tutorials.
+            Begin with {FOUNDATION_PUBLISHED_TOTAL_LESSONS} published Foundation lessons,
+            then follow the full {coreLessonCount}-lesson mapped route without jumping
+            randomly between tutorials.
           </p>
         </div>
       </section>
@@ -35,8 +36,7 @@ export default function LearnPage() {
         <div className="shell">
           <div className="section-heading compact-heading">
             <div>
-              <p className="eyebrow">How progress works</p>
-              <h2>Different course lengths. The same calm learning rhythm.</h2>
+              <h2>One rhythm across every course.</h2>
             </div>
             <p>Each course uses as many levels as its subject needs, but every path repeats these six beginner-friendly stages.</p>
           </div>
@@ -56,8 +56,7 @@ export default function LearnPage() {
         <div className="shell">
           <div className="section-heading compact-heading">
             <div>
-              <p className="eyebrow">Course catalogue</p>
-              <h2>Start with what you need now.</h2>
+              <h2>Choose your next route.</h2>
             </div>
             <p>Available lessons are usable today. Mapped tracks show exactly what comes next.</p>
           </div>

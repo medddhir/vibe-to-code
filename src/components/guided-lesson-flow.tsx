@@ -22,6 +22,10 @@ import {
   setCurrentCheckpoint,
   setCurrentLesson,
 } from "@/lib/course-progress";
+import {
+  FOUNDATION_PUBLISHED_TOTAL_LESSONS,
+  getFoundationLessonJourney,
+} from "@/data/foundations-level1";
 
 export type GuidedLessonStep = {
   id: string;
@@ -199,6 +203,12 @@ type GuidedLessonFlowProps = {
   completionReward?: string;
   courseSlug?: string;
   lessonProgressSlug?: string;
+  nextLesson?: {
+    href: string;
+    title: string;
+    eyebrow: string;
+    actionLabel: string;
+  };
   children: ReactNode;
 };
 
@@ -313,6 +323,7 @@ export function GuidedLessonFlow({
   courseTotalLessons,
   courseSlug,
   lessonProgressSlug,
+  nextLesson,
   children,
 }: GuidedLessonFlowProps) {
   const panels = Children.toArray(children);
@@ -351,8 +362,28 @@ export function GuidedLessonFlow({
     [firstStepId, knownIds, lessonVersion, storageKey, steps],
   );
 
-  const courseLessonProgressValue = courseLessonNumber ?? lessonNumber;
-  const courseLessonTotalValue = courseTotalLessons ?? totalLessons;
+  const foundationJourney = courseSlug === "foundations" && lessonProgressSlug
+    ? getFoundationLessonJourney(lessonProgressSlug)
+    : null;
+  const courseLessonProgressValue = foundationJourney?.current.courseNumber
+    ?? courseLessonNumber
+    ?? lessonNumber;
+  const courseLessonTotalValue = foundationJourney
+    ? FOUNDATION_PUBLISHED_TOTAL_LESSONS
+    : courseTotalLessons ?? totalLessons;
+  const automaticNextLesson = foundationJourney?.next
+    ? {
+        href: `/lessons/${foundationJourney.next.lesson.slug}`,
+        title: foundationJourney.next.lesson.title,
+        eyebrow: foundationJourney.startsNextLevel
+          ? `${foundationJourney.next.levelLabel} unlocked`
+          : `Next · ${foundationJourney.next.levelLabel} lesson ${foundationJourney.next.number}`,
+        actionLabel: foundationJourney.startsNextLevel
+          ? `Start ${foundationJourney.next.levelLabel}`
+          : "Continue to next lesson",
+      }
+    : undefined;
+  const resolvedNextLesson = nextLesson ?? automaticNextLesson;
 
   const activeIndex = Math.max(
     0,
@@ -366,7 +397,7 @@ export function GuidedLessonFlow({
   const isFinalStep = activeIndex === steps.length - 1;
   const lessonCompleted = Boolean(progress.completedAt);
   const lessonStepPercent = steps.length ? ((activeIndex + 1) / steps.length) * 100 : 0;
-  const coursePercent = (lessonNumber / totalLessons) * 100;
+  const coursePercent = (courseLessonProgressValue / courseLessonTotalValue) * 100;
 
   const trackCourseStep = useCallback(
     (stepId: string) => {
@@ -572,7 +603,13 @@ export function GuidedLessonFlow({
             aria-current={active ? "step" : undefined}
             onClick={() => moveToStep(step.id)}
           >
-            <span aria-hidden="true">{complete ? "✓" : String(index + 1).padStart(2, "0")}</span>
+            <span aria-hidden="true">
+              {complete ? (
+                <svg viewBox="0 0 16 16" focusable="false">
+                  <path d="m3.25 8.15 2.75 2.7 6.75-6.1" />
+                </svg>
+              ) : String(index + 1).padStart(2, "0")}
+            </span>
             <span>
               <small>{step.eyebrow}</small>
               <strong>{step.title}</strong>
@@ -605,9 +642,9 @@ export function GuidedLessonFlow({
               role="progressbar"
               aria-label="Course progress"
               aria-valuemin={0}
-              aria-valuemax={totalLessons}
-              aria-valuenow={lessonNumber}
-              aria-valuetext={`Lesson ${lessonNumber} of ${totalLessons} in ${levelLabel}`}
+              aria-valuemax={courseLessonTotalValue}
+              aria-valuenow={courseLessonProgressValue}
+              aria-valuetext={`Course lesson ${courseLessonProgressValue} of ${courseLessonTotalValue}`}
             >
               <span style={{ width: `${coursePercent}%` }} />
             </div>
@@ -664,22 +701,39 @@ export function GuidedLessonFlow({
 
             {activeStep.requiresPractice && !activePracticeComplete ? (
               <div className="lesson-gate-note" role="status">
-                <span aria-hidden="true">↳</span>
                 <p><strong>The next {stepNoun.toLowerCase()} is locked for now.</strong> Clear this checkpoint, then the button will unlock.</p>
               </div>
             ) : null}
 
             {lessonCompleted && isFinalStep ? (
               <section className="lesson-complete-card" aria-live="polite">
-                <span aria-hidden="true">✓</span>
                 <div>
-                  <p className="eyebrow">{completionEyebrow}</p>
+                  <p className="completion-status">{completionEyebrow}</p>
                   <h2>{completionTitle}</h2>
                   <p>{completionDescription}</p>
                   {completionReward ? <strong className="lesson-complete-reward">{completionReward}</strong> : null}
-                  <Link className="button button-primary" href={`${courseHref}#level-1`}>
-                    Return to the course map
-                  </Link>
+                  {resolvedNextLesson ? (
+                    <div className="lesson-next-handoff">
+                      <span>{resolvedNextLesson.eyebrow}</span>
+                      <strong>{resolvedNextLesson.title}</strong>
+                    </div>
+                  ) : null}
+                  <div className="lesson-complete-actions">
+                    {resolvedNextLesson ? (
+                      <Link className="button button-primary" href={resolvedNextLesson.href}>
+                        {resolvedNextLesson.actionLabel}
+                        <svg className="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                          <path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" />
+                        </svg>
+                      </Link>
+                    ) : null}
+                    <Link
+                      className={resolvedNextLesson ? "button button-secondary" : "button button-primary"}
+                      href={courseHref}
+                    >
+                      View course map
+                    </Link>
+                  </div>
                 </div>
               </section>
             ) : (

@@ -807,6 +807,7 @@ function stripUnsafeTagBlocks(source: string) {
     .replace(/<\/?style\b[^>]*>/gi, "")
     .replace(/<\/?script\b[^>]*>/gi, "")
     .replace(/<iframe\b[^>]*>[\s\S]*?(<\/iframe\s*>|$)/gi, "")
+    // impeccable-disable-next-line broken-image: sanitizer removes untrusted img tags; it never renders this pattern.
     .replace(/<img\b[^>]*>/gi, "")
     .replace(/<object\b[^>]*>[\s\S]*?(<\/object\s*>|$)/gi, "")
     .replace(/<embed\b[^>]*>/gi, "")

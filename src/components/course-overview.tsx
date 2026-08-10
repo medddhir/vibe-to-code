@@ -24,7 +24,7 @@ function BasicCourse({ course }: { course: Course }) {
               {course.shortName.slice(0, 2).toUpperCase()}
             </span>
             <div>
-              <p className="eyebrow">{course.eyebrow}</p>
+              <span className="course-discipline">{course.eyebrow}</span>
               <h1>{course.name}</h1>
             </div>
           </div>
@@ -96,8 +96,7 @@ function CourseLearningLoop() {
       <div className="shell">
         <div className="section-heading compact-heading">
           <div>
-            <p className="eyebrow">The lesson rhythm</p>
-            <h2 id="course-method-title">You will always know what to do next.</h2>
+            <h2 id="course-method-title">A familiar route through every new idea.</h2>
           </div>
           <p>Every lesson follows the same calm loop, so new concepts feel familiar.</p>
         </div>
@@ -123,7 +122,6 @@ function ModelAtlas({ updatedAt }: { updatedAt: string }) {
       <div className="shell">
         <div className="model-atlas-heading">
           <div>
-            <p className="eyebrow">Global model compass</p>
             <h2 id="model-atlas-title">Learn the landscape, not a temporary ranking.</h2>
           </div>
           <div className="atlas-note">
@@ -176,7 +174,7 @@ function DetailedCourse({ course }: { course: Course }) {
             <div className="course-hero-copy">
               <div className="course-kicker">
                 <span className="course-symbol" aria-hidden="true">{course.shortName.slice(0, 2).toUpperCase()}</span>
-                <p className="eyebrow">{course.eyebrow}</p>
+                <span className="course-discipline">{course.eyebrow}</span>
               </div>
               <h1>{course.name}</h1>
               <p className="course-lead">{course.description}</p>
@@ -232,10 +230,17 @@ function DetailedCourse({ course }: { course: Course }) {
         </div>
       </section>
 
+      {course.slug === "foundations" ? (
+        <section className="section course-progress-section">
+          <div className="shell">
+            <FoundationCourseProgressPanel levels={course.levels.slice(0, 2)} />
+          </div>
+        </section>
+      ) : null}
+
       <section id="course-outcomes" className="section course-overview-section">
         <div className="shell course-overview-grid">
           <div>
-            <p className="eyebrow">By the end</p>
             <h2>Not just watched. Understood and built.</h2>
             <div className="outcome-list">
               {course.outcomes?.map((outcome, index) => (
@@ -247,7 +252,7 @@ function DetailedCourse({ course }: { course: Course }) {
             </div>
           </div>
           <aside className="course-prep-card">
-            <p className="eyebrow">Before you start</p>
+            <span className="course-discipline">Before you start</span>
             <h3>No hidden prerequisites.</h3>
             <ul>
               {course.prerequisites?.map((prerequisite) => <li key={prerequisite}>{prerequisite}</li>)}
@@ -263,7 +268,6 @@ function DetailedCourse({ course }: { course: Course }) {
         <div className="shell">
           <div className="section-heading compact-heading">
             <div>
-              <p className="eyebrow">Project ladder</p>
               <h2 id="course-projects-title">Build proof, not tutorial clutter.</h2>
             </div>
             <p>Each project produces something you can show, test, explain, and improve.</p>
@@ -286,10 +290,13 @@ function DetailedCourse({ course }: { course: Course }) {
         <div className="shell course-map-shell">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Complete course map</p>
-              <h2>Every lesson has a purpose, practice task, and mistake clinic.</h2>
+              <h2>The complete course wiring.</h2>
             </div>
-            <p>Open one level at a time. Only the first published lesson is marked Start; the rest are being written and tested.</p>
+            <p>
+              {course.slug === "foundations"
+                ? "Level 0 and Level 1 are live. Complete each lesson to unlock the next; the handoff continues across the level boundary automatically."
+                : "Open one level at a time. Only published lessons are marked Start; the rest are being written and tested."}
+            </p>
           </div>
 
           <nav className="level-jump-nav" aria-label="Jump to a course level">
@@ -303,7 +310,12 @@ function DetailedCourse({ course }: { course: Course }) {
 
           <div className="detailed-course-levels">
             {course.levels.map((level, levelIndex) => (
-              <details key={`${level.label}-${level.title}`} id={`level-${levelIndex + 1}`} className="detailed-course-level" open={levelIndex === 0}>
+              <details
+                key={`${level.label}-${level.title}`}
+                id={`level-${levelIndex + 1}`}
+                className="detailed-course-level"
+                open={levelIndex === 0 || (course.slug === "foundations" && levelIndex === 1)}
+              >
                 <summary>
                   <span className="level-number">{level.label}</span>
                   <span className="level-summary-copy">
@@ -362,7 +374,6 @@ function DetailedCourse({ course }: { course: Course }) {
       <section className="section section-soft course-sources-section" aria-labelledby="course-sources-title">
         <div className="shell course-sources-grid">
           <div>
-            <p className="eyebrow">Evidence, not internet soup</p>
             <h2 id="course-sources-title">Built from maintained official guidance.</h2>
             <p>These links are starting points, not decoration. Model and software details are rechecked against official documentation before a lesson is published.</p>
           </div>
@@ -377,13 +388,6 @@ function DetailedCourse({ course }: { course: Course }) {
         </div>
       </section>
 
-      {course.slug === "foundations" ? (
-        <section className="section section-soft course-progress-section">
-          <div className="shell">
-            <FoundationCourseProgressPanel levels={course.levels.slice(0, 2)} />
-          </div>
-        </section>
-      ) : null}
     </>
   );
 }

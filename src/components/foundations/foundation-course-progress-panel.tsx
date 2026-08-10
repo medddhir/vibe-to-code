@@ -7,6 +7,7 @@ import type { CourseLevel } from "@/data/curriculum";
 import {
   FOUNDATION_PUBLISHED_BY_SLUG,
   FOUNDATION_PUBLISHED_TOTAL_LESSONS,
+  getFoundationLessonSlot,
 } from "@/data/foundations-level1";
 import {
   foundationPublishedOrder,
@@ -129,6 +130,21 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
     [levels, snapshot],
   );
 
+  const nextLessonSlug = snapshot.lessonOrder.find(
+    (slug) =>
+      !snapshot.lessons[slug]?.completed &&
+      isLessonUnlockedInSnapshot(snapshot, slug),
+  );
+  const nextLesson = nextLessonSlug
+    ? getFoundationLessonSlot(nextLessonSlug)
+    : null;
+  const hasStarted = snapshot.completedLessons.length > 0 || Boolean(snapshot.lastVisitedLesson);
+  const nextActionLabel = snapshot.coursePercent === 100
+    ? "Review the learning path"
+    : hasStarted
+      ? "Continue your course"
+      : "Start Level 0";
+
   function clearCourse() {
     if (
       !window.confirm(
@@ -163,6 +179,22 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
             {snapshot.completedLessons.length} of {FOUNDATION_PUBLISHED_TOTAL_LESSONS} published lessons completed.
           </p>
         </div>
+        <Link
+          className="button button-primary foundation-progress-continue"
+          href={nextLesson
+            ? `/lessons/${nextLesson.lesson.slug}`
+            : snapshot.coursePercent === 100
+              ? "/courses/foundations#course-levels"
+              : "/lessons/what-is-code"}
+        >
+          <span>
+            <small>{nextLesson ? `${nextLesson.levelLabel} · Lesson ${nextLesson.number}` : "Path complete"}</small>
+            {nextActionLabel}
+          </span>
+          <svg className="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" />
+          </svg>
+        </Link>
       </div>
 
       <div className="foundation-progress-bar" aria-hidden="true">
@@ -186,6 +218,14 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
                 const lessonSlug = lesson.slug;
                 const slot = lessonSlug ? FOUNDATION_PUBLISHED_BY_SLUG[lessonSlug] : null;
                 const isEnabled = row.state !== "locked";
+                const hasActivity = Boolean(
+                  row.progress &&
+                  (row.progress.completed ||
+                    row.progress.currentCheckpoint ||
+                    row.progress.completedCheckpointCount ||
+                    row.progress.totalAttempts ||
+                    row.progress.totalHints),
+                );
 
                 return (
                   <li
@@ -221,7 +261,7 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
                       type="button"
                       className="button button-small"
                       onClick={() => clearLesson(lessonSlug)}
-                      disabled={!row.progress}
+                      disabled={!hasActivity}
                     >
                       Reset
                     </button>

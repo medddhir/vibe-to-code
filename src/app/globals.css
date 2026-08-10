@@ -1359,7 +1359,6 @@ pre {
   height: 100%;
   border-radius: inherit;
   background: var(--accent);
-  transition: width 180ms ease;
 }
 
 .foundation-progress-list {
@@ -1550,10 +1549,12 @@ pre {
   z-index: -1;
   inset: 0;
   opacity: 0.48;
-  background-image:
-    linear-gradient(color-mix(in srgb, var(--course-accent) 10%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--course-accent) 10%, transparent) 1px, transparent 1px);
-  background-size: 34px 34px;
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--course-accent) 10%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 68px 100%;
   mask-image: linear-gradient(to bottom, black, transparent 78%);
 }
 
@@ -2838,7 +2839,7 @@ pre {
 }
 
 .callout-simple {
-  border-left: 4px solid var(--accent);
+  border-left: 2px solid var(--accent);
   background: var(--accent-soft);
 }
 

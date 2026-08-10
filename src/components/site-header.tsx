@@ -4,8 +4,8 @@ import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const navigation = [
-  { href: "/learn", label: "Learn" },
-  { href: "/courses/foundations", label: "Curriculum" },
+  { href: "/learn", label: "Courses" },
+  { href: "/courses/foundations", label: "Foundations" },
   { href: "/contribute", label: "Contribute" },
 ];
 
@@ -35,7 +35,7 @@ export function SiteHeader() {
         <div className="header-actions">
           <ThemeToggle />
           <Link className="button button-small" href="/lessons/what-is-code">
-            Start free
+            Start Level 0
           </Link>
           <details className="mobile-menu">
             <summary aria-label="Open navigation menu">Menu</summary>

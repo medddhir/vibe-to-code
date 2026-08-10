@@ -1,42 +1,49 @@
 import Link from "next/link";
 
 import { CourseCard } from "@/components/course-card";
-import { LearningStep } from "@/components/learning-step";
 import { TerminalCard } from "@/components/terminal-card";
 import { coreLessonCount, courses } from "@/data/curriculum";
+import { FOUNDATION_PUBLISHED_TOTAL_LESSONS } from "@/data/foundations-level1";
 
 const proofPoints = [
-  { value: "₹0", label: "to start learning" },
-  { value: `${coreLessonCount}`, label: "lessons in the core roadmap" },
-  { value: "Open", label: "for public contribution" },
+  { value: "₹0", label: "Core learning" },
+  { value: `${coreLessonCount}`, label: "Mapped lessons" },
+  { value: String(FOUNDATION_PUBLISHED_TOTAL_LESSONS), label: "Foundation lessons live" },
+];
+
+const inspectionProtocol = [
+  ["Understand", "Read the mental model in plain language before touching syntax."],
+  ["Inspect", "See the important parts of real code and trace what each one controls."],
+  ["Change", "Make one deliberate edit and predict what should happen next."],
+  ["Verify", "Use output, errors, and tests to prove the result instead of guessing."],
 ];
 
 export default function Home() {
   return (
     <main id="main-content">
-      <section className="hero section">
-        <div className="shell hero-grid">
+      <section className="hero section inspection-hero">
+        <div className="shell hero-grid inspection-hero-grid">
           <div className="hero-copy">
-            <div className="announcement">
-              <span className="announcement-dot" aria-hidden="true" />
-              Free, open source, and built for curious beginners
-            </div>
             <h1>
-              Stop guessing what AI built. <span>Learn the code.</span>
+              AI gave you the code. <span>Now make it yours.</span>
             </h1>
             <p className="hero-description">
-              Vibe to Code teaches you to read, write, test, and improve AI-generated
-              code—starting from zero and moving toward real products.
+              Vibe to Code turns generated code into a path you can inspect, change,
+              debug, and verify—starting at zero, ending with software you understand.
             </p>
             <div className="hero-actions">
               <Link className="button button-primary" href="/lessons/what-is-code">
-                Start lesson one <span aria-hidden="true">→</span>
+                Start Developer Foundations <span aria-hidden="true">→</span>
               </Link>
               <Link className="button button-secondary" href="/learn">
                 Explore the curriculum
               </Link>
             </div>
-            <p className="hero-footnote">No account. No credit card. No experience needed.</p>
+            <div className="hero-assurance" aria-label="What you need to start">
+              <span>No account</span>
+              <span>No payment</span>
+              <span>No coding experience</span>
+            </div>
           </div>
           <TerminalCard />
         </div>
@@ -55,12 +62,11 @@ export default function Home() {
         <div className="shell">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">A clear place to begin</p>
-              <h2>Learn the parts that vibe coding usually hides.</h2>
+              <h2>One route out of tutorial chaos.</h2>
             </div>
             <p>
-              Start with the shared foundations. Then move into languages and tools only
-              when you understand why they exist.
+              Begin with the systems every developer uses. Add languages and tools only
+              when you know what problem each one solves.
             </p>
           </div>
           <div className="course-grid">
@@ -74,42 +80,34 @@ export default function Home() {
       <section className="section" id="method">
         <div className="shell method-grid">
           <div className="method-intro">
-            <p className="eyebrow">The learning loop</p>
-            <h2>Simple enough for a first-time coder. Useful enough for a founder.</h2>
+            <h2>A repeatable inspection protocol.</h2>
             <p>
-              Every lesson moves through the same four steps, so you always know what to
-              do next.
+              Every lesson uses the same four-stage route. The subject changes; the way
+              you build confidence stays familiar.
             </p>
             <Link className="text-link" href="/courses/foundations">
               See the complete first course roadmap <span aria-hidden="true">→</span>
             </Link>
           </div>
-          <div className="steps-list">
-            <LearningStep number="01" title="Understand">
-              Get a plain-English mental model before seeing syntax.
-            </LearningStep>
-            <LearningStep number="02" title="Try">
-              Predict the result, then type and change a small example.
-            </LearningStep>
-            <LearningStep number="03" title="Debug">
-              Find a deliberate mistake and learn to read the evidence.
-            </LearningStep>
-            <LearningStep number="04" title="Build">
-              Apply the lesson inside a useful mini-project.
-            </LearningStep>
-          </div>
+          <ol className="steps-list inspection-protocol">
+            {inspectionProtocol.map(([title, description], index) => (
+              <li key={title}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <div><h3>{title}</h3><p>{description}</p></div>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
       <section className="section section-dark">
         <div className="shell beta-grid">
           <div>
-            <p className="eyebrow eyebrow-light">The first mapped route</p>
-            <h2>{coreLessonCount} lessons from first code to safe AI-assisted shipping.</h2>
+            <h2>A curriculum that shows its full wiring.</h2>
             <p>
-              The roadmap covers developer foundations, responsible AI use, Python, and
-              Git. Lesson one is ready now; every planned lesson shows its purpose,
-              practice task, and common mistake before it is published.
+              The {coreLessonCount}-lesson core roadmap connects computer confidence,
+              responsible AI use, Python, and Git. Published lessons work now; mapped
+              lessons show exactly what the route will cover.
             </p>
           </div>
           <ol className="beta-roadmap">
@@ -136,8 +134,7 @@ export default function Home() {
       <section className="section">
         <div className="shell open-source-card">
           <div>
-            <p className="eyebrow">Built in public</p>
-            <h2>See a confusing explanation? Help make it clearer.</h2>
+            <h2>The learning manual is open.</h2>
             <p>
               The repository is public. Developers, teachers, students, and first-time
               contributors can improve lessons, fix examples, or add new learning paths.

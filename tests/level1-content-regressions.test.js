@@ -57,6 +57,10 @@ const foundationLessonStateSource = fs.readFileSync(
   lessonPath("src/components/foundations/lesson-state.ts"),
   "utf8",
 );
+const guidedLessonFlowSource = fs.readFileSync(
+  lessonPath("src/components/guided-lesson-flow.tsx"),
+  "utf8",
+);
 const { isStepPracticeActivitiesComplete } = require("../src/components/guided-lesson-flow.tsx");
 
 function extractStepIds(source) {
@@ -64,6 +68,12 @@ function extractStepIds(source) {
 }
 
 describe("Published Foundation content and interaction regressions", () => {
+  it("derives the next Foundation lesson in the shared lesson engine", () => {
+    assert.ok(guidedLessonFlowSource.includes("getFoundationLessonJourney"));
+    assert.ok(guidedLessonFlowSource.includes("Continue to next lesson"));
+    assert.ok(guidedLessonFlowSource.includes("Start ${foundationJourney.next.levelLabel}"));
+  });
+
   it("all published Foundation lesson pages use unique interactive step IDs", () => {
     for (const lesson of publishedFoundationLessonPaths) {
       const source = fs.readFileSync(lessonPath(lesson), "utf8");

@@ -1,12 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 
+import "@fontsource-variable/archivo/wght.css";
+
 import { RepoStarCta } from "@/components/repo-star-cta";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 
 import "./globals.css";
+import "./impeccable.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -45,8 +48,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f7f2" },
-    { media: "(prefers-color-scheme: dark)", color: "#0d0f14" },
+    { media: "(prefers-color-scheme: light)", color: "#f2f4ef" },
+    { media: "(prefers-color-scheme: dark)", color: "#101411" },
   ],
   colorScheme: "light dark",
 };
@@ -65,7 +68,7 @@ const themeInitScript = `
     }
     document.documentElement.dataset.theme = theme;
     document.querySelectorAll('meta[name="theme-color"]').forEach(function (meta) {
-      meta.setAttribute("content", theme === "dark" ? "#0d0f14" : "#f7f7f2");
+      meta.setAttribute("content", theme === "dark" ? "#101411" : "#f2f4ef");
     });
   })();
 `;
@@ -74,6 +77,20 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
+        <script
+          id="impeccable-design-contract"
+          type="application/json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              thesis: "Turn AI-generated code into an inspectable route from prompt to proof; refuse the generic SaaS hero and card grid.",
+              ownWorld: "Porcelain and graphite work surfaces, cobalt route rails, safety-lime pass states, inspection labels, and precise cutaway panels.",
+              story: "A beginner sees what the product teaches, starts Level 0, and always knows the next verified action.",
+              firstViewport: "A left learning brief faces a large code inspection bench; the primary Level 0 action sits directly under the offer.",
+              form: "Code Inspection Bench, grounded candidate 3, seed ee349566.",
+              finish: "unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md",
+            }).replace(/</g, "\\u003c"),
+          }}
+        />
         <Script id="vibe-to-code-theme" strategy="beforeInteractive">
           {themeInitScript}
         </Script>

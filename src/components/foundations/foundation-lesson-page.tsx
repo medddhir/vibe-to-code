@@ -9,7 +9,8 @@ import {
 import { useFoundationLessonState } from "@/components/foundations/lesson-state";
 import {
   FOUNDATION_PUBLISHED_LESSONS,
-  getFoundationLessonSlot,
+  getFoundationCourseMapHref,
+  getFoundationLessonJourney,
 } from "@/data/foundations-level1";
 
 function LessonLockedFallback({
@@ -66,10 +67,10 @@ export function FoundationLessonPage({
   steps,
   children,
 }: FoundationLessonPageProps) {
-  const { isUnlocked, isCompleted } = useFoundationLessonState(lessonSlug);
-  const lessonSlot = getFoundationLessonSlot(lessonSlug);
-  const previousPublishedLesson = lessonSlot?.courseNumber
-    ? FOUNDATION_PUBLISHED_LESSONS[lessonSlot.courseNumber - 2]
+  const { isUnlocked } = useFoundationLessonState(lessonSlug);
+  const lessonJourney = getFoundationLessonJourney(lessonSlug);
+  const previousPublishedLesson = lessonJourney?.current.courseNumber
+    ? FOUNDATION_PUBLISHED_LESSONS[lessonJourney.current.courseNumber - 2]
     : null;
   const requiredLessonLabel = previousPublishedLesson
     ? `Complete "${previousPublishedLesson.title}" to unlock this lesson.`
@@ -85,16 +86,19 @@ export function FoundationLessonPage({
     );
   }
 
-  const completionDescription = isCompleted
-    ? "Great. This lesson is complete. Revisit this route for refreshers or move to your next lesson from the course map."
-    : "You complete each checkpoint by making one real change, reading feedback, and proving the fix."
-;
+  const nextLesson = lessonJourney?.next;
+  const completionDescription = nextLesson
+    ? lessonJourney.startsNextLevel
+      ? `${levelTitle} is complete. ${nextLesson.levelTitle} is now unlocked and ready when you are.`
+      : `Your progress is saved. “${nextLesson.lesson.title}” is now unlocked.`
+    : "You completed every published Developer Foundations lesson. You can review any lesson from the course map.";
+  const courseMapHref = getFoundationCourseMapHref(lessonSlug);
 
   return (
     <GuidedLessonFlow
       lessonId={lessonSlug}
       lessonVersion={lessonVersion}
-      courseHref="/courses/foundations"
+      courseHref={courseMapHref}
       courseName="Developer Foundations"
       levelLabel={levelTitle}
       lessonNumber={lessonNumber}
@@ -110,6 +114,16 @@ export function FoundationLessonPage({
       completionTitle="Lesson complete"
       completionEyebrow={`${levelTitle} checkpoint`}
       completionReward="Foundation path unlocked"
+      nextLesson={nextLesson ? {
+        href: `/lessons/${nextLesson.lesson.slug}`,
+        title: nextLesson.lesson.title,
+        eyebrow: lessonJourney?.startsNextLevel
+          ? `${nextLesson.levelLabel} unlocked`
+          : `Next · ${nextLesson.levelLabel} lesson ${nextLesson.number}`,
+        actionLabel: lessonJourney?.startsNextLevel
+          ? `Start ${nextLesson.levelLabel}`
+          : "Continue to next lesson",
+      } : undefined}
       courseSlug="foundations"
       lessonProgressSlug={lessonSlug}
       finalButtonLabel="Complete lesson"
