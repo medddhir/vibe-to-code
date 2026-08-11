@@ -3,8 +3,11 @@ import Script from "next/script";
 
 import "@fontsource-variable/archivo/wght.css";
 
+import { EnvironmentProvider } from "@/components/environment-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { StartupScreen } from "@/components/startup-screen";
+import { getCurriculumReviewMode } from "@/lib/environment";
 import { siteConfig } from "@/lib/site";
 
 import "./globals.css";
@@ -14,7 +17,7 @@ import "./premium.css";
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: "Vibe to Code — Learn what your code actually does",
+    default: "Vibe to Code | Learn what your code actually does",
     template: "%s · Vibe to Code",
   },
   description: siteConfig.description,
@@ -73,7 +76,37 @@ const themeInitScript = `
   })();
 `;
 
+const startupInitScript = `
+  (function () {
+    var key = "vibe-to-code:intro:v1";
+    var root = document.documentElement;
+
+    try {
+      if (sessionStorage.getItem(key)) {
+        root.dataset.vtcIntro = "seen";
+        return;
+      }
+
+      sessionStorage.setItem(key, "seen");
+
+      ["/brand/mark-light.png", "/brand/wordmark-dark.png"].forEach(function (href) {
+        var preload = document.createElement("link");
+        preload.rel = "preload";
+        preload.as = "image";
+        preload.href = href;
+        document.head.appendChild(preload);
+      });
+
+      root.dataset.vtcIntro = "play";
+    } catch (error) {
+      root.dataset.vtcIntro = "seen";
+    }
+  })();
+`;
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const curriculumReview = getCurriculumReviewMode();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
@@ -94,12 +127,19 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Script id="vibe-to-code-theme" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
-        <a className="skip-link" href="#main-content">
-          Skip to content
-        </a>
-        <SiteHeader />
-        {children}
-        <SiteFooter />
+        <script
+          dangerouslySetInnerHTML={{ __html: startupInitScript }}
+          id="vibe-to-code-startup"
+        />
+        <EnvironmentProvider curriculumReview={curriculumReview}>
+          <StartupScreen />
+          <a className="skip-link" href="#main-content">
+            Skip to content
+          </a>
+          <SiteHeader />
+          {children}
+          <SiteFooter />
+        </EnvironmentProvider>
       </body>
     </html>
   );

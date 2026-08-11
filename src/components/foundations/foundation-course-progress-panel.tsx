@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useSyncExternalStore } from "react";
 
+import { useCurriculumReviewMode } from "@/components/environment-provider";
 import type { CourseLevel } from "@/data/curriculum";
 import {
   FOUNDATION_PUBLISHED_BY_SLUG,
@@ -73,6 +74,7 @@ function readServerCourseSnapshot() {
 function getLessonRowState(
   snapshot: CourseProgressSnapshot,
   lessonSlug: string,
+  curriculumReview: boolean,
 ): LessonRowState["state"] {
   const progress = snapshot.lessons[lessonSlug];
 
@@ -84,7 +86,10 @@ function getLessonRowState(
     return "completed";
   }
 
-  if (!isLessonUnlockedInSnapshot(snapshot, lessonSlug)) {
+  if (
+    !curriculumReview &&
+    !isLessonUnlockedInSnapshot(snapshot, lessonSlug)
+  ) {
     return "locked";
   }
 
@@ -96,6 +101,7 @@ function subscribe(callback: () => void) {
 }
 
 export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgressPanelProps) {
+  const curriculumReview = useCurriculumReviewMode();
   const snapshot = useSyncExternalStore(
     subscribe,
     readCourseSnapshot,
@@ -113,7 +119,11 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
           };
 
           if (slug) {
-            row.state = getLessonRowState(snapshot, slug);
+            row.state = getLessonRowState(
+              snapshot,
+              slug,
+              curriculumReview,
+            );
           }
 
           return { lesson, row };
@@ -127,7 +137,7 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
           percent: rows.length ? Math.round((completedCount / rows.length) * 100) : 0,
         };
       }),
-    [levels, snapshot],
+    [curriculumReview, levels, snapshot],
   );
 
   const nextLessonSlug = snapshot.lessonOrder.find(
@@ -201,6 +211,13 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
         <span style={{ width: `${snapshot.coursePercent}%` }} />
       </div>
       <p className="foundation-progress-text">{snapshot.coursePercent}% of the published path complete</p>
+
+      {curriculumReview ? (
+        <p className="foundation-review-note">
+          Staging review mode is active. Every published lesson is open for inspection;
+          production will keep the guided unlock sequence.
+        </p>
+      ) : null}
 
       <div className="foundation-progress-groups">
         {levelRows.map(({ level, rows, completedCount, percent }) => (

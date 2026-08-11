@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { BrandFilm } from "@/components/brand-film";
+import { LiveCurriculumCard } from "@/components/live-curriculum-card";
 import { MiniLessonLab } from "@/components/mini-lesson-lab";
 import { coreLessonCount, courses } from "@/data/curriculum";
 import { FOUNDATION_PUBLISHED_TOTAL_LESSONS } from "@/data/foundations-level1";
@@ -49,7 +49,7 @@ export default function Home() {
             </h1>
             <p className="vtc-hero-description">
               Learn what AI writes, fix what breaks, and ship products you can
-              actually own—from your first file to your first production build.
+              actually own, from your first file to your first production build.
             </p>
 
             <div className="vtc-hero-actions">
@@ -67,7 +67,7 @@ export default function Home() {
             </p>
           </div>
 
-          <BrandFilm />
+          <LiveCurriculumCard />
         </div>
 
         <div className="shell vtc-proof-rail" aria-label="Platform facts">
@@ -92,7 +92,7 @@ export default function Home() {
           </div>
           <p className="vtc-manifesto-note">
             For founders, creators, students, and curious builders who can make
-            something appear with a prompt—but refuse to stay dependent on one.
+            something appear with a prompt, but refuse to stay dependent on one.
           </p>
         </div>
       </section>
@@ -104,7 +104,7 @@ export default function Home() {
             <h2 id="protocol-title">One learning loop. Every technical skill.</h2>
             <p>
               The subject changes. The rhythm stays familiar, so your attention
-              goes into the idea—not figuring out how the lesson works.
+              goes into the idea, not figuring out how the lesson works.
             </p>
             <Link className="vtc-arrow-link" href="/courses/foundations">
               Inspect the Foundations route <span aria-hidden="true">↗</span>

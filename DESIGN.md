@@ -169,7 +169,7 @@ The system rejects childish gamification, ornamental neon, mascot-led interfaces
 
 The folded-ribbon cursor is the primary symbol. Its sharp folds bridge AI-speed and deliberate technical craft without falling back to a generic code bracket or sparkle. The structured monoline wordmark is the primary naming asset in navigation and brand-led moments. Use the dark asset on porcelain, the light asset on graphite, and preserve the original proportions.
 
-The ten-second identity film may appear as a supporting hero or campaign object with a poster and an explicit pause control. It must never delay navigation, cover the interface as a startup screen, or autoplay for people who request reduced motion.
+The identity opens once per browser session with a 1.6-second folded-cursor and wordmark lockup. It lives in the persistent root layout, does not replay during internal navigation, exits before interaction begins, and becomes an opacity-only transition for people who request reduced motion. No background video or looping brand film belongs in the product interface.
 
 **The Identity Restraint Rule.** Let the cursor and wordmark establish recognition once per region; do not repeat the symbol as ambient decoration or use it as a generic bullet.
 

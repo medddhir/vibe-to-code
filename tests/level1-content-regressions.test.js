@@ -88,6 +88,28 @@ describe("Published Foundation content and interaction regressions", () => {
     }
   });
 
+  it("every guided lesson step has a matching rendered panel", () => {
+    for (const lesson of publishedFoundationLessonPaths) {
+      const source = fs.readFileSync(lessonPath(lesson), "utf8");
+      const lessonStepsBlock = source.match(
+        /const lessonSteps: GuidedLessonStep\[\] = \[([\s\S]*?)\n\];/,
+      );
+
+      assert.ok(lessonStepsBlock, `Could not find lessonSteps in ${lesson}`);
+
+      const stepIds = [
+        ...lessonStepsBlock[1].matchAll(/\bid:\s*"([^"]+)"/g),
+      ].map((match) => match[1]);
+
+      for (const stepId of stepIds) {
+        assert.ok(
+          source.includes(`id="${stepId}"`),
+          `Missing a rendered panel for step "${stepId}" in ${lesson}`,
+        );
+      }
+    }
+  });
+
   it("Lesson 2 loop checkpoints require separate simulator-and-checkpoint completions", () => {
     const ifLogicStep = {
       id: "if-logic",
@@ -256,9 +278,10 @@ describe("Published Foundation content and interaction regressions", () => {
         "useSyncExternalStore(subscribe, readCourseSnapshot, readCourseSnapshot)",
       ),
     );
+    assert.ok(foundationCourseProgressPanelSource.includes("useCurriculumReviewMode"));
     assert.ok(
-      foundationCourseProgressPanelSource.includes(
-        "getLessonRowState(snapshot, slug)",
+      /getLessonRowState\([\s\S]*?snapshot,[\s\S]*?slug,[\s\S]*?curriculumReview,[\s\S]*?\)/m.test(
+        foundationCourseProgressPanelSource,
       ),
     );
   });

@@ -228,11 +228,31 @@ export default function DecisionsLoopsFunctionsLesson() {
       </section>
 
       <section id="predict-path" className="lesson-section guided-topic mission-topic">
-        <p className="eyebrow">Function preview</p>
+        <p className="eyebrow">Trace before running</p>
         <h2>Predict state before running.</h2>
         <p>
-          In this tiny language, each assignment updates memory immediately. The function checkpoint below still uses one
-          predictable rule.
+          Each assignment updates memory immediately. Read the input, apply the one rule,
+          and name the result before you run anything.
+        </p>
+
+        <CodeWindow
+          title="Predict the function output"
+          code={'input = 8\nresult = input + 4'}
+          output="result = 12"
+        />
+
+        <div className="lesson-ready-note">
+          <span aria-hidden="true">✓</span>
+          <p><strong>Prediction:</strong> the rule adds 4 to the input, so 8 becomes 12.</p>
+        </div>
+      </section>
+
+      <section id="function-output" className="lesson-section guided-topic mission-topic">
+        <p className="eyebrow">Function input</p>
+        <h2>Pass input into one reusable rule.</h2>
+        <p>
+          Now prove the prediction with a tiny function-like rule. Keep the operation
+          visible so the same input always produces the same result.
         </p>
 
         <DecisionFunctionLab

@@ -1762,8 +1762,7 @@ a:not(.button) {
     width: min(100% - 32px, 1240px);
   }
 
-  .desktop-nav,
-  .header-actions > .button-small {
+  .desktop-nav {
     display: none;
   }
 
@@ -1856,6 +1855,9 @@ a:not(.button) {
 }
 
 @media (max-width: 620px) {
+  .header-actions > .button-small {
+    display: none;
+  }
   .section {
     padding: 72px 0;
   }
