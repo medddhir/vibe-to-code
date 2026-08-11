@@ -29,7 +29,7 @@ Learners use the site in a desktop or mobile browser. Published Foundation lesso
 - Existing Level 1 progress must survive curriculum and progress-schema changes.
 - Lesson content, simulations, gates, and progress logic must remain functional through the redesign.
 - The next action must be obvious after every checkpoint, lesson, and level.
-- Google signup and server-synced progress are planned but are not part of this redesign.
+- Google signup and server-synced progress are the next product milestone. The public learning path remains usable in guest mode, and account work must merge rather than erase existing local progress.
 - The project is a Next.js App Router application deployed on Vercel and maintained in one GitHub repository.
 
 ## Brand Commitments
@@ -38,7 +38,8 @@ Learners use the site in a desktop or mobile browser. Published Foundation lesso
 - Primary voice: plain, direct, encouraging, and never patronising.
 - The experience should feel futuristic, confident, premium, and suitable for serious learners.
 - It must not feel childish, heavily gamified, or like a generic neon AI product.
-- The current mark remains temporary until the final symbol and wordmark are integrated.
+- The approved identity uses the folded-ribbon cursor symbol (direction 03) and the structured monoline wordmark (direction 02) in light and dark variants.
+- The approved logo film is a supporting brand moment, never a blocking startup screen.
 
 ## Evidence on Hand
 
