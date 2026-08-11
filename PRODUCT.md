@@ -39,7 +39,7 @@ Learners use the site in a desktop or mobile browser. Published Foundation lesso
 - The experience should feel futuristic, confident, premium, and suitable for serious learners.
 - It must not feel childish, heavily gamified, or like a generic neon AI product.
 - The approved identity uses the folded-ribbon cursor symbol (direction 03) and the structured monoline wordmark (direction 02) in light and dark variants.
-- The approved logo film is a supporting brand moment, never a blocking startup screen.
+- The approved identity appears as a maximum 1.6-second, once-per-session startup lockup with a reduced-motion fallback. The product interface does not use a looping logo film.
 
 ## Evidence on Hand
 

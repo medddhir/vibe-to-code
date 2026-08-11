@@ -3302,7 +3302,7 @@ pre {
   border-radius: 13px;
   background: var(--warning-surface);
   color: var(--warning-text);
-  grid-template-columns: 27px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 9px;
 }
 
@@ -3313,7 +3313,8 @@ pre {
 
 .lesson-gate-note p {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 1rem;
+  line-height: 1.55;
 }
 
 .guided-lesson-navigation {
@@ -5010,11 +5011,11 @@ pre {
 }
 
 .guided-lesson-main .lesson-step-nav button > span:first-child {
-  font-size: 0.8125rem;
+  font-size: var(--lesson-meta);
 }
 
 .guided-lesson-main .lesson-step-nav small {
-  font-size: 0.8125rem;
+  font-size: var(--lesson-meta);
   line-height: 1.3;
 }
 
@@ -6476,11 +6477,18 @@ pre {
     min-height: auto;
   }
 
+  .course-map-section {
+    overflow-x: clip;
+  }
+
   .level-jump-nav {
     display: flex;
+    width: 100%;
+    max-width: 100%;
     overflow-x: auto;
-    margin-right: -14px;
-    padding-right: 14px;
+    overflow-y: hidden;
+    margin-right: 0;
+    padding-right: 0;
     scroll-snap-type: x mandatory;
   }
 

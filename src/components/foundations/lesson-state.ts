@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useSyncExternalStore } from "react";
 
+import { useCurriculumReviewMode } from "@/components/environment-provider";
 import {
   getCourseProgressSnapshot,
   getCourseStorageKey,
@@ -67,6 +68,7 @@ function subscribe(callback: () => void) {
 }
 
 export function useFoundationLessonState(lessonSlug: string) {
+  const curriculumReview = useCurriculumReviewMode();
   const snapshot = useSyncExternalStore(
     subscribe,
     readSnapshot,
@@ -77,12 +79,13 @@ export function useFoundationLessonState(lessonSlug: string) {
     const lesson = snapshot.lessons[lessonSlug];
 
     return {
-      isUnlocked: isLessonUnlockedInSnapshot(snapshot, lessonSlug),
+      isUnlocked:
+        curriculumReview || isLessonUnlockedInSnapshot(snapshot, lessonSlug),
       isCompleted: Boolean(lesson?.completed),
       isCurrent: snapshot.lastVisitedLesson === lessonSlug,
       attempts: lesson?.totalAttempts ?? 0,
       hints: lesson?.totalHints ?? 0,
       checkpointCount: lesson?.completedCheckpointCount ?? 0,
     };
-  }, [lessonSlug, snapshot]);
+  }, [curriculumReview, lessonSlug, snapshot]);
 }

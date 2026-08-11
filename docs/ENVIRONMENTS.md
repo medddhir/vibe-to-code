@@ -19,4 +19,6 @@ Vibe to Code uses one GitHub repository with isolated Vercel environments.
 
 Production and staging must use separate environment variables, OAuth clients, and data stores whenever user accounts or persistent data are involved. Secrets must never be committed to this repository.
 
+Published Foundation lessons are all unlocked for curriculum review in Vercel preview environments, including the `develop` deployment behind `staging.vibe-to-code.tech`. Production keeps the guided sequential unlock path. `NEXT_PUBLIC_UNLOCK_PUBLISHED_LESSONS=true` can explicitly enable review mode, while `false` is an emergency off switch for any environment.
+
 The production admin application will use a separate protected Vercel project before `admin.vibe-to-code.tech` is attached.
