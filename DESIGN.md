@@ -157,12 +157,21 @@ The system rejects childish gamification, ornamental neon, mascot-led interfaces
 
 **Key Characteristics:**
 
+- Approved folded-ribbon cursor mark and structured monoline wordmark
 - Porcelain learning surfaces paired with graphite inspection benches
 - Cobalt rails and nodes that expose sequence, route, and active action
 - Safety-lime reserved for pass, completion, unlock, and high-confidence next steps
 - Variable-width Archivo headlines with dense, restrained mono metadata
 - Asymmetrical editorial grids that collapse into one clear mobile sequence
 - Borders and tonal layers before shadows; visible proof before decorative reward
+
+### Identity
+
+The folded-ribbon cursor is the primary symbol. Its sharp folds bridge AI-speed and deliberate technical craft without falling back to a generic code bracket or sparkle. The structured monoline wordmark is the primary naming asset in navigation and brand-led moments. Use the dark asset on porcelain, the light asset on graphite, and preserve the original proportions.
+
+The ten-second identity film may appear as a supporting hero or campaign object with a poster and an explicit pause control. It must never delay navigation, cover the interface as a startup screen, or autoplay for people who request reduced motion.
+
+**The Identity Restraint Rule.** Let the cursor and wordmark establish recognition once per region; do not repeat the symbol as ambient decoration or use it as a generic bullet.
 
 ## Colors
 
@@ -295,8 +304,8 @@ Components feel precise, tactile, and serious. Their hierarchy comes from materi
 
 ### Navigation
 
-- **Style:** A 70px sticky translucent header with a one-pixel rule. The cobalt code mark anchors the left; links are compact gray controls that gain a soft mineral surface on hover; the theme toggle and start action remain explicit.
-- **Mobile:** Hide the desktop link row and small start action at 820px, preserving a 44px theme control and 44px menu summary.
+- **Style:** A 70–72px sticky translucent header with a one-pixel rule. The approved cursor and wordmark anchor the left; links are compact gray controls that gain a soft mineral surface on hover; the theme toggle and start action remain explicit.
+- **Mobile:** Hide the desktop link row and header-sized start action at 820px, then place `Start Level 0` as the first high-contrast item inside the 44px menu control.
 
 ### Inspection Bench
 

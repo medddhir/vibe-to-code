@@ -3,13 +3,13 @@ import Script from "next/script";
 
 import "@fontsource-variable/archivo/wght.css";
 
-import { RepoStarCta } from "@/components/repo-star-cta";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 
 import "./globals.css";
 import "./impeccable.css";
+import "./premium.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -99,7 +99,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </a>
         <SiteHeader />
         {children}
-        <RepoStarCta />
         <SiteFooter />
       </body>
     </html>
