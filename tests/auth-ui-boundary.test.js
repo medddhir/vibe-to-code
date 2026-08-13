@@ -2,7 +2,9 @@
 require("./test-support");
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const { test } = require("node:test");
+const path = require("node:path");
 
 const {
   classifyAuthError,
@@ -53,4 +55,25 @@ test("masks account-enumeration errors and email display", () => {
   assert.equal(classifyAuthError({ status: 429 }), "rate-limit");
   assert.equal(classifyAuthError({ message: "Failed to fetch" }), "network");
   assert.equal(maskEmail("learner@example.com"), "le•••••@example.com");
+});
+
+test("keeps public account entry points Google-only", () => {
+  const authMethodForm = fs.readFileSync(
+    path.join(process.cwd(), "src/components/auth/auth-method-form.tsx"),
+    "utf8",
+  );
+  const authShell = fs.readFileSync(
+    path.join(process.cwd(), "src/components/auth/auth-shell.tsx"),
+    "utf8",
+  );
+  const verifyEmailPage = fs.readFileSync(
+    path.join(process.cwd(), "src/app/verify-email/page.tsx"),
+    "utf8",
+  );
+
+  assert.match(authMethodForm, /Continue with Google/);
+  assert.doesNotMatch(authMethodForm, /signInWithOtp|auth-email-form|or use email/);
+  assert.doesNotMatch(authShell, /Verify your inbox|one-time code/);
+  assert.match(verifyEmailPage, /redirect\("\/sign-in"\)/);
+  assert.doesNotMatch(verifyEmailPage, /EmailCodeForm/);
 });

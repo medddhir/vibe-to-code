@@ -29,10 +29,11 @@ Supabase custom domains require a paid project and add-on, so staging uses its d
 
 ## Sign-in methods
 
-The first release supports:
+The public account UI currently supports:
 
 1. Google OAuth using a separate Google web client in each environment.
-2. Passwordless email with a six-digit one-time code.
+
+Passwordless email-code modules remain in the codebase for a later rollout, but the public entry points are hidden and `/verify-email` redirects to `/sign-in` until custom SMTP and the required token template are configured and tested.
 
 Email OTP confirms that the learner controls the inbox before a usable session is created. It does not prove a person's real-world identity and cannot eliminate every disposable inbox. Disposable-domain blocking is intentionally deferred because it creates false positives and needs ongoing list maintenance.
 
