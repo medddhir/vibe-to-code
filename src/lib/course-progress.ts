@@ -1,4 +1,9 @@
 import { foundationLevels } from "@/data/course-content";
+import {
+  clearStoredLessonProgress,
+  clearStoredLessonProgressForLessons,
+} from "@/lib/lesson-progress-storage";
+import { FOUNDATION_CURRICULUM_VERSION } from "@/lib/progress-manifest";
 
 type LessonProgressRecord = {
   completedAt: string | null;
@@ -41,7 +46,7 @@ export type LessonUnlockState = "locked" | "unlocked" | "current" | "completed";
 
 const COURSE_PROGRESS_EVENT = "vibe-to-code:course-progress";
 const COURSE_PROGRESS_VERSION = 1;
-const FOUNDATION_COURSE_VERSION = 2;
+const FOUNDATION_COURSE_VERSION = FOUNDATION_CURRICULUM_VERSION;
 const STORAGE_PREFIX = "vibe-to-code:course-progress:v1";
 
 const inMemoryCourseProgress = new Map<string, string>();
@@ -506,6 +511,7 @@ export function resetLessonProgress(courseSlug: string, lessonSlug: string) {
       [lessonSlug]: makeEmptyLessonRecord(),
     },
   }));
+  clearStoredLessonProgress(lessonSlug);
 }
 
 export function resetCourseProgress(courseSlug: string) {
@@ -516,6 +522,7 @@ export function resetCourseProgress(courseSlug: string) {
   const cleared = createDefaultCourseRecord(courseSlug);
   const storageKey = getStorageKey(courseSlug);
   writeProgressSnapshot(storageKey, JSON.stringify(cleared));
+  clearStoredLessonProgressForLessons(getFoundationLessonOrder());
 }
 
 export function getLessonProgressState(
@@ -559,6 +566,18 @@ export function subscribeToCourseProgress(storageKey: string, callback: () => vo
 
 export function getCourseStorageKey(courseSlug: string) {
   return getStorageKey(courseSlug);
+}
+
+export function readStoredCourseProgressSnapshot(courseSlug: string) {
+  return readProgressSnapshot(getStorageKey(courseSlug));
+}
+
+export function replaceStoredCourseProgressSnapshot(
+  courseSlug: string,
+  serializedProgress: string,
+) {
+  const normalized = normalizeCourseRecord(serializedProgress, courseSlug);
+  writeProgressSnapshot(getStorageKey(courseSlug), JSON.stringify(normalized));
 }
 
 export const foundationLevel0Order = [...FOUNDATION_LEVEL0_ORDER];

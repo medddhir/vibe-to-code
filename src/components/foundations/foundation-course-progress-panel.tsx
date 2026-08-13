@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 
 import { useCurriculumReviewMode } from "@/components/environment-provider";
+import { useProgressSync } from "@/components/progress/progress-sync-provider";
 import type { CourseLevel } from "@/data/curriculum";
 import {
   FOUNDATION_PUBLISHED_BY_SLUG,
@@ -15,8 +16,6 @@ import {
   getCourseProgressSnapshot,
   getCourseStorageKey,
   isLessonUnlockedInSnapshot,
-  resetCourseProgress,
-  resetLessonProgress,
   subscribeToCourseProgress,
   type CourseProgressSnapshot,
   type LessonProgressStatus,
@@ -102,6 +101,11 @@ function subscribe(callback: () => void) {
 
 export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgressPanelProps) {
   const curriculumReview = useCurriculumReviewMode();
+  const progressSync = useProgressSync();
+  const [resetFeedback, setResetFeedback] = useState<{
+    message: string;
+    ok: boolean;
+  } | null>(null);
   const snapshot = useSyncExternalStore(
     subscribe,
     readCourseSnapshot,
@@ -155,7 +159,7 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
       ? "Continue your course"
       : "Start Level 0";
 
-  function clearCourse() {
+  async function clearCourse() {
     if (
       !window.confirm(
         "Reset all published Foundation progress? You will need to complete Level 0 and Level 1 again.",
@@ -164,10 +168,11 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
       return;
     }
 
-    resetCourseProgress("foundations");
+    setResetFeedback(null);
+    setResetFeedback(await progressSync.resetCourse());
   }
 
-  function clearLesson(slug?: string) {
+  async function clearLesson(slug?: string) {
     if (!slug) {
       return;
     }
@@ -176,7 +181,8 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
       return;
     }
 
-    resetLessonProgress("foundations", slug);
+    setResetFeedback(null);
+    setResetFeedback(await progressSync.resetLesson(slug));
   }
 
   return (
@@ -277,10 +283,12 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
                     <button
                       type="button"
                       className="button button-small"
-                      onClick={() => clearLesson(lessonSlug)}
-                      disabled={!hasActivity}
+                      onClick={() => void clearLesson(lessonSlug)}
+                      disabled={!hasActivity || progressSync.resettingScope !== null}
                     >
-                      Reset
+                      {lessonSlug && progressSync.resettingScope === `lesson:${lessonSlug}`
+                        ? "Resetting..."
+                        : "Reset"}
                     </button>
                   </li>
                 );
@@ -296,8 +304,24 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
         </p>
       ) : null}
 
-      <button type="button" className="button button-secondary" onClick={clearCourse}>
-        Reset published Foundation progress
+      {resetFeedback ? (
+        <p
+          className="foundation-progress-text"
+          role={resetFeedback.ok ? "status" : "alert"}
+        >
+          {resetFeedback.message}
+        </p>
+      ) : null}
+
+      <button
+        type="button"
+        className="button button-secondary"
+        onClick={() => void clearCourse()}
+        disabled={progressSync.resettingScope !== null}
+      >
+        {progressSync.resettingScope === "course"
+          ? "Resetting Foundation progress..."
+          : "Reset published Foundation progress"}
       </button>
     </section>
   );

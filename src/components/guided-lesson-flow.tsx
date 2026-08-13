@@ -9,19 +9,27 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
 
+import { useProgressSync } from "@/components/progress/progress-sync-provider";
 import {
   markLessonCompleted,
   recordCompletedCheckpoint,
   recordLessonAttempt,
   recordLessonHint,
-  resetLessonProgress,
+  resetLessonProgress as resetLocalLessonProgress,
   setCurrentCheckpoint,
   setCurrentLesson,
 } from "@/lib/course-progress";
+import {
+  getLessonStorageKey,
+  readLessonProgressSnapshot as readProgressSnapshot,
+  subscribeToLessonProgress as subscribeToProgress,
+  writeLessonProgressSnapshot as writeProgressSnapshot,
+} from "@/lib/lesson-progress-storage";
 import {
   FOUNDATION_PUBLISHED_TOTAL_LESSONS,
   getFoundationLessonJourney,
@@ -58,12 +66,8 @@ type LessonProgressContextValue = {
 };
 
 const LessonProgressContext = createContext<LessonProgressContextValue | null>(null);
-const inMemoryProgress = new Map<string, string>();
-const memoryOnlyProgress = new Set<string>();
-const lessonProgressEvent = "vibe-to-code:lesson-progress";
 
-export const getLessonStorageKey = (lessonId: string, lessonVersion: number) =>
-  `vibe-to-code:lesson-progress:v1:${lessonId}:lesson-v${lessonVersion}`;
+export { getLessonStorageKey } from "@/lib/lesson-progress-storage";
 
 function getRequiredActivityIds(step: GuidedLessonStep) {
   return step.requiresPractice
@@ -115,60 +119,6 @@ function migrateLegacyStepCompletion(
   const next = new Set(practiceCompletedIds);
   requiredIds.forEach((id) => next.add(id));
   return [...next];
-}
-
-function readProgressSnapshot(storageKey: string) {
-  if (typeof window === "undefined") {
-    return "";
-  }
-
-  if (memoryOnlyProgress.has(storageKey)) {
-    return inMemoryProgress.get(storageKey) ?? "";
-  }
-
-  try {
-    return localStorage.getItem(storageKey) ?? inMemoryProgress.get(storageKey) ?? "";
-  } catch {
-    memoryOnlyProgress.add(storageKey);
-    return inMemoryProgress.get(storageKey) ?? "";
-  }
-}
-
-function writeProgressSnapshot(storageKey: string, value: string) {
-  inMemoryProgress.set(storageKey, value);
-
-  try {
-    localStorage.setItem(storageKey, value);
-  } catch {
-    memoryOnlyProgress.add(storageKey);
-    // The in-memory copy keeps the lesson usable when storage is blocked or full.
-  }
-
-  window.dispatchEvent(
-    new CustomEvent(lessonProgressEvent, { detail: { storageKey } }),
-  );
-}
-
-function subscribeToProgress(storageKey: string, callback: () => void) {
-  function handleLocalProgress(event: Event) {
-    const detail = (event as CustomEvent<{ storageKey?: string }>).detail;
-    if (detail?.storageKey === storageKey) {
-      callback();
-    }
-  }
-
-  function handleStorage(event: StorageEvent) {
-    if (event.key === storageKey) {
-      callback();
-    }
-  }
-
-  window.addEventListener(lessonProgressEvent, handleLocalProgress);
-  window.addEventListener("storage", handleStorage);
-  return () => {
-    window.removeEventListener(lessonProgressEvent, handleLocalProgress);
-    window.removeEventListener("storage", handleStorage);
-  };
 }
 
 export function useLessonProgress() {
@@ -326,6 +276,11 @@ export function GuidedLessonFlow({
   nextLesson,
   children,
 }: GuidedLessonFlowProps) {
+  const progressSync = useProgressSync();
+  const [resetFeedback, setResetFeedback] = useState<{
+    message: string;
+    ok: boolean;
+  } | null>(null);
   const panels = Children.toArray(children);
   const firstStepId = steps[0]?.id ?? "start";
   const storageKey = getLessonStorageKey(lessonId, lessonVersion);
@@ -498,18 +453,30 @@ export function GuidedLessonFlow({
     }
   }
 
-  function resetProgress() {
+  async function resetProgress() {
     if (!window.confirm("Reset this lesson and erase its saved progress on this device?")) {
       return;
     }
 
-    writeProgressSnapshot(
-      storageKey,
-      JSON.stringify(createDefaultProgress(firstStepId, lessonVersion)),
-    );
-    if (courseSlug && lessonProgressSlug) {
-      resetLessonProgress(courseSlug, lessonProgressSlug);
+    setResetFeedback(null);
+
+    if (courseSlug === "foundations" && lessonProgressSlug && foundationJourney) {
+      const result = await progressSync.resetLesson(lessonProgressSlug);
+      setResetFeedback(result);
+      if (!result.ok) {
+        return;
+      }
+    } else {
+      writeProgressSnapshot(
+        storageKey,
+        JSON.stringify(createDefaultProgress(firstStepId, lessonVersion)),
+      );
+      if (courseSlug && lessonProgressSlug) {
+        resetLocalLessonProgress(courseSlug, lessonProgressSlug);
+      }
+      setResetFeedback({ message: "Lesson progress was reset.", ok: true });
     }
+
     window.requestAnimationFrame(() => {
       panelStartRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
       panelStartRef.current?.focus({ preventScroll: true });
@@ -663,9 +630,21 @@ export function GuidedLessonFlow({
               {stepNavigation}
             </details>
 
-            <button className="lesson-reset" type="button" onClick={resetProgress}>
-              Reset lesson progress
+            <button
+              className="lesson-reset"
+              type="button"
+              onClick={() => void resetProgress()}
+              disabled={progressSync.resettingScope !== null}
+            >
+              {progressSync.resettingScope === `lesson:${lessonProgressSlug}`
+                ? "Resetting lesson progress..."
+                : "Reset lesson progress"}
             </button>
+            {resetFeedback ? (
+              <small role={resetFeedback.ok ? "status" : "alert"}>
+                {resetFeedback.message}
+              </small>
+            ) : null}
           </aside>
 
           <article className="lesson-article guided-lesson-article">
