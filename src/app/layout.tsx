@@ -3,7 +3,9 @@ import Script from "next/script";
 
 import "@fontsource-variable/archivo/wght.css";
 
+import { AuthUserProvider } from "@/components/auth/use-auth-user";
 import { EnvironmentProvider } from "@/components/environment-provider";
+import { ProgressSyncProvider } from "@/components/progress/progress-sync-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { StartupScreen } from "@/components/startup-screen";
@@ -13,6 +15,7 @@ import { siteConfig } from "@/lib/site";
 import "./globals.css";
 import "./impeccable.css";
 import "./premium.css";
+import "./auth.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -132,13 +135,17 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           id="vibe-to-code-startup"
         />
         <EnvironmentProvider curriculumReview={curriculumReview}>
-          <StartupScreen />
-          <a className="skip-link" href="#main-content">
-            Skip to content
-          </a>
-          <SiteHeader />
-          {children}
-          <SiteFooter />
+          <AuthUserProvider>
+            <ProgressSyncProvider>
+              <StartupScreen />
+              <a className="skip-link" href="#main-content">
+                Skip to content
+              </a>
+              <SiteHeader />
+              {children}
+              <SiteFooter />
+            </ProgressSyncProvider>
+          </AuthUserProvider>
         </EnvironmentProvider>
       </body>
     </html>
