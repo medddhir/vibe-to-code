@@ -107,7 +107,7 @@ Every published lesson should be:
 
 ### What you need
 
-- [Node.js](https://nodejs.org/) 20.9 or newer
+- [Node.js](https://nodejs.org/) 22 or newer
 - [Git](https://git-scm.com/)
 - A code editor such as [Visual Studio Code](https://code.visualstudio.com/)
 

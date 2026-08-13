@@ -57,6 +57,10 @@ const foundationLessonStateSource = fs.readFileSync(
   lessonPath("src/components/foundations/lesson-state.ts"),
   "utf8",
 );
+const guidedLessonFlowSource = fs.readFileSync(
+  lessonPath("src/components/guided-lesson-flow.tsx"),
+  "utf8",
+);
 const { isStepPracticeActivitiesComplete } = require("../src/components/guided-lesson-flow.tsx");
 
 function extractStepIds(source) {
@@ -64,6 +68,12 @@ function extractStepIds(source) {
 }
 
 describe("Published Foundation content and interaction regressions", () => {
+  it("derives the next Foundation lesson in the shared lesson engine", () => {
+    assert.ok(guidedLessonFlowSource.includes("getFoundationLessonJourney"));
+    assert.ok(guidedLessonFlowSource.includes("Continue to next lesson"));
+    assert.ok(guidedLessonFlowSource.includes("Start ${foundationJourney.next.levelLabel}"));
+  });
+
   it("all published Foundation lesson pages use unique interactive step IDs", () => {
     for (const lesson of publishedFoundationLessonPaths) {
       const source = fs.readFileSync(lessonPath(lesson), "utf8");
@@ -75,6 +85,28 @@ describe("Published Foundation content and interaction regressions", () => {
         ids.length,
         `Duplicate interactive step IDs found in ${lesson}: ${ids.filter((value, index, all) => all.indexOf(value) !== index).join(", ")}`,
       );
+    }
+  });
+
+  it("every guided lesson step has a matching rendered panel", () => {
+    for (const lesson of publishedFoundationLessonPaths) {
+      const source = fs.readFileSync(lessonPath(lesson), "utf8");
+      const lessonStepsBlock = source.match(
+        /const lessonSteps: GuidedLessonStep\[\] = \[([\s\S]*?)\n\];/,
+      );
+
+      assert.ok(lessonStepsBlock, `Could not find lessonSteps in ${lesson}`);
+
+      const stepIds = [
+        ...lessonStepsBlock[1].matchAll(/\bid:\s*"([^"]+)"/g),
+      ].map((match) => match[1]);
+
+      for (const stepId of stepIds) {
+        assert.ok(
+          source.includes(`id="${stepId}"`),
+          `Missing a rendered panel for step "${stepId}" in ${lesson}`,
+        );
+      }
     }
   });
 
@@ -246,9 +278,10 @@ describe("Published Foundation content and interaction regressions", () => {
         "useSyncExternalStore(subscribe, readCourseSnapshot, readCourseSnapshot)",
       ),
     );
+    assert.ok(foundationCourseProgressPanelSource.includes("useCurriculumReviewMode"));
     assert.ok(
-      foundationCourseProgressPanelSource.includes(
-        "getLessonRowState(snapshot, slug)",
+      /getLessonRowState\([\s\S]*?snapshot,[\s\S]*?slug,[\s\S]*?curriculumReview,[\s\S]*?\)/m.test(
+        foundationCourseProgressPanelSource,
       ),
     );
   });

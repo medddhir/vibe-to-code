@@ -8,7 +8,7 @@ function applyTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme;
 
   document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((meta) => {
-    meta.content = theme === "dark" ? "#0d0f14" : "#f7f7f2";
+    meta.content = theme === "dark" ? "#101411" : "#f2f4ef";
   });
 }
 

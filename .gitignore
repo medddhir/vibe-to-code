@@ -24,3 +24,5 @@
 /upload/
 /.agents/
 /.codex/
+/.impeccable/config.local.json
+/.impeccable/review/

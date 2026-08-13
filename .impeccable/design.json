@@ -1,0 +1,405 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-10T22:05:29Z",
+  "title": "Design System: Vibe to Code",
+  "extensions": {
+    "colorMeta": {
+      "porcelain": {
+        "role": "neutral",
+        "displayName": "Porcelain Canvas",
+        "canonical": "#f2f4ef",
+        "tonalRamp": ["#121914", "#29332c", "#455047", "#59645d", "#7e8980", "#aeb9b0", "#e6eae3", "#fbfcf7"]
+      },
+      "work-surface": {
+        "role": "neutral",
+        "displayName": "Work Surface",
+        "canonical": "#fbfcf7",
+        "tonalRamp": ["#121914", "#29332c", "#455047", "#59645d", "#7e8980", "#aeb9b0", "#e6eae3", "#fbfcf7"]
+      },
+      "soft-surface": {
+        "role": "neutral",
+        "displayName": "Soft Surface",
+        "canonical": "#e6eae3",
+        "tonalRamp": ["#121914", "#29332c", "#455047", "#59645d", "#7e8980", "#aeb9b0", "#e6eae3", "#fbfcf7"]
+      },
+      "graphite": {
+        "role": "neutral",
+        "displayName": "Graphite Ink",
+        "canonical": "#111713",
+        "tonalRamp": ["#111713", "#29332c", "#455047", "#59645d", "#7e8980", "#aeb9b0", "#e6eae3", "#fbfcf7"]
+      },
+      "graphite-soft": {
+        "role": "neutral",
+        "displayName": "Graphite Soft",
+        "canonical": "#29332c",
+        "tonalRamp": ["#111713", "#29332c", "#455047", "#59645d", "#7e8980", "#aeb9b0", "#e6eae3", "#fbfcf7"]
+      },
+      "muted-ink": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#59645d",
+        "tonalRamp": ["#111713", "#29332c", "#455047", "#59645d", "#7e8980", "#aeb9b0", "#e6eae3", "#fbfcf7"]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Mineral Rule",
+        "canonical": "#cfd6ce",
+        "tonalRamp": ["#111713", "#29332c", "#455047", "#59645d", "#7e8980", "#aeb9b0", "#cfd6ce", "#fbfcf7"]
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Strong Mineral Rule",
+        "canonical": "#aeb9b0",
+        "tonalRamp": ["#111713", "#29332c", "#455047", "#59645d", "#7e8980", "#aeb9b0", "#d7ddd6", "#fbfcf7"]
+      },
+      "cobalt-route": {
+        "role": "primary",
+        "displayName": "Cobalt Route",
+        "canonical": "#2448e8",
+        "tonalRamp": ["#08144f", "#102482", "#1738c7", "#2448e8", "#546cf1", "#8196ff", "#b8c2ff", "#eef0ff"]
+      },
+      "cobalt-deep": {
+        "role": "primary",
+        "displayName": "Cobalt Deep",
+        "canonical": "#1738c7",
+        "tonalRamp": ["#08144f", "#102482", "#1738c7", "#2448e8", "#546cf1", "#8196ff", "#b8c2ff", "#eef0ff"]
+      },
+      "cobalt-wash": {
+        "role": "primary",
+        "displayName": "Cobalt Wash",
+        "canonical": "#e2e7ff",
+        "tonalRamp": ["#08144f", "#102482", "#1738c7", "#2448e8", "#546cf1", "#8196ff", "#b8c2ff", "#eef0ff"]
+      },
+      "safety-lime": {
+        "role": "secondary",
+        "displayName": "Safety Lime",
+        "canonical": "#c8f04b",
+        "tonalRamp": ["#1c2507", "#384d0a", "#5f8210", "#87ae18", "#a7d51f", "#c8f04b", "#dcfb7d", "#f2ffd0"]
+      },
+      "safety-lime-strong": {
+        "role": "secondary",
+        "displayName": "Safety Lime Strong",
+        "canonical": "#a7d51f",
+        "tonalRamp": ["#1c2507", "#384d0a", "#5f8210", "#87ae18", "#a7d51f", "#c8f04b", "#dcfb7d", "#f2ffd0"]
+      },
+      "signal-ink": {
+        "role": "neutral",
+        "displayName": "Signal Ink",
+        "canonical": "#131a11",
+        "tonalRamp": ["#131a11", "#2f3b19", "#4c5f20", "#6f8526", "#94ad2f", "#b9d64a", "#dcf48a", "#f4ffd5"]
+      },
+      "workbench": {
+        "role": "neutral",
+        "displayName": "Graphite Workbench",
+        "canonical": "#121914",
+        "tonalRamp": ["#0b0e0c", "#121914", "#1a241d", "#314039", "#59645d", "#8d9b91", "#cfd6ce", "#f4f7f2"]
+      },
+      "instrument-surface": {
+        "role": "neutral",
+        "displayName": "Instrument Surface",
+        "canonical": "#18211b",
+        "tonalRamp": ["#0b0e0c", "#121914", "#18211b", "#314039", "#59645d", "#8d9b91", "#cfd6ce", "#f4f7f2"]
+      },
+      "editor-canvas": {
+        "role": "neutral",
+        "displayName": "Editor Canvas",
+        "canonical": "#0c0e13",
+        "tonalRamp": ["#0c0e13", "#171a20", "#2b303b", "#454c59", "#69717f", "#9ca3af", "#d7dbe2", "#f4f7f2"]
+      },
+      "code-text": {
+        "role": "neutral",
+        "displayName": "Code Text",
+        "canonical": "#f4f7f2",
+        "tonalRamp": ["#0b0e0c", "#121914", "#1a241d", "#314039", "#59645d", "#8d9b91", "#cfd6ce", "#f4f7f2"]
+      },
+      "code-muted": {
+        "role": "neutral",
+        "displayName": "Code Muted",
+        "canonical": "#a8b4ac",
+        "tonalRamp": ["#0b0e0c", "#121914", "#1a241d", "#314039", "#59645d", "#8d9b91", "#a8b4ac", "#f4f7f2"]
+      },
+      "success": {
+        "role": "tertiary",
+        "displayName": "Verified Green",
+        "canonical": "#177245",
+        "tonalRamp": ["#082117", "#0d3925", "#155f3a", "#177245", "#3d9867", "#7bcf9c", "#b8ebce", "#edf9f1"]
+      },
+      "success-surface": {
+        "role": "tertiary",
+        "displayName": "Verified Surface",
+        "canonical": "#e4f3e8",
+        "tonalRamp": ["#082117", "#0d3925", "#155f3a", "#177245", "#3d9867", "#7bcf9c", "#b8ebce", "#edf9f1"]
+      },
+      "warning": {
+        "role": "tertiary",
+        "displayName": "Diagnostic Ochre",
+        "canonical": "#66500e",
+        "tonalRamp": ["#261b03", "#4a3508", "#66500e", "#987515", "#c39a29", "#d5bc64", "#f0dc99", "#fff6d8"]
+      },
+      "warning-surface": {
+        "role": "tertiary",
+        "displayName": "Diagnostic Surface",
+        "canonical": "#fff6d8",
+        "tonalRamp": ["#261b03", "#4a3508", "#66500e", "#987515", "#c39a29", "#d5bc64", "#f0dc99", "#fff6d8"]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Error Rust",
+        "canonical": "#8e3426",
+        "tonalRamp": ["#32120d", "#5a2017", "#8e3426", "#b94e3b", "#df7967", "#ff9f8b", "#ffc8bd", "#ffebe7"]
+      },
+      "danger-surface": {
+        "role": "tertiary",
+        "displayName": "Error Surface",
+        "canonical": "#ffebe7",
+        "tonalRamp": ["#32120d", "#5a2017", "#8e3426", "#b94e3b", "#df7967", "#ff9f8b", "#ffc8bd", "#ffebe7"]
+      },
+      "dark-canvas": {
+        "role": "neutral",
+        "displayName": "Dark Canvas",
+        "canonical": "#101411",
+        "tonalRamp": ["#0b0e0c", "#101411", "#171d18", "#202821", "#313b33", "#59645d", "#a5b0a8", "#f3f6f1"]
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "Dark Surface",
+        "canonical": "#171d18",
+        "tonalRamp": ["#0b0e0c", "#101411", "#171d18", "#202821", "#313b33", "#59645d", "#a5b0a8", "#f3f6f1"]
+      },
+      "dark-rule": {
+        "role": "neutral",
+        "displayName": "Dark Mineral Rule",
+        "canonical": "#313b33",
+        "tonalRamp": ["#0b0e0c", "#101411", "#171d18", "#202821", "#313b33", "#59645d", "#a5b0a8", "#f3f6f1"]
+      },
+      "dark-cobalt": {
+        "role": "primary",
+        "displayName": "Dark-Theme Cobalt",
+        "canonical": "#8196ff",
+        "tonalRamp": ["#08144f", "#102482", "#1738c7", "#2448e8", "#546cf1", "#8196ff", "#b8c2ff", "#eef0ff"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Short hero, course, and lesson theses with a compact width axis."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section arguments and completion statements."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Route stages, cards, and instrument panels."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Interface explanation and supporting copy."
+      },
+      "learning-body": {
+        "displayName": "Learning Body",
+        "purpose": "Readable long-form lesson instruction capped near 72 characters."
+      },
+      "control": {
+        "displayName": "Control",
+        "purpose": "Buttons and decisive handoff actions."
+      },
+      "metadata": {
+        "displayName": "Inspection Metadata",
+        "purpose": "Route codes, filenames, measurements, state labels, and aligned numbers."
+      }
+    },
+    "shadows": [
+      {
+        "name": "surface-low",
+        "value": "0 12px 30px rgba(24, 34, 27, 0.08)",
+        "purpose": "Hovered cards and restrained floating surfaces."
+      },
+      {
+        "name": "action-cobalt",
+        "value": "0 8px 20px rgba(36, 72, 232, 0.2)",
+        "purpose": "Light-theme primary actions."
+      },
+      {
+        "name": "workbench-lift",
+        "value": "0 34px 80px rgba(18, 25, 20, 0.24)",
+        "purpose": "Large graphite inspection instruments."
+      },
+      {
+        "name": "completion-lift",
+        "value": "0 24px 56px rgba(87, 115, 12, 0.18)",
+        "purpose": "Verified safety-lime completion handoffs."
+      },
+      {
+        "name": "dark-maximum",
+        "value": "0 34px 100px rgba(0, 0, 0, 0.42)",
+        "purpose": "Maximum depth for featured objects in dark mode."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-standard",
+        "value": "180ms ease",
+        "purpose": "Color, border, and shadow changes on controls."
+      },
+      {
+        "name": "panel-enter",
+        "value": "280ms ease",
+        "purpose": "Guided lesson panel transitions."
+      },
+      {
+        "name": "route-calibration",
+        "value": "900ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The one-time prompt-to-proof rail calibration; removed under reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "major-reflow",
+        "value": "1060px"
+      },
+      {
+        "name": "navigation-reflow",
+        "value": "820px"
+      },
+      {
+        "name": "single-sequence",
+        "value": "620px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The dominant next action: cobalt on porcelain and safety-lime on graphite-dark themes.",
+      "html": "<button class=\"ds-button ds-button-primary\" type=\"button\">Start Developer Foundations <span class=\"ds-button-arrow\" aria-hidden=\"true\">→</span></button>",
+      "css": ".ds-button { min-height: 50px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 20px; border: 1px solid transparent; border-radius: 10px; font-family: var(--font-sans, \"Archivo Variable\", sans-serif); font-size: 1rem; font-weight: 720; line-height: 1.2; letter-spacing: -0.01em; cursor: pointer; transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease, box-shadow 180ms ease; } .ds-button-primary { background: var(--primary-action, #2448e8); color: var(--primary-action-ink, #fff); box-shadow: 0 8px 20px rgba(36,72,232,.2); } .ds-button-primary:hover { background: var(--primary-action-hover, #1738c7); color: var(--primary-action-hover-ink, #fff); } .ds-button-primary:active { box-shadow: 0 4px 12px rgba(36,72,232,.18); } .ds-button-primary:focus-visible { outline: 2px solid var(--focus-ring, rgba(36,72,232,.5)); outline-offset: 4px; } .ds-button-arrow { font-size: 1.05em; } :host-context([data-theme=\"dark\"]) .ds-button-primary { box-shadow: 0 8px 22px rgba(200,240,75,.12); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A bordered alternative that keeps the dominant route visually singular.",
+      "html": "<button class=\"ds-button ds-button-secondary\" type=\"button\">Explore the curriculum</button>",
+      "css": ".ds-button { min-height: 50px; display: inline-flex; align-items: center; justify-content: center; padding: 13px 20px; border-radius: 10px; font-family: var(--font-sans, \"Archivo Variable\", sans-serif); font-size: 1rem; font-weight: 720; line-height: 1.2; letter-spacing: -0.01em; cursor: pointer; transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease; } .ds-button-secondary { border: 1px solid var(--line-strong, #aeb9b0); background: transparent; color: var(--ink, #111713); } .ds-button-secondary:hover { border-color: var(--accent, #2448e8); background: var(--accent-soft, #e2e7ff); color: var(--accent-dark, #1738c7); } .ds-button-secondary:active { background: color-mix(in srgb, var(--accent-soft, #e2e7ff) 74%, transparent); } .ds-button-secondary:focus-visible { outline: 2px solid var(--focus-ring, rgba(36,72,232,.5)); outline-offset: 4px; }"
+    },
+    {
+      "name": "Site Navigation",
+      "kind": "nav",
+      "refersTo": "site-navigation",
+      "description": "A ruled 70px route header with the cobalt code mark, quiet links, theme control, and explicit start action.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Primary navigation\"><a class=\"ds-nav-brand\" href=\"#\"><span class=\"ds-nav-mark\" aria-hidden=\"true\">&lt;<b class=\"ds-nav-slash\">/</b>&gt;</span><span class=\"ds-nav-name\">Vibe to Code<small class=\"ds-nav-byline\">BY TURBOPAY</small></span></a><div class=\"ds-nav-links\"><a class=\"ds-nav-link\" href=\"#\">Courses</a><a class=\"ds-nav-link ds-nav-link-active\" href=\"#\">Foundations</a><a class=\"ds-nav-link\" href=\"#\">Contribute</a></div><button class=\"ds-nav-start\" type=\"button\">Start Level 0</button></nav>",
+      "css": ".ds-nav { min-height: 70px; display: flex; align-items: center; gap: 28px; padding: 0 28px; border-bottom: 1px solid var(--line, #cfd6ce); background: var(--header-background, rgba(242,244,239,.92)); color: var(--ink, #111713); font-family: var(--font-sans, \"Archivo Variable\", sans-serif); backdrop-filter: blur(16px) saturate(130%); } .ds-nav-brand { display: inline-flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; } .ds-nav-mark { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: var(--accent, #2448e8); color: #fff; font-family: var(--font-mono, monospace); font-size: .72rem; font-weight: 800; letter-spacing: -.16em; } .ds-nav-slash { color: var(--signal, #c8f04b); } .ds-nav-name { display: grid; font-weight: 760; line-height: 1.05; } .ds-nav-byline { margin-top: 4px; color: var(--muted, #59645d); font-size: .62rem; letter-spacing: .04em; } .ds-nav-links { display: flex; gap: 10px; margin-left: auto; } .ds-nav-link { min-height: 42px; display: inline-flex; align-items: center; padding: 10px 12px; border-radius: 8px; color: var(--muted, #59645d); font-size: .9rem; font-weight: 650; text-decoration: none; } .ds-nav-link:hover, .ds-nav-link-active { background: var(--surface-soft, #e6eae3); color: var(--ink, #111713); } .ds-nav-link:focus-visible, .ds-nav-brand:focus-visible, .ds-nav-start:focus-visible { outline: 2px solid var(--focus-ring, rgba(36,72,232,.5)); outline-offset: 3px; } .ds-nav-start { min-height: 44px; padding: 10px 15px; border: 0; border-radius: 8px; background: var(--primary-action, #2448e8); color: var(--primary-action-ink, #fff); font-weight: 720; cursor: pointer; } .ds-nav-start:hover { background: var(--primary-action-hover, #1738c7); }"
+    },
+    {
+      "name": "Pass Status Chip",
+      "kind": "chip",
+      "refersTo": "chip-pass",
+      "description": "A compact proof label reserved for passed, completed, or unlocked route states.",
+      "html": "<span class=\"ds-chip-pass\"><span class=\"ds-chip-dot\" aria-hidden=\"true\"></span>PASS PATH</span>",
+      "css": ".ds-chip-pass { min-height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 8px; background: var(--signal, #c8f04b); color: var(--signal-ink, #131a11); font-family: var(--font-mono, monospace); font-size: .64rem; font-weight: 800; line-height: 1.2; letter-spacing: .04em; text-transform: uppercase; } .ds-chip-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }"
+    },
+    {
+      "name": "Practice Editor",
+      "kind": "input",
+      "refersTo": "practice-editor",
+      "description": "A safe graphite code field with restrained terminal chrome and a cobalt focus proof.",
+      "html": "<div class=\"ds-editor\"><div class=\"ds-editor-bar\" aria-hidden=\"true\"><span class=\"ds-editor-dot ds-editor-dot-red\"></span><span class=\"ds-editor-dot ds-editor-dot-amber\"></span><span class=\"ds-editor-dot ds-editor-dot-green\"></span><small class=\"ds-editor-file\">lesson.py · safe practice runner</small></div><label class=\"ds-editor-label\" for=\"ds-editor-input\">PYTHON CODE</label><div class=\"ds-editor-field\"><textarea class=\"ds-editor-textarea\" id=\"ds-editor-input\" rows=\"3\" spellcheck=\"false\">message = \"I can inspect this\"\nprint(message)</textarea></div></div>",
+      "css": ".ds-editor { overflow: hidden; border: 1px solid var(--code-line, #314039); border-radius: 12px; background: var(--code-background, #121914); color: var(--code-text, #f4f7f2); font-family: var(--font-mono, monospace); } .ds-editor-bar { min-height: 46px; display: flex; align-items: center; gap: 6px; padding: 0 16px; border-bottom: 1px solid var(--code-line, #314039); background: var(--code-surface, #18211b); } .ds-editor-dot { width: 8px; height: 8px; border-radius: 50%; } .ds-editor-dot-red { background: #ff6d67; } .ds-editor-dot-amber { background: #f6c451; } .ds-editor-dot-green { background: #5cd28b; } .ds-editor-file { margin-left: 8px; color: var(--code-muted, #a8b4ac); font-size: .66rem; } .ds-editor-label { display: block; margin: 18px 20px 9px; color: var(--code-muted, #a8b4ac); font-family: var(--font-sans, \"Archivo Variable\", sans-serif); font-size: .65rem; font-weight: 800; letter-spacing: .08em; } .ds-editor-field { min-height: 116px; display: grid; margin: 0 20px 20px; padding: 14px 0; border: 1px solid #303642; border-radius: 10px; background: #0c0e13; } .ds-editor-field:focus-within { border-color: #727eff; box-shadow: 0 0 0 3px rgba(114,126,255,.17); } .ds-editor-textarea { width: 100%; min-height: 82px; resize: vertical; padding: 0 15px; border: 0; outline: 0; background: transparent; caret-color: var(--code-accent, #96a8ff); color: var(--code-text, #f4f7f2); font: .9rem/1.7 var(--font-mono, monospace); }"
+    },
+    {
+      "name": "Featured Course Card",
+      "kind": "card",
+      "refersTo": "course-card-featured",
+      "description": "A graphite route card that breaks the equal-card grid and makes the recommended curriculum entry unmistakable.",
+      "html": "<article class=\"ds-course-card\"><div class=\"ds-course-topline\"><span class=\"ds-course-symbol\">DF</span><span class=\"ds-course-status\">AVAILABLE</span></div><p class=\"ds-course-label\">START HERE</p><h3 class=\"ds-course-title\">Developer Foundations</h3><p class=\"ds-course-copy\">Learn what code is, inspect each moving part, and verify what happens next.</p><div class=\"ds-course-route\" aria-hidden=\"true\"><span class=\"ds-course-line\"></span><i class=\"ds-course-node ds-course-node-active\"></i><i class=\"ds-course-node\"></i><i class=\"ds-course-node\"></i></div><div class=\"ds-course-meta\"><span>46 lessons</span><span>6 levels</span></div><a class=\"ds-course-link\" href=\"#\">View course →</a></article>",
+      "css": ".ds-course-card { min-height: 430px; display: flex; flex-direction: column; padding: 28px; border: 1px solid var(--line, #cfd6ce); border-radius: 12px; background: var(--dark, #121914); color: var(--code-text, #f4f7f2); font-family: var(--font-sans, \"Archivo Variable\", sans-serif); transition: border-color 180ms ease, box-shadow 180ms ease; } .ds-course-card:hover { border-color: var(--signal, #c8f04b); box-shadow: 0 16px 34px rgba(24,34,27,.08); } .ds-course-topline { display: flex; align-items: center; justify-content: space-between; margin-bottom: 34px; } .ds-course-symbol { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 8px; background: var(--signal, #c8f04b); color: var(--signal-ink, #131a11); font-family: var(--font-mono, monospace); font-size: .8rem; font-weight: 850; } .ds-course-status { padding: 6px 9px; border-radius: 6px; background: var(--success-surface, #e4f3e8); color: var(--success-text, #155f3a); font-size: .68rem; font-weight: 800; letter-spacing: .04em; } .ds-course-label { margin: 0 0 10px; color: var(--code-text, #f4f7f2); font-size: .76rem; font-weight: 720; letter-spacing: .04em; } .ds-course-title { max-width: 15ch; margin: 0 0 13px; font-size: 2.35rem; line-height: 1.08; letter-spacing: -.035em; } .ds-course-copy { max-width: 54ch; margin: 0; color: #b5c0b8; line-height: 1.62; } .ds-course-route { height: 10px; display: grid; align-items: center; margin: auto 0 20px; grid-template-columns: 1fr auto auto auto; gap: 12px; } .ds-course-line { height: 1px; background: #465148; } .ds-course-node { width: 8px; height: 8px; border: 1px solid var(--signal, #c8f04b); border-radius: 50%; } .ds-course-node-active { background: var(--signal, #c8f04b); } .ds-course-meta { display: flex; gap: 18px; padding-top: 20px; border-top: 1px solid #465148; color: #b5c0b8; font-size: .78rem; font-weight: 700; font-variant-numeric: tabular-nums; } .ds-course-link { margin-top: 17px; color: var(--code-text, #f4f7f2); font-weight: 780; text-decoration: none; } .ds-course-link:hover { color: var(--signal, #c8f04b); } .ds-course-link:focus-visible { outline: 2px solid var(--signal, #c8f04b); outline-offset: 4px; }"
+    },
+    {
+      "name": "Inspection Bench",
+      "kind": "custom",
+      "refersTo": "inspection-bench",
+      "description": "The signature prompt-to-proof instrument: numbered code, a vertical route axis, and one safety-lime verified row.",
+      "html": "<figure class=\"ds-bench\"><figcaption class=\"ds-bench-bar\"><strong class=\"ds-bench-title\">Inspection bench</strong><small class=\"ds-bench-meta\">VTC-FLOW / LIVE MODEL</small><span class=\"ds-bench-pass\">PASS PATH</span></figcaption><div class=\"ds-bench-body\"><div class=\"ds-bench-axis\"><span>PROMPT</span><i class=\"ds-bench-axis-line\"></i><span>PROOF</span></div><ol class=\"ds-bench-lines\"><li class=\"ds-bench-row\"><span class=\"ds-bench-number\">01</span><code class=\"ds-bench-code\">const idea = 'invoice tracker';</code><span class=\"ds-bench-state\"><i class=\"ds-bench-state-dot\"></i>Intent named</span></li><li class=\"ds-bench-row\"><span class=\"ds-bench-number\">02</span><code class=\"ds-bench-code\">review(build.diff);</code><span class=\"ds-bench-state\"><i class=\"ds-bench-state-dot\"></i>Change understood</span></li><li class=\"ds-bench-row ds-bench-row-ready\"><span class=\"ds-bench-number\">03</span><code class=\"ds-bench-code\">ship(build);</code><span class=\"ds-bench-state\"><i class=\"ds-bench-state-dot\"></i>Ready to own</span></li></ol></div><footer class=\"ds-bench-note\"><span>AI writes the first draft.</span><strong>You learn to verify the result.</strong></footer></figure>",
+      "css": ".ds-bench { position: relative; overflow: visible; margin: 0; border: 0; border-radius: 16px; background: var(--dark, #121914); color: var(--code-text, #f4f7f2); box-shadow: 0 34px 80px rgba(18,25,20,.24); font-family: var(--font-sans, \"Archivo Variable\", sans-serif); } .ds-bench::after { position: absolute; z-index: -1; right: -12px; bottom: -12px; width: 72%; height: 72%; border-radius: 16px; background: var(--signal, #c8f04b); content: \"\"; } .ds-bench-bar { min-height: 58px; display: grid; align-items: center; padding: 0 22px; border-bottom: 1px solid #344039; border-radius: 16px 16px 0 0; background: var(--code-surface, #18211b); grid-template-columns: 1fr auto auto; gap: 18px; } .ds-bench-title { font-size: .88rem; font-weight: 720; } .ds-bench-meta { color: #9aa89f; font-family: var(--font-mono, monospace); font-size: .67rem; letter-spacing: .06em; } .ds-bench-pass { padding: 5px 8px; border-radius: 6px; background: var(--signal, #c8f04b); color: var(--signal-ink, #131a11); font-size: .64rem; font-weight: 800; letter-spacing: .04em; } .ds-bench-body { min-height: 300px; display: grid; padding: 28px 24px; grid-template-columns: 58px 1fr; gap: 16px; } .ds-bench-axis { display: grid; justify-items: center; grid-template-rows: auto 1fr auto; color: #89978e; font-size: .62rem; font-weight: 700; letter-spacing: .06em; } .ds-bench-axis-line { width: 1px; margin: 10px 0; background: #4b5b50; } .ds-bench-lines { display: grid; align-content: center; margin: 0; padding: 0; list-style: none; } .ds-bench-row { min-height: 62px; display: grid; align-items: center; padding: 0 12px; border-bottom: 1px solid #2d3931; grid-template-columns: 34px minmax(0,1fr) minmax(110px,auto); gap: 12px; } .ds-bench-row:first-child { border-top: 1px solid #2d3931; } .ds-bench-row-ready { background: rgba(200,240,75,.08); } .ds-bench-number { color: #76857b; font-family: var(--font-mono, monospace); font-size: .68rem; } .ds-bench-code { overflow: hidden; color: var(--code-text, #f4f7f2); font-family: var(--font-mono, monospace); font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; } .ds-bench-state { display: flex; align-items: center; gap: 8px; color: #acb8b0; font-size: .72rem; font-weight: 650; } .ds-bench-state-dot { width: 7px; height: 7px; border-radius: 50%; background: #728178; } .ds-bench-row-ready .ds-bench-code, .ds-bench-row-ready .ds-bench-state { color: var(--signal, #c8f04b); } .ds-bench-row-ready .ds-bench-state-dot { background: var(--signal, #c8f04b); box-shadow: 0 6px 16px rgba(200,240,75,.26); } .ds-bench-note { display: flex; justify-content: space-between; gap: 20px; padding: 18px 24px; border-top: 1px solid #344039; border-radius: 0 0 16px 16px; background: var(--code-surface, #18211b); color: var(--code-muted, #a8b4ac); font-size: .8rem; } .ds-bench-note strong { color: var(--code-text, #f4f7f2); }"
+    },
+    {
+      "name": "Completion Handoff",
+      "kind": "card",
+      "refersTo": "completion-handoff",
+      "description": "A full proof state that names the completed mission, unlocked destination, and one dominant next action.",
+      "html": "<section class=\"ds-completion\"><p class=\"ds-completion-status\">MISSION 01 COMPLETE</p><h2 class=\"ds-completion-title\">The bot is awake—and you stayed in control.</h2><p class=\"ds-completion-copy\">You built the path, predicted a result, repaired a bug, and checked the claim with evidence.</p><span class=\"ds-completion-reward\">SKILL UNLOCKED · CODE OPERATOR</span><div class=\"ds-completion-handoff\"><small class=\"ds-completion-next\">NEXT · LEVEL 0 LESSON 2</small><strong class=\"ds-completion-destination\">Source code, running programs, and output</strong></div><div class=\"ds-completion-actions\"><button class=\"ds-completion-primary\" type=\"button\">Continue to next lesson →</button><button class=\"ds-completion-secondary\" type=\"button\">View course map</button></div></section>",
+      "css": ".ds-completion { overflow: hidden; padding: clamp(28px,5vw,54px); border-radius: 16px; background: var(--signal, #c8f04b); color: var(--signal-ink, #131a11); box-shadow: 0 24px 56px rgba(87,115,12,.18); font-family: var(--font-sans, \"Archivo Variable\", sans-serif); } .ds-completion-status { margin: 0 0 12px; font-size: .76rem; font-weight: 760; letter-spacing: .04em; } .ds-completion-title { max-width: 12ch; margin: 0 0 14px; font-size: clamp(2.4rem,4vw,4rem); font-weight: 730; line-height: 1; letter-spacing: -.036em; } .ds-completion-copy { max-width: 64ch; margin: 0 0 18px; color: #35420f; line-height: 1.6; } .ds-completion-reward { display: inline-flex; padding: 6px 10px; border: 1px solid rgba(17,23,19,.28); border-radius: 999px; color: #28350a; font-size: .76rem; font-weight: 760; letter-spacing: .04em; } .ds-completion-handoff { display: grid; margin-top: 30px; padding: 22px 0; border-block: 1px solid rgba(17,23,19,.28); gap: 6px; } .ds-completion-next { color: #405116; font-size: .72rem; font-weight: 740; letter-spacing: .04em; } .ds-completion-destination { max-width: 42ch; font-size: 1.25rem; } .ds-completion-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; } .ds-completion-primary, .ds-completion-secondary { min-height: 50px; padding: 13px 20px; border-radius: 10px; font: 720 1rem/1.2 var(--font-sans, \"Archivo Variable\", sans-serif); cursor: pointer; transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease; } .ds-completion-primary { border: 1px solid transparent; background: var(--dark, #121914); color: var(--code-text, #f4f7f2); } .ds-completion-primary:hover { background: #273128; } .ds-completion-secondary { border: 1px solid rgba(17,23,19,.42); background: transparent; color: var(--signal-ink, #131a11); } .ds-completion-secondary:hover { background: rgba(255,255,255,.2); } .ds-completion-primary:focus-visible, .ds-completion-secondary:focus-visible { outline: 2px solid var(--signal-ink, #131a11); outline-offset: 4px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Code Inspection Bench",
+    "overview": "Vibe to Code feels like a premium technical workbench built for learning: porcelain and graphite work surfaces, cobalt route rails, safety-lime proof states, and compact inspection labels make an abstract curriculum feel inspectable. The system is futuristic through precision, contrast, and visible logic—not through spectacle.\n\nLayouts are structured but intentionally asymmetrical. Large learning statements face instrument-like panels; dividers, route lines, numbered nodes, progress bars, and handoff cards continually answer “where am I?” and “what is verified next?” The voice is confident and serious while the generous learning text and plain controls protect beginner confidence.\n\nThe system rejects childish gamification, ornamental neon, mascot-led interfaces, and generic SaaS card grids. Progress is evidence, not confetti; lime indicates a passed checkpoint or unlocked route, while cobalt carries attention and navigation.",
+    "keyCharacteristics": [
+      "Porcelain learning surfaces paired with graphite inspection benches",
+      "Cobalt rails and nodes that expose sequence, route, and active action",
+      "Safety-lime reserved for pass, completion, unlock, and high-confidence next steps",
+      "Variable-width Archivo headlines with dense, restrained mono metadata",
+      "Asymmetrical editorial grids that collapse into one clear mobile sequence",
+      "Borders and tonal layers before shadows; visible proof before decorative reward"
+    ],
+    "rules": [
+      {
+        "name": "The Route and Proof Rule",
+        "body": "Cobalt shows where attention travels; safety-lime proves that a checkpoint passed or a route unlocked. Never use lime as ambient decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mineral Neutral Rule",
+        "body": "Use green-cast porcelain and graphite neutrals instead of pure white and blue-black so code instruments and learning surfaces feel like one physical system.",
+        "section": "colors"
+      },
+      {
+        "name": "The Inspection Label Rule",
+        "body": "Monospace and uppercase metadata annotate the system; they do not carry paragraphs or attempt to make every surface look like a terminal.",
+        "section": "typography"
+      },
+      {
+        "name": "The Short Thesis Rule",
+        "body": "Balance display copy into compact blocks and cap headings near 22 characters; let prose stay wider and calmer.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Visible Route Rule",
+        "body": "Responsive reflow may remove columns and secondary metadata, but it must never change the order of the learning sequence or obscure the next action.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat Work Surface Rule",
+        "body": "Begin with a border or tonal change. Add elevation only when a surface is sticky, featured, interactive, or carries the decisive proof state.",
+        "section": "elevation"
+      },
+      {
+        "name": "The No Bubbles Rule",
+        "body": "Rounded corners soften the workbench; they do not turn every container into a pill or friendly toy.",
+        "section": "shapes"
+      },
+      {
+        "name": "The Next Action Rule",
+        "body": "Every route panel ends with one visually dominant, explicitly named action; completed work hands off to the next lesson or level without making the learner infer what unlocked.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do use cobalt for routes and active actions, then reserve safety-lime for passed, completed, or unlocked states.",
+      "Do pair a large plain-language thesis with a visible instrument, route, example, or proof surface.",
+      "Do preserve 16–18px learning text, 44–50px controls, clear keyboard focus, and the original learning order on mobile.",
+      "Do use borders, progress tracks, numbered nodes, and handoff labels to make system state legible.",
+      "Do let dark graphite surfaces concentrate technical work while porcelain surfaces support reading and orientation."
+    ],
+    "donts": [
+      "Don't turn lime into a general brand fill, ambient glow, or decorative neon.",
+      "Don't scatter equal, interchangeable cards into a generic SaaS grid when route priority can be expressed through span, material, or sequence.",
+      "Don't use childish rewards, confetti, cartoon ornament, or game-like points to communicate progress.",
+      "Don't overuse terminal styling, monospace text, pills, glass effects, or shadows; each has a narrow functional role.",
+      "Don't hide the next verified action after a checkpoint, lesson, or level transition."
+    ]
+  }
+}

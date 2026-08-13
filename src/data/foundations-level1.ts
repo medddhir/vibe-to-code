@@ -87,3 +87,47 @@ export function getFoundationsLessonNumber(lessonSlug: string) {
 export function getFoundationsCourseLessonNumber(lessonSlug: string) {
   return getFoundationLessonSlot(lessonSlug)?.courseNumber;
 }
+
+export type FoundationLessonJourney = {
+  current: FoundationLessonSlot;
+  previous: FoundationLessonSlot | null;
+  next: FoundationLessonSlot | null;
+  startsNextLevel: boolean;
+  completesPublishedPath: boolean;
+};
+
+export function getFoundationLessonJourney(
+  lessonSlug: string,
+): FoundationLessonJourney | null {
+  const current = getFoundationLessonSlot(lessonSlug);
+
+  if (!current) {
+    return null;
+  }
+
+  const previousLesson = FOUNDATION_PUBLISHED_LESSONS[current.courseNumber - 2];
+  const nextLesson = FOUNDATION_PUBLISHED_LESSONS[current.courseNumber];
+  const previous = previousLesson?.slug
+    ? getFoundationLessonSlot(previousLesson.slug) ?? null
+    : null;
+  const next = nextLesson?.slug
+    ? getFoundationLessonSlot(nextLesson.slug) ?? null
+    : null;
+
+  return {
+    current,
+    previous,
+    next,
+    startsNextLevel: Boolean(next && next.levelIndex !== current.levelIndex),
+    completesPublishedPath: !next,
+  };
+}
+
+export function getFoundationCourseMapHref(lessonSlug: string) {
+  const journey = getFoundationLessonJourney(lessonSlug);
+  const mapLevelIndex = journey?.startsNextLevel && journey.next
+    ? journey.next.levelIndex
+    : journey?.current.levelIndex ?? 0;
+
+  return `/courses/foundations#level-${mapLevelIndex + 1}`;
+}

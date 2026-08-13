@@ -9,17 +9,18 @@ export function SiteFooter() {
         <div className="footer-brand">
           <BrandMark />
           <p>
-            Free, open-source coding education for people who started with AI
-            and want to understand what they are building.
+            The learning layer between an AI-generated first draft and software
+            you can confidently call your own.
           </p>
+          <span className="footer-status"><i aria-hidden="true" /> 14 guided lessons live</span>
         </div>
 
         <div className="footer-links">
           <div>
             <strong>Learn</strong>
-            <Link href="/learn">All courses</Link>
-            <Link href="/courses/foundations">Start here</Link>
-            <Link href="/lessons/what-is-code">First lesson</Link>
+            <Link href="/lessons/what-is-code">Start Level 0</Link>
+            <Link href="/courses/foundations">Developer Foundations</Link>
+            <Link href="/learn">All learning paths</Link>
           </div>
           <div>
             <strong>Project</strong>
@@ -35,12 +36,21 @@ export function SiteFooter() {
               TurboPay
             </a>
           </div>
+          <div>
+            <strong>Follow</strong>
+            <a href="https://x.com/VibeToCode" target="_blank" rel="noreferrer">
+              X / Twitter
+            </a>
+            <a href="https://www.instagram.com/vibe.to.code/" target="_blank" rel="noreferrer">
+              Instagram
+            </a>
+          </div>
         </div>
       </div>
 
       <div className="shell footer-bottom">
-        <p>Created by Medhir · A TurboPay Technologies initiative.</p>
-        <p>Core learning stays free.</p>
+        <p>© 2026 Vibe to Code · A TurboPay Technologies initiative.</p>
+        <p>Free to learn. Open to improve.</p>
       </div>
     </footer>
   );

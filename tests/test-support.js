@@ -39,12 +39,19 @@ if (typeof global.window === "undefined") {
   };
 
   global.localStorage = {
+    get length() {
+      return memoryStorage.size;
+    },
     getItem: (key) => memoryStorage.get(key) ?? null,
+    key: (index) => [...memoryStorage.keys()][index] ?? null,
     setItem: (key, value) => {
       memoryStorage.set(key, String(value));
     },
     removeItem: (key) => {
       memoryStorage.delete(key);
+    },
+    clear: () => {
+      memoryStorage.clear();
     },
   };
 }

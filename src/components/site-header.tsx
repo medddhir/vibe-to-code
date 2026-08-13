@@ -1,12 +1,14 @@
 import Link from "next/link";
 
+import { AccountEntry } from "@/components/auth/account-entry";
 import { BrandMark } from "@/components/brand-mark";
+import { MobileNavigationMenu } from "@/components/mobile-navigation-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const navigation = [
-  { href: "/learn", label: "Learn" },
-  { href: "/courses/foundations", label: "Curriculum" },
-  { href: "/contribute", label: "Contribute" },
+  { href: "/learn", label: "Learning paths" },
+  { href: "/courses/foundations", label: "Foundations" },
+  { href: "/contribute", label: "Open source" },
 ];
 
 export function SiteHeader() {
@@ -23,37 +25,17 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
-          <a
-            href="https://github.com/medddhir/vibe-to-code"
-            target="_blank"
-            rel="noreferrer"
-          >
-            GitHub
-          </a>
         </nav>
 
         <div className="header-actions">
           <ThemeToggle />
+          <div className="header-account-slot">
+            <AccountEntry />
+          </div>
           <Link className="button button-small" href="/lessons/what-is-code">
-            Start free
+            Start Level 0
           </Link>
-          <details className="mobile-menu">
-            <summary aria-label="Open navigation menu">Menu</summary>
-            <nav aria-label="Mobile navigation">
-              {navigation.map((item) => (
-                <Link key={item.href} href={item.href}>
-                  {item.label}
-                </Link>
-              ))}
-              <a
-                href="https://github.com/medddhir/vibe-to-code"
-                target="_blank"
-                rel="noreferrer"
-              >
-                GitHub
-              </a>
-            </nav>
-          </details>
+          <MobileNavigationMenu navigation={navigation} />
         </div>
       </div>
     </header>

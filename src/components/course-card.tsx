@@ -15,9 +15,15 @@ export function CourseCard({ course, featured = false }: { course: Course; featu
           {course.status}
         </span>
       </div>
-      <p className="eyebrow">{course.eyebrow}</p>
+      <p className="course-route-label">{course.eyebrow}</p>
       <h3>{course.name}</h3>
       <p>{course.description}</p>
+      <div className="course-route-line" aria-hidden="true">
+        <span />
+        <i />
+        <i />
+        <i />
+      </div>
       <div className="course-meta" aria-label="Course size">
         <span>{course.lessonCount} lessons</span>
         <span>{course.levelCount} {course.levelCount === 1 ? "level" : "levels"}</span>

@@ -1,20 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 
+import { useCurriculumReviewMode } from "@/components/environment-provider";
+import { useProgressSync } from "@/components/progress/progress-sync-provider";
 import type { CourseLevel } from "@/data/curriculum";
 import {
   FOUNDATION_PUBLISHED_BY_SLUG,
   FOUNDATION_PUBLISHED_TOTAL_LESSONS,
+  getFoundationLessonSlot,
 } from "@/data/foundations-level1";
 import {
   foundationPublishedOrder,
   getCourseProgressSnapshot,
   getCourseStorageKey,
   isLessonUnlockedInSnapshot,
-  resetCourseProgress,
-  resetLessonProgress,
   subscribeToCourseProgress,
   type CourseProgressSnapshot,
   type LessonProgressStatus,
@@ -72,6 +73,7 @@ function readServerCourseSnapshot() {
 function getLessonRowState(
   snapshot: CourseProgressSnapshot,
   lessonSlug: string,
+  curriculumReview: boolean,
 ): LessonRowState["state"] {
   const progress = snapshot.lessons[lessonSlug];
 
@@ -83,7 +85,10 @@ function getLessonRowState(
     return "completed";
   }
 
-  if (!isLessonUnlockedInSnapshot(snapshot, lessonSlug)) {
+  if (
+    !curriculumReview &&
+    !isLessonUnlockedInSnapshot(snapshot, lessonSlug)
+  ) {
     return "locked";
   }
 
@@ -95,6 +100,12 @@ function subscribe(callback: () => void) {
 }
 
 export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgressPanelProps) {
+  const curriculumReview = useCurriculumReviewMode();
+  const progressSync = useProgressSync();
+  const [resetFeedback, setResetFeedback] = useState<{
+    message: string;
+    ok: boolean;
+  } | null>(null);
   const snapshot = useSyncExternalStore(
     subscribe,
     readCourseSnapshot,
@@ -112,7 +123,11 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
           };
 
           if (slug) {
-            row.state = getLessonRowState(snapshot, slug);
+            row.state = getLessonRowState(
+              snapshot,
+              slug,
+              curriculumReview,
+            );
           }
 
           return { lesson, row };
@@ -126,10 +141,25 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
           percent: rows.length ? Math.round((completedCount / rows.length) * 100) : 0,
         };
       }),
-    [levels, snapshot],
+    [curriculumReview, levels, snapshot],
   );
 
-  function clearCourse() {
+  const nextLessonSlug = snapshot.lessonOrder.find(
+    (slug) =>
+      !snapshot.lessons[slug]?.completed &&
+      isLessonUnlockedInSnapshot(snapshot, slug),
+  );
+  const nextLesson = nextLessonSlug
+    ? getFoundationLessonSlot(nextLessonSlug)
+    : null;
+  const hasStarted = snapshot.completedLessons.length > 0 || Boolean(snapshot.lastVisitedLesson);
+  const nextActionLabel = snapshot.coursePercent === 100
+    ? "Review the learning path"
+    : hasStarted
+      ? "Continue your course"
+      : "Start Level 0";
+
+  async function clearCourse() {
     if (
       !window.confirm(
         "Reset all published Foundation progress? You will need to complete Level 0 and Level 1 again.",
@@ -138,10 +168,11 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
       return;
     }
 
-    resetCourseProgress("foundations");
+    setResetFeedback(null);
+    setResetFeedback(await progressSync.resetCourse());
   }
 
-  function clearLesson(slug?: string) {
+  async function clearLesson(slug?: string) {
     if (!slug) {
       return;
     }
@@ -150,7 +181,8 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
       return;
     }
 
-    resetLessonProgress("foundations", slug);
+    setResetFeedback(null);
+    setResetFeedback(await progressSync.resetLesson(slug));
   }
 
   return (
@@ -163,12 +195,35 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
             {snapshot.completedLessons.length} of {FOUNDATION_PUBLISHED_TOTAL_LESSONS} published lessons completed.
           </p>
         </div>
+        <Link
+          className="button button-primary foundation-progress-continue"
+          href={nextLesson
+            ? `/lessons/${nextLesson.lesson.slug}`
+            : snapshot.coursePercent === 100
+              ? "/courses/foundations#course-levels"
+              : "/lessons/what-is-code"}
+        >
+          <span>
+            <small>{nextLesson ? `${nextLesson.levelLabel} · Lesson ${nextLesson.number}` : "Path complete"}</small>
+            {nextActionLabel}
+          </span>
+          <svg className="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" />
+          </svg>
+        </Link>
       </div>
 
       <div className="foundation-progress-bar" aria-hidden="true">
         <span style={{ width: `${snapshot.coursePercent}%` }} />
       </div>
       <p className="foundation-progress-text">{snapshot.coursePercent}% of the published path complete</p>
+
+      {curriculumReview ? (
+        <p className="foundation-review-note">
+          Staging review mode is active. Every published lesson is open for inspection;
+          production will keep the guided unlock sequence.
+        </p>
+      ) : null}
 
       <div className="foundation-progress-groups">
         {levelRows.map(({ level, rows, completedCount, percent }) => (
@@ -186,6 +241,14 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
                 const lessonSlug = lesson.slug;
                 const slot = lessonSlug ? FOUNDATION_PUBLISHED_BY_SLUG[lessonSlug] : null;
                 const isEnabled = row.state !== "locked";
+                const hasActivity = Boolean(
+                  row.progress &&
+                  (row.progress.completed ||
+                    row.progress.currentCheckpoint ||
+                    row.progress.completedCheckpointCount ||
+                    row.progress.totalAttempts ||
+                    row.progress.totalHints),
+                );
 
                 return (
                   <li
@@ -220,10 +283,12 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
                     <button
                       type="button"
                       className="button button-small"
-                      onClick={() => clearLesson(lessonSlug)}
-                      disabled={!row.progress}
+                      onClick={() => void clearLesson(lessonSlug)}
+                      disabled={!hasActivity || progressSync.resettingScope !== null}
                     >
-                      Reset
+                      {lessonSlug && progressSync.resettingScope === `lesson:${lessonSlug}`
+                        ? "Resetting..."
+                        : "Reset"}
                     </button>
                   </li>
                 );
@@ -239,8 +304,24 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
         </p>
       ) : null}
 
-      <button type="button" className="button button-secondary" onClick={clearCourse}>
-        Reset published Foundation progress
+      {resetFeedback ? (
+        <p
+          className="foundation-progress-text"
+          role={resetFeedback.ok ? "status" : "alert"}
+        >
+          {resetFeedback.message}
+        </p>
+      ) : null}
+
+      <button
+        type="button"
+        className="button button-secondary"
+        onClick={() => void clearCourse()}
+        disabled={progressSync.resettingScope !== null}
+      >
+        {progressSync.resettingScope === "course"
+          ? "Resetting Foundation progress..."
+          : "Reset published Foundation progress"}
       </button>
     </section>
   );

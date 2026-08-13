@@ -9,19 +9,31 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
 
+import { useProgressSync } from "@/components/progress/progress-sync-provider";
 import {
   markLessonCompleted,
   recordCompletedCheckpoint,
   recordLessonAttempt,
   recordLessonHint,
-  resetLessonProgress,
+  resetLessonProgress as resetLocalLessonProgress,
   setCurrentCheckpoint,
   setCurrentLesson,
 } from "@/lib/course-progress";
+import {
+  getLessonStorageKey,
+  readLessonProgressSnapshot as readProgressSnapshot,
+  subscribeToLessonProgress as subscribeToProgress,
+  writeLessonProgressSnapshot as writeProgressSnapshot,
+} from "@/lib/lesson-progress-storage";
+import {
+  FOUNDATION_PUBLISHED_TOTAL_LESSONS,
+  getFoundationLessonJourney,
+} from "@/data/foundations-level1";
 
 export type GuidedLessonStep = {
   id: string;
@@ -54,12 +66,8 @@ type LessonProgressContextValue = {
 };
 
 const LessonProgressContext = createContext<LessonProgressContextValue | null>(null);
-const inMemoryProgress = new Map<string, string>();
-const memoryOnlyProgress = new Set<string>();
-const lessonProgressEvent = "vibe-to-code:lesson-progress";
 
-export const getLessonStorageKey = (lessonId: string, lessonVersion: number) =>
-  `vibe-to-code:lesson-progress:v1:${lessonId}:lesson-v${lessonVersion}`;
+export { getLessonStorageKey } from "@/lib/lesson-progress-storage";
 
 function getRequiredActivityIds(step: GuidedLessonStep) {
   return step.requiresPractice
@@ -113,60 +121,6 @@ function migrateLegacyStepCompletion(
   return [...next];
 }
 
-function readProgressSnapshot(storageKey: string) {
-  if (typeof window === "undefined") {
-    return "";
-  }
-
-  if (memoryOnlyProgress.has(storageKey)) {
-    return inMemoryProgress.get(storageKey) ?? "";
-  }
-
-  try {
-    return localStorage.getItem(storageKey) ?? inMemoryProgress.get(storageKey) ?? "";
-  } catch {
-    memoryOnlyProgress.add(storageKey);
-    return inMemoryProgress.get(storageKey) ?? "";
-  }
-}
-
-function writeProgressSnapshot(storageKey: string, value: string) {
-  inMemoryProgress.set(storageKey, value);
-
-  try {
-    localStorage.setItem(storageKey, value);
-  } catch {
-    memoryOnlyProgress.add(storageKey);
-    // The in-memory copy keeps the lesson usable when storage is blocked or full.
-  }
-
-  window.dispatchEvent(
-    new CustomEvent(lessonProgressEvent, { detail: { storageKey } }),
-  );
-}
-
-function subscribeToProgress(storageKey: string, callback: () => void) {
-  function handleLocalProgress(event: Event) {
-    const detail = (event as CustomEvent<{ storageKey?: string }>).detail;
-    if (detail?.storageKey === storageKey) {
-      callback();
-    }
-  }
-
-  function handleStorage(event: StorageEvent) {
-    if (event.key === storageKey) {
-      callback();
-    }
-  }
-
-  window.addEventListener(lessonProgressEvent, handleLocalProgress);
-  window.addEventListener("storage", handleStorage);
-  return () => {
-    window.removeEventListener(lessonProgressEvent, handleLocalProgress);
-    window.removeEventListener("storage", handleStorage);
-  };
-}
-
 export function useLessonProgress() {
   const value = useContext(LessonProgressContext);
 
@@ -199,6 +153,12 @@ type GuidedLessonFlowProps = {
   completionReward?: string;
   courseSlug?: string;
   lessonProgressSlug?: string;
+  nextLesson?: {
+    href: string;
+    title: string;
+    eyebrow: string;
+    actionLabel: string;
+  };
   children: ReactNode;
 };
 
@@ -313,8 +273,14 @@ export function GuidedLessonFlow({
   courseTotalLessons,
   courseSlug,
   lessonProgressSlug,
+  nextLesson,
   children,
 }: GuidedLessonFlowProps) {
+  const progressSync = useProgressSync();
+  const [resetFeedback, setResetFeedback] = useState<{
+    message: string;
+    ok: boolean;
+  } | null>(null);
   const panels = Children.toArray(children);
   const firstStepId = steps[0]?.id ?? "start";
   const storageKey = getLessonStorageKey(lessonId, lessonVersion);
@@ -351,8 +317,28 @@ export function GuidedLessonFlow({
     [firstStepId, knownIds, lessonVersion, storageKey, steps],
   );
 
-  const courseLessonProgressValue = courseLessonNumber ?? lessonNumber;
-  const courseLessonTotalValue = courseTotalLessons ?? totalLessons;
+  const foundationJourney = courseSlug === "foundations" && lessonProgressSlug
+    ? getFoundationLessonJourney(lessonProgressSlug)
+    : null;
+  const courseLessonProgressValue = foundationJourney?.current.courseNumber
+    ?? courseLessonNumber
+    ?? lessonNumber;
+  const courseLessonTotalValue = foundationJourney
+    ? FOUNDATION_PUBLISHED_TOTAL_LESSONS
+    : courseTotalLessons ?? totalLessons;
+  const automaticNextLesson = foundationJourney?.next
+    ? {
+        href: `/lessons/${foundationJourney.next.lesson.slug}`,
+        title: foundationJourney.next.lesson.title,
+        eyebrow: foundationJourney.startsNextLevel
+          ? `${foundationJourney.next.levelLabel} unlocked`
+          : `Next · ${foundationJourney.next.levelLabel} lesson ${foundationJourney.next.number}`,
+        actionLabel: foundationJourney.startsNextLevel
+          ? `Start ${foundationJourney.next.levelLabel}`
+          : "Continue to next lesson",
+      }
+    : undefined;
+  const resolvedNextLesson = nextLesson ?? automaticNextLesson;
 
   const activeIndex = Math.max(
     0,
@@ -366,7 +352,7 @@ export function GuidedLessonFlow({
   const isFinalStep = activeIndex === steps.length - 1;
   const lessonCompleted = Boolean(progress.completedAt);
   const lessonStepPercent = steps.length ? ((activeIndex + 1) / steps.length) * 100 : 0;
-  const coursePercent = (lessonNumber / totalLessons) * 100;
+  const coursePercent = (courseLessonProgressValue / courseLessonTotalValue) * 100;
 
   const trackCourseStep = useCallback(
     (stepId: string) => {
@@ -467,18 +453,30 @@ export function GuidedLessonFlow({
     }
   }
 
-  function resetProgress() {
+  async function resetProgress() {
     if (!window.confirm("Reset this lesson and erase its saved progress on this device?")) {
       return;
     }
 
-    writeProgressSnapshot(
-      storageKey,
-      JSON.stringify(createDefaultProgress(firstStepId, lessonVersion)),
-    );
-    if (courseSlug && lessonProgressSlug) {
-      resetLessonProgress(courseSlug, lessonProgressSlug);
+    setResetFeedback(null);
+
+    if (courseSlug === "foundations" && lessonProgressSlug && foundationJourney) {
+      const result = await progressSync.resetLesson(lessonProgressSlug);
+      setResetFeedback(result);
+      if (!result.ok) {
+        return;
+      }
+    } else {
+      writeProgressSnapshot(
+        storageKey,
+        JSON.stringify(createDefaultProgress(firstStepId, lessonVersion)),
+      );
+      if (courseSlug && lessonProgressSlug) {
+        resetLocalLessonProgress(courseSlug, lessonProgressSlug);
+      }
+      setResetFeedback({ message: "Lesson progress was reset.", ok: true });
     }
+
     window.requestAnimationFrame(() => {
       panelStartRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
       panelStartRef.current?.focus({ preventScroll: true });
@@ -572,7 +570,13 @@ export function GuidedLessonFlow({
             aria-current={active ? "step" : undefined}
             onClick={() => moveToStep(step.id)}
           >
-            <span aria-hidden="true">{complete ? "✓" : String(index + 1).padStart(2, "0")}</span>
+            <span aria-hidden="true">
+              {complete ? (
+                <svg viewBox="0 0 16 16" focusable="false">
+                  <path d="m3.25 8.15 2.75 2.7 6.75-6.1" />
+                </svg>
+              ) : String(index + 1).padStart(2, "0")}
+            </span>
             <span>
               <small>{step.eyebrow}</small>
               <strong>{step.title}</strong>
@@ -605,9 +609,9 @@ export function GuidedLessonFlow({
               role="progressbar"
               aria-label="Course progress"
               aria-valuemin={0}
-              aria-valuemax={totalLessons}
-              aria-valuenow={lessonNumber}
-              aria-valuetext={`Lesson ${lessonNumber} of ${totalLessons} in ${levelLabel}`}
+              aria-valuemax={courseLessonTotalValue}
+              aria-valuenow={courseLessonProgressValue}
+              aria-valuetext={`Course lesson ${courseLessonProgressValue} of ${courseLessonTotalValue}`}
             >
               <span style={{ width: `${coursePercent}%` }} />
             </div>
@@ -626,9 +630,21 @@ export function GuidedLessonFlow({
               {stepNavigation}
             </details>
 
-            <button className="lesson-reset" type="button" onClick={resetProgress}>
-              Reset lesson progress
+            <button
+              className="lesson-reset"
+              type="button"
+              onClick={() => void resetProgress()}
+              disabled={progressSync.resettingScope !== null}
+            >
+              {progressSync.resettingScope === `lesson:${lessonProgressSlug}`
+                ? "Resetting lesson progress..."
+                : "Reset lesson progress"}
             </button>
+            {resetFeedback ? (
+              <small role={resetFeedback.ok ? "status" : "alert"}>
+                {resetFeedback.message}
+              </small>
+            ) : null}
           </aside>
 
           <article className="lesson-article guided-lesson-article">
@@ -664,22 +680,39 @@ export function GuidedLessonFlow({
 
             {activeStep.requiresPractice && !activePracticeComplete ? (
               <div className="lesson-gate-note" role="status">
-                <span aria-hidden="true">↳</span>
                 <p><strong>The next {stepNoun.toLowerCase()} is locked for now.</strong> Clear this checkpoint, then the button will unlock.</p>
               </div>
             ) : null}
 
             {lessonCompleted && isFinalStep ? (
               <section className="lesson-complete-card" aria-live="polite">
-                <span aria-hidden="true">✓</span>
                 <div>
-                  <p className="eyebrow">{completionEyebrow}</p>
+                  <p className="completion-status">{completionEyebrow}</p>
                   <h2>{completionTitle}</h2>
                   <p>{completionDescription}</p>
                   {completionReward ? <strong className="lesson-complete-reward">{completionReward}</strong> : null}
-                  <Link className="button button-primary" href={`${courseHref}#level-1`}>
-                    Return to the course map
-                  </Link>
+                  {resolvedNextLesson ? (
+                    <div className="lesson-next-handoff">
+                      <span>{resolvedNextLesson.eyebrow}</span>
+                      <strong>{resolvedNextLesson.title}</strong>
+                    </div>
+                  ) : null}
+                  <div className="lesson-complete-actions">
+                    {resolvedNextLesson ? (
+                      <Link className="button button-primary" href={resolvedNextLesson.href}>
+                        {resolvedNextLesson.actionLabel}
+                        <svg className="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                          <path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" />
+                        </svg>
+                      </Link>
+                    ) : null}
+                    <Link
+                      className={resolvedNextLesson ? "button button-secondary" : "button button-primary"}
+                      href={courseHref}
+                    >
+                      View course map
+                    </Link>
+                  </div>
                 </div>
               </section>
             ) : (

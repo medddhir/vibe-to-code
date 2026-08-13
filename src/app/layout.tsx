@@ -1,17 +1,26 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 
-import { RepoStarCta } from "@/components/repo-star-cta";
+import "@fontsource-variable/archivo/wght.css";
+
+import { AuthUserProvider } from "@/components/auth/use-auth-user";
+import { EnvironmentProvider } from "@/components/environment-provider";
+import { ProgressSyncProvider } from "@/components/progress/progress-sync-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { StartupScreen } from "@/components/startup-screen";
+import { getCurriculumReviewMode } from "@/lib/environment";
 import { siteConfig } from "@/lib/site";
 
 import "./globals.css";
+import "./impeccable.css";
+import "./premium.css";
+import "./auth.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: "Vibe to Code — Learn what your code actually does",
+    default: "Vibe to Code | Learn what your code actually does",
     template: "%s · Vibe to Code",
   },
   description: siteConfig.description,
@@ -45,8 +54,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f7f2" },
-    { media: "(prefers-color-scheme: dark)", color: "#0d0f14" },
+    { media: "(prefers-color-scheme: light)", color: "#f2f4ef" },
+    { media: "(prefers-color-scheme: dark)", color: "#101411" },
   ],
   colorScheme: "light dark",
 };
@@ -65,25 +74,79 @@ const themeInitScript = `
     }
     document.documentElement.dataset.theme = theme;
     document.querySelectorAll('meta[name="theme-color"]').forEach(function (meta) {
-      meta.setAttribute("content", theme === "dark" ? "#0d0f14" : "#f7f7f2");
+      meta.setAttribute("content", theme === "dark" ? "#101411" : "#f2f4ef");
     });
   })();
 `;
 
+const startupInitScript = `
+  (function () {
+    var key = "vibe-to-code:intro:v1";
+    var root = document.documentElement;
+
+    try {
+      if (sessionStorage.getItem(key)) {
+        root.dataset.vtcIntro = "seen";
+        return;
+      }
+
+      sessionStorage.setItem(key, "seen");
+
+      ["/brand/mark-light.png", "/brand/wordmark-dark.png"].forEach(function (href) {
+        var preload = document.createElement("link");
+        preload.rel = "preload";
+        preload.as = "image";
+        preload.href = href;
+        document.head.appendChild(preload);
+      });
+
+      root.dataset.vtcIntro = "play";
+    } catch (error) {
+      root.dataset.vtcIntro = "seen";
+    }
+  })();
+`;
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const curriculumReview = getCurriculumReviewMode();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
+        <script
+          id="impeccable-design-contract"
+          type="application/json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              thesis: "Turn AI-generated code into an inspectable route from prompt to proof; refuse the generic SaaS hero and card grid.",
+              ownWorld: "Porcelain and graphite work surfaces, cobalt route rails, safety-lime pass states, inspection labels, and precise cutaway panels.",
+              story: "A beginner sees what the product teaches, starts Level 0, and always knows the next verified action.",
+              firstViewport: "A left learning brief faces a large code inspection bench; the primary Level 0 action sits directly under the offer.",
+              form: "Code Inspection Bench, grounded candidate 3, seed ee349566.",
+              finish: "unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md",
+            }).replace(/</g, "\\u003c"),
+          }}
+        />
         <Script id="vibe-to-code-theme" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
-        <a className="skip-link" href="#main-content">
-          Skip to content
-        </a>
-        <SiteHeader />
-        {children}
-        <RepoStarCta />
-        <SiteFooter />
+        <script
+          dangerouslySetInnerHTML={{ __html: startupInitScript }}
+          id="vibe-to-code-startup"
+        />
+        <EnvironmentProvider curriculumReview={curriculumReview}>
+          <AuthUserProvider>
+            <ProgressSyncProvider>
+              <StartupScreen />
+              <a className="skip-link" href="#main-content">
+                Skip to content
+              </a>
+              <SiteHeader />
+              {children}
+              <SiteFooter />
+            </ProgressSyncProvider>
+          </AuthUserProvider>
+        </EnvironmentProvider>
       </body>
     </html>
   );
