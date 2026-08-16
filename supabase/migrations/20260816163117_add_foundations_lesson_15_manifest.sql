@@ -1,5 +1,17 @@
 -- Curriculum version 2 remains immutable for rollback. Version 3 adds only
 -- Developer Foundations Level 2 Lesson 1 and its approved progress IDs.
+do $$
+begin
+  if exists (select 1 from public.learner_course_progress)
+    or exists (select 1 from public.progress_sync_requests)
+  then
+    raise exception
+      'Foundations curriculum v3 requires reviewed learner-progress migration'
+      using errcode = '55000';
+  end if;
+end
+$$;
+
 insert into public.curriculum_lessons
   (course_slug, curriculum_version, lesson_slug, lesson_order, lesson_version)
 values

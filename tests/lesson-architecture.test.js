@@ -46,9 +46,16 @@ const {
   validatePublishedLessonRegistry,
 } = require("../src/lib/lesson-validation.ts");
 const {
+  getChoiceCheckpointDisplayState,
+} = require("../src/components/choice-checkpoint.tsx");
+const {
   getLessonBlockRendererKind,
   getOrderingCheckpointDisplayOrder,
+  getOrderingCheckpointDisplayState,
 } = require("../src/components/generic-lesson-renderer.tsx");
+const {
+  getCourseMapLessonState,
+} = require("../src/components/course-overview.tsx");
 const {
   getGuidedStepsForLessonDefinition,
 } = require("../src/lib/guided-lesson-definition.ts");
@@ -269,6 +276,28 @@ test("publishes only Level 2 Lesson 1 and leaves the other eight Level 2 lessons
   assert.equal(
     level2.slice(1).every((entry) => entry.route === null && entry.access === "unavailable"),
     true,
+  );
+});
+
+test("course maps link only registry-published positions through canonical routes", () => {
+  assert.deepEqual(getCourseMapLessonState("foundations", 2, 0), {
+    label: "Start",
+    route: "/lessons/internet-web-browser-server",
+  });
+
+  const plannedWithPlausibleSlug = {
+    ...foundationLevels[2].lessons[1],
+    slug: "url-anatomy-looking-permanent",
+  };
+  assert.equal(plannedWithPlausibleSlug.slug, "url-anatomy-looking-permanent");
+  assert.deepEqual(getCourseMapLessonState("foundations", 2, 1), {
+    label: "Planned",
+    route: null,
+  });
+
+  assert.deepEqual(
+    published.map((entry) => entry.route),
+    publishedSlugs.map((slug) => `/lessons/${slug}`),
   );
 });
 
@@ -936,7 +965,83 @@ test("completed ordering restoration always displays the verified correct order"
   );
 });
 
-test("generic checkpoints retain focus, announce every move and failure, and use touch-safe buttons", () => {
+test("checkpoint display state replaces stale local errors after external completion", () => {
+  const choiceWrong = getChoiceCheckpointDisplayState({
+    completed: false,
+    correctId: "correct",
+    selectedId: "wrong",
+    feedback: "Try again.",
+    answerCorrect: false,
+    successMessage: "Correct.",
+  });
+  assert.deepEqual(choiceWrong, {
+    selectedId: "wrong",
+    feedback: "Try again.",
+    answerCorrect: false,
+  });
+  assert.deepEqual(getChoiceCheckpointDisplayState({
+    completed: true,
+    correctId: "correct",
+    selectedId: choiceWrong.selectedId,
+    feedback: choiceWrong.feedback,
+    answerCorrect: choiceWrong.answerCorrect,
+    successMessage: "Correct.",
+  }), {
+    selectedId: "correct",
+    feedback: "Correct.",
+    answerCorrect: true,
+  });
+  assert.deepEqual(getChoiceCheckpointDisplayState({
+    completed: true,
+    correctId: "correct",
+    selectedId: "",
+    feedback: "",
+    answerCorrect: false,
+    successMessage: "Correct.",
+  }), {
+    selectedId: "correct",
+    feedback: "Correct.",
+    answerCorrect: true,
+  });
+
+  const activity = internetWebBrowserServerLesson.activities.find(
+    (candidate) => candidate.id === "order-page-journey",
+  );
+  const scrambled = activity.items.map((item) => item.id);
+  const orderingWrong = getOrderingCheckpointDisplayState(
+    activity,
+    scrambled,
+    activity.errorMessage,
+    `Incorrect sequence. ${activity.errorMessage}`,
+    false,
+  );
+  assert.equal(orderingWrong.feedback, activity.errorMessage);
+  assert.equal(orderingWrong.announcement, `Incorrect sequence. ${activity.errorMessage}`);
+  assert.deepEqual(getOrderingCheckpointDisplayState(
+    activity,
+    orderingWrong.order,
+    orderingWrong.feedback,
+    orderingWrong.announcement,
+    true,
+  ), {
+    order: [...activity.correctOrder],
+    feedback: activity.successMessage,
+    announcement: activity.successMessage,
+  });
+  assert.deepEqual(getOrderingCheckpointDisplayState(
+    activity,
+    scrambled,
+    "",
+    "",
+    true,
+  ), {
+    order: [...activity.correctOrder],
+    feedback: activity.successMessage,
+    announcement: activity.successMessage,
+  });
+});
+
+test("generic checkpoint focus, live-region, and touch controls are structurally enforced", () => {
   const renderer = fs.readFileSync(
     path.join(process.cwd(), "src/components/generic-lesson-renderer.tsx"),
     "utf8",
@@ -945,7 +1050,7 @@ test("generic checkpoints retain focus, announce every move and failure, and use
   assert.match(renderer, /movementControls\.current/);
   assert.match(renderer, /target\.focus\(\)/);
   assert.match(renderer, /Moved \$\{item\?\.label/);
-  assert.match(renderer, /Incorrect attempt \$\{failedSubmissions\.current\}/);
+  assert.match(renderer, /Incorrect sequence\. \$\{activity\.errorMessage\}/);
   assert.match(renderer, /aria-live="polite"/);
   assert.match(renderer, /aria-atomic="true"/);
   assert.match(renderer, /type="button"/);
@@ -954,12 +1059,12 @@ test("generic checkpoints retain focus, announce every move and failure, and use
   assert.match(styles, /\.ordering-checkpoint-controls \.button[\s\S]*min-height: 44px/);
 });
 
-test("ChoiceCheckpoint reserves the checkmark for a verified answer", () => {
+test("ChoiceCheckpoint neutral-indicator rendering is structurally enforced", () => {
   const source = fs.readFileSync(
     path.join(process.cwd(), "src/components/choice-checkpoint.tsx"),
     "utf8",
   );
-  assert.match(source, /completed \|\| answerCorrect \? "✓" : "•"/);
+  assert.match(source, /displayState\.answerCorrect \? "✓" : "•"/);
   assert.doesNotMatch(source, /selected \? "✓"/);
 });
 

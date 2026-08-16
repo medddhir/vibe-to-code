@@ -19,6 +19,12 @@ export function createLessonRegistry(entries: readonly LessonCatalogEntry[]) {
   );
   const byState = (state: LessonPublicationState) => snapshots.get(state) ?? Object.freeze([]);
   const published = byState("published");
+  const publishedByPosition = new Map(
+    published.map((entry) => [
+      `${entry.courseSlug}:${entry.levelIndex}:${entry.lessonIndex}`,
+      entry,
+    ]),
+  );
 
   return Object.freeze({
     all: () => all,
@@ -33,6 +39,8 @@ export function createLessonRegistry(entries: readonly LessonCatalogEntry[]) {
       )),
     publishedBySlug: (lessonSlug: string) =>
       published.find((entry) => entry.lessonSlug === lessonSlug) ?? null,
+    publishedByPosition: (courseSlug: string, levelIndex: number, lessonIndex: number) =>
+      publishedByPosition.get(`${courseSlug}:${levelIndex}:${lessonIndex}`) ?? null,
   });
 }
 
@@ -45,3 +53,4 @@ export const getPlannedLessonCatalogEntries = lessonRegistry.planned;
 export const getLessonCatalogEntriesByCourse = lessonRegistry.byCourse;
 export const getLessonCatalogEntriesByLevel = lessonRegistry.byLevel;
 export const getPublishedLessonBySlug = lessonRegistry.publishedBySlug;
+export const getPublishedLessonByPosition = lessonRegistry.publishedByPosition;

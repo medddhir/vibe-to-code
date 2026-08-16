@@ -28,13 +28,28 @@ export function getOrderingCheckpointDisplayOrder(
   return completed ? [...activity.correctOrder] : [...currentOrder];
 }
 
+export function getOrderingCheckpointDisplayState(
+  activity: OrderingActivity,
+  currentOrder: readonly string[],
+  feedback: string,
+  announcement: string,
+  completed: boolean,
+) {
+  return completed
+    ? {
+      order: [...activity.correctOrder],
+      feedback: activity.successMessage,
+      announcement: activity.successMessage,
+    }
+    : { order: [...currentOrder], feedback, announcement };
+}
+
 function OrderingCheckpoint({ activity }: { activity: OrderingActivity }) {
   const { completePractice, practiceCompletedIds, recordFailedAttempt } =
     useLessonProgress();
   const [order, setOrder] = useState(() => activity.items.map((item) => item.id));
   const [feedback, setFeedback] = useState("");
   const [announcement, setAnnouncement] = useState({ sequence: 0, message: "" });
-  const failedSubmissions = useRef(0);
   const [focusTarget, setFocusTarget] = useState<{
     itemId: string;
     direction: -1 | 1;
@@ -42,8 +57,13 @@ function OrderingCheckpoint({ activity }: { activity: OrderingActivity }) {
   } | null>(null);
   const movementControls = useRef(new Map<string, HTMLButtonElement>());
   const completed = practiceCompletedIds.includes(activity.id);
-  const displayedOrder = getOrderingCheckpointDisplayOrder(activity, order, completed);
-  const displayedFeedback = completed && !feedback ? activity.successMessage : feedback;
+  const displayState = getOrderingCheckpointDisplayState(
+    activity,
+    order,
+    feedback,
+    announcement.message,
+    completed,
+  );
 
   useEffect(() => {
     if (!focusTarget) return;
@@ -90,11 +110,10 @@ function OrderingCheckpoint({ activity }: { activity: OrderingActivity }) {
       return;
     }
     recordFailedAttempt(activity.id);
-    failedSubmissions.current += 1;
     setFeedback(activity.errorMessage);
     setAnnouncement((current) => ({
       sequence: current.sequence + 1,
-      message: `Incorrect attempt ${failedSubmissions.current}. ${activity.errorMessage}`,
+      message: `Incorrect sequence. ${activity.errorMessage}`,
     }));
   }
 
@@ -108,7 +127,7 @@ function OrderingCheckpoint({ activity }: { activity: OrderingActivity }) {
       </div>
       <p>{activity.prompt}</p>
       <ol className="ordering-checkpoint-list" aria-label="Current sequence">
-        {displayedOrder.map((id, index) => {
+        {displayState.order.map((id, index) => {
           const item = activity.items.find((candidate) => candidate.id === id);
           return (
             <li key={id}>
@@ -134,7 +153,7 @@ function OrderingCheckpoint({ activity }: { activity: OrderingActivity }) {
                   }}
                   className="button button-secondary"
                   type="button"
-                  disabled={completed || index === displayedOrder.length - 1}
+                  disabled={completed || index === displayState.order.length - 1}
                   onClick={() => move(index, 1)}
                   aria-label={`Move ${item?.label} later`}
                 >
@@ -153,9 +172,9 @@ function OrderingCheckpoint({ activity }: { activity: OrderingActivity }) {
       >
         {completed ? "Checkpoint cleared" : "Check sequence"}
       </button>
-      {displayedFeedback ? (
+      {displayState.feedback ? (
         <p className="choice-feedback">
-          {displayedFeedback}
+          {displayState.feedback}
         </p>
       ) : null}
       <p
@@ -164,7 +183,7 @@ function OrderingCheckpoint({ activity }: { activity: OrderingActivity }) {
         aria-live="polite"
         aria-atomic="true"
       >
-        <span key={announcement.sequence}>{announcement.message}</span>
+        <span key={`${announcement.sequence}:${completed}`}>{displayState.announcement}</span>
       </p>
     </section>
   );
