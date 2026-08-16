@@ -52,8 +52,8 @@ export function AuthShell({
               <li>
                 <span>02</span>
                 <div>
-                  <strong>Verify your inbox</strong>
-                  <p>A one-time code confirms that the email belongs to you.</p>
+                  <strong>Continue with Google</strong>
+                  <p>Google confirms your account without another password.</p>
                 </div>
               </li>
               <li>

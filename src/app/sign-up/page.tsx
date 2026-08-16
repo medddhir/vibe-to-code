@@ -7,7 +7,7 @@ import { resolveSafeReturnPath } from "@/lib/supabase/return-path";
 
 export const metadata: Metadata = {
   title: "Create account",
-  description: "Create a verified Vibe to Code account with Google or an email code.",
+  description: "Create a free Vibe to Code account securely with Google.",
 };
 
 type SignUpPageProps = {

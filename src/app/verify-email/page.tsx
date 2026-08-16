@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-
-import { EmailCodeForm } from "@/components/auth/email-code-form";
-import { AuthShell } from "@/components/auth/auth-shell";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Verify email",
@@ -11,18 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function VerifyEmailPage() {
-  return (
-    <AuthShell
-      kicker="One-time verification"
-      title="Check your inbox."
-      description="Enter the 6-digit code from the latest Vibe to Code email."
-      footer={
-        <p>
-          Want to keep learning instead? <Link href="/lessons/what-is-code">Continue as a guest</Link>
-        </p>
-      }
-    >
-      <EmailCodeForm />
-    </AuthShell>
-  );
+  redirect("/sign-in");
 }

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
 
 import "@fontsource-variable/archivo/wght.css";
 
@@ -147,6 +148,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </ProgressSyncProvider>
           </AuthUserProvider>
         </EnvironmentProvider>
+        <Analytics />
       </body>
     </html>
   );
