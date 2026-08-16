@@ -19,7 +19,7 @@ export const foundationLevels: CourseLevel[] = [
     lessons: [
       lesson(
         "What code actually is",
-        "15 min",
+        "10 min",
         "Separate written instructions, a running program, and visible output.",
         "Predict and run one tiny Python instruction, then change its message.",
         "Thinking code is the finished app—or that AI-generated code is automatically correct.",
