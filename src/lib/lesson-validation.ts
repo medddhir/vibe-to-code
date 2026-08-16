@@ -77,20 +77,74 @@ function positiveInteger(value: unknown, path: string, issues: string[]) {
   return value;
 }
 
-function arrayValue(value: unknown, path: string, issues: string[]) {
+function readSafeArray(value: unknown, path: string, issues: string[]) {
   if (!Array.isArray(value)) {
     issues.push(`${path} must be an array`);
     return null;
   }
-  const dense = Array.from(value as unknown[]);
-  for (let index = 0; index < value.length; index += 1) {
-    if (!Object.hasOwn(value, index)) issues.push(`${path}[${index}] is a sparse array hole`);
+  if (Object.getPrototypeOf(value) !== Array.prototype) {
+    issues.push(`${path} must use the normal Array prototype`);
+    return null;
+  }
+
+  const ownKeys = Reflect.ownKeys(value);
+  const lengthDescriptor = Object.getOwnPropertyDescriptor(value, "length");
+  if (!lengthDescriptor || lengthDescriptor.get || lengthDescriptor.set ||
+      typeof lengthDescriptor.value !== "number" || !Number.isSafeInteger(lengthDescriptor.value) ||
+      lengthDescriptor.value < 0) {
+    issues.push(`${path}.length must be a safe own data property`);
+    return null;
+  }
+
+  const length = lengthDescriptor.value;
+  const indexDescriptors: Array<[number, PropertyDescriptor]> = [];
+  let safe = true;
+  for (let keyIndex = 0; keyIndex < ownKeys.length; keyIndex += 1) {
+    const key = ownKeys[keyIndex];
+    if (key === "length") continue;
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (typeof key === "symbol") {
+      issues.push(`${path} contains a symbol key`);
+      if (!descriptor || descriptor.get || descriptor.set) {
+        issues.push(`${path} contains executable symbol property access`);
+      }
+      safe = false;
+      continue;
+    }
+    if (!descriptor || descriptor.get || descriptor.set) {
+      issues.push(`${path}.${key} contains executable property access`);
+      safe = false;
+      continue;
+    }
+    const isCanonicalIndex = /^(0|[1-9]\d*)$/.test(key) &&
+      Number.isSafeInteger(Number(key)) && Number(key) < length;
+    if (!isCanonicalIndex) {
+      if (FORBIDDEN_CONTENT_KEYS.has(key)) issues.push(`${path}.${key} is not allowed in lesson data`);
+      issues.push(`${path}.${key} is not an allowed array property`);
+      safe = false;
+      continue;
+    }
+    indexDescriptors.push([Number(key), descriptor]);
+  }
+
+  indexDescriptors.sort(([left], [right]) => left - right);
+  const firstGap = indexDescriptors.findIndex(([index], position) => index !== position);
+  if (indexDescriptors.length !== length || firstGap !== -1) {
+    const firstMissingIndex = firstGap === -1 ? indexDescriptors.length : firstGap;
+    issues.push(`${path}[${firstMissingIndex}] is a sparse array hole`);
+    safe = false;
+  }
+  if (!safe) return null;
+
+  const dense = new Array<unknown>(indexDescriptors.length);
+  for (let index = 0; index < indexDescriptors.length; index += 1) {
+    dense[index] = indexDescriptors[index][1].value;
   }
   return dense;
 }
 
 function stringIdArray(value: unknown, path: string, issues: string[]) {
-  const values = arrayValue(value, path, issues);
+  const values = readSafeArray(value, path, issues);
   if (!values) return [];
   const valid: string[] = [];
   values.forEach((item, index) => {
@@ -194,7 +248,7 @@ function validateCatalogEntry(entry: unknown, path: string, issues: string[]) {
 }
 
 function validateCatalogInternal(input: unknown, issues: string[]) {
-  const entries = arrayValue(input, "catalog", issues);
+  const entries = readSafeArray(input, "catalog", issues);
   if (!entries) return;
   const valid = entries.flatMap((entry, index) => {
     const result = validateCatalogEntry(entry, `catalog[${index}]`, issues);
@@ -273,41 +327,13 @@ function scanSerializable(
   let hasUnsafeAccessor = false;
   try {
     if (Array.isArray(value)) {
-      const indexDescriptors: Array<[number, PropertyDescriptor]> = [];
-      Reflect.ownKeys(value).forEach((key) => {
-        if (key === "length") return;
-        if (typeof key === "symbol") {
-          issues.push(`${path} contains a symbol key`);
-          return;
-        }
-        const descriptor = Object.getOwnPropertyDescriptor(value, key);
-        if (!descriptor || descriptor.get || descriptor.set) {
-          issues.push(`${path}.${key} contains executable property access`);
+      const values = readSafeArray(value, path, issues);
+      if (!values) return true;
+      for (let index = 0; index < values.length; index += 1) {
+        if (scanSerializable(values[index], `${path}[${index}]`, issues, ancestors)) {
           hasUnsafeAccessor = true;
-          return;
         }
-        const isCanonicalIndex = /^(0|[1-9]\d*)$/.test(key) &&
-          Number.isSafeInteger(Number(key)) && Number(key) < value.length;
-        if (!isCanonicalIndex) {
-          if (FORBIDDEN_CONTENT_KEYS.has(key)) issues.push(`${path}.${key} is not allowed in lesson data`);
-          issues.push(`${path}.${key} is not an allowed array property`);
-          if (scanSerializable(descriptor.value, `${path}.${key}`, issues, ancestors)) {
-            hasUnsafeAccessor = true;
-          }
-          return;
-        }
-        indexDescriptors.push([Number(key), descriptor]);
-      });
-      indexDescriptors.sort(([left], [right]) => left - right);
-      if (indexDescriptors.length !== value.length ||
-          indexDescriptors.some(([index], position) => index !== position)) {
-        issues.push(`${path} contains sparse array holes`);
       }
-      indexDescriptors.forEach(([index, descriptor]) => {
-        if (scanSerializable(descriptor.value, `${path}[${index}]`, issues, ancestors)) {
-          hasUnsafeAccessor = true;
-        }
-      });
       return hasUnsafeAccessor;
     }
     if (!isPlainRecord(value)) {
@@ -337,7 +363,7 @@ function scanSerializable(
 }
 
 function validateTextArray(value: unknown, path: string, issues: string[], requireOne = false) {
-  const values = arrayValue(value, path, issues);
+  const values = readSafeArray(value, path, issues);
   if (!values) return [];
   if (requireOne && values.length === 0) issues.push(`${path} must not be empty`);
   const valid: string[] = [];
@@ -407,7 +433,7 @@ function validateActivity(activity: unknown, path: string, issues: string[]) {
     nonblank(activity.question, `${path}.question`, issues);
     nonblank(activity.successMessage, `${path}.successMessage`, issues);
     nonblank(activity.hint, `${path}.hint`, issues);
-    const options = arrayValue(activity.options, `${path}.options`, issues);
+    const options = readSafeArray(activity.options, `${path}.options`, issues);
     const optionIds: string[] = [];
     if (options) {
       if (options.length < 2) issues.push(`${path}.options must contain at least two options`);
@@ -429,7 +455,7 @@ function validateActivity(activity: unknown, path: string, issues: string[]) {
     nonblank(activity.prompt, `${path}.prompt`, issues);
     nonblank(activity.successMessage, `${path}.successMessage`, issues);
     nonblank(activity.errorMessage, `${path}.errorMessage`, issues);
-    const items = arrayValue(activity.items, `${path}.items`, issues);
+    const items = readSafeArray(activity.items, `${path}.items`, issues);
     const itemIds: string[] = [];
     if (items) {
       if (items.length < 2) issues.push(`${path}.items must contain at least two items`);
@@ -468,7 +494,7 @@ function validateContentInternal(input: unknown, issues: string[]) {
   const outcomes = validateTextArray(input.learningOutcomes, "content.learningOutcomes", issues);
   nonblank(input.misconception, "content.misconception", issues);
 
-  const activitiesInput = arrayValue(input.activities, "content.activities", issues);
+  const activitiesInput = readSafeArray(input.activities, "content.activities", issues);
   const activities = new Map<string, string | null>();
   if (activitiesInput) {
     activitiesInput.forEach((activity, index) => {
@@ -488,7 +514,7 @@ function validateContentInternal(input: unknown, issues: string[]) {
     completionRequired = stringIdArray(completion.requiredActivityIds, "content.completionRule.requiredActivityIds", issues);
   }
 
-  const stepsInput = arrayValue(input.guidedSteps, "content.guidedSteps", issues);
+  const stepsInput = readSafeArray(input.guidedSteps, "content.guidedSteps", issues);
   const stepIds: string[] = [];
   const rendered = new Map<string, { count: number; stepId: string; expectedType: string }>();
   const stepRequirements: { stepId: string; ids: string[] }[] = [];
@@ -506,7 +532,7 @@ function validateContentInternal(input: unknown, issues: string[]) {
       nonblank(step.eyebrow, `${path}.eyebrow`, issues);
       const required = stringIdArray(step.requiredActivityIds, `${path}.requiredActivityIds`, issues);
       if (stepId) stepRequirements.push({ stepId, ids: required });
-      const blocks = arrayValue(step.blocks, `${path}.blocks`, issues);
+      const blocks = readSafeArray(step.blocks, `${path}.blocks`, issues);
       if (blocks) {
         if (blocks.length === 0) issues.push(`${path}.blocks must not be empty`);
         blocks.forEach((block, blockIndex) => {
@@ -544,7 +570,7 @@ function validateContentInternal(input: unknown, issues: string[]) {
     else if (location.stepId !== stepId) issues.push(`Step ${stepId} requires activity ${id} rendered in step ${location.stepId}`);
   }));
 
-  const sources = arrayValue(input.sources, "content.sources", issues);
+  const sources = readSafeArray(input.sources, "content.sources", issues);
   const inspectedSources: RecordValue[] = [];
   let validSourceCount = 0;
   if (sources) sources.forEach((source, index) => {
@@ -626,7 +652,13 @@ export function validatePublishableLessonBundle(catalogEntry: unknown, contentRe
       return;
     }
     const content = validateContentInternal(definition, issues);
-    if (!content || !isPlainRecord(definition)) return;
+    if (!content) {
+      issues.push("Publishable content requires at least one learning outcome");
+      issues.push("Publishable content requires at least one real guided step");
+      issues.push("Publishable content requires at least one source with valid fields");
+      return;
+    }
+    if (!isPlainRecord(definition)) return;
     if (content.lessonSlug !== catalog.lessonSlug) issues.push("Catalog and content lesson slugs do not match");
     if (definition.lessonVersion !== entry.lessonVersion) issues.push("Catalog and content lesson versions do not match");
     if (JSON.stringify(content.stepIds) !== JSON.stringify(catalog.progressStepIds)) {
@@ -656,8 +688,9 @@ export function validatePublishableLessonBundle(catalogEntry: unknown, contentRe
 export function validatePublishedDataDrivenLessons(catalog: unknown, contentRegistry: unknown) {
   return safeValidate((issues) => {
     issues.push(...validateLessonCatalog(catalog));
-    if (!Array.isArray(catalog)) return;
-    catalog.forEach((entry) => {
+    const entries = readSafeArray(catalog, "catalog", issues);
+    if (!entries) return;
+    entries.forEach((entry) => {
       if (isRecord(entry) && entry.publicationState === "published" && entry.renderMode === "data-driven") {
         issues.push(...validatePublishableLessonBundle(entry, contentRegistry));
       }
@@ -667,22 +700,18 @@ export function validatePublishedDataDrivenLessons(catalog: unknown, contentRegi
 
 export function validatePublishedLessonRegistry(catalog: unknown, publishedRegistry: unknown) {
   return safeValidate((issues) => {
-    if (!Array.isArray(catalog)) {
-      issues.push("Catalog must be an array");
-      return;
-    }
-    if (!Array.isArray(publishedRegistry)) {
-      issues.push("Published registry must be an array");
-      return;
-    }
-    publishedRegistry.forEach((entry, index) => {
+    const catalogEntries = readSafeArray(catalog, "catalog", issues);
+    const publishedEntries = readSafeArray(publishedRegistry, "publishedRegistry", issues);
+    if (!catalogEntries || !publishedEntries) return;
+    publishedEntries.forEach((entry, index) => {
       if (!isRecord(entry) || entry.publicationState !== "published") {
         issues.push(`publishedRegistry[${index}] is not published`);
       }
     });
-    const expected = catalog.filter((entry) => isRecord(entry) && entry.publicationState === "published");
-    if (expected.length !== publishedRegistry.length || expected.some((entry, index) =>
-      !isRecord(publishedRegistry[index]) || entry.lessonSlug !== publishedRegistry[index].lessonSlug)) {
+    const expected = catalogEntries.filter((entry) => isRecord(entry) && entry.publicationState === "published");
+    if (expected.length !== publishedEntries.length || expected.some((entry, index) =>
+      !isRecord(entry) || !isRecord(publishedEntries[index]) ||
+      entry.lessonSlug !== publishedEntries[index].lessonSlug)) {
       issues.push("Published registry does not match catalog publication order");
     }
   });

@@ -490,6 +490,95 @@ test("array serializability rejects hidden own properties, accessors, cycles, an
   assert.deepEqual(validateLessonContentDefinition(contentFixture()), []);
 });
 
+test("array validation never executes own or inherited iterators and getters", () => {
+  let ownIteratorGetterCalls = 0;
+  const ownIteratorGetter = ["safe"];
+  Object.defineProperty(ownIteratorGetter, Symbol.iterator, {
+    get() {
+      ownIteratorGetterCalls += 1;
+      return Array.prototype[Symbol.iterator];
+    },
+  });
+
+  let ownIteratorCalls = 0;
+  const ownIteratorFunction = ["safe"];
+  Object.defineProperty(ownIteratorFunction, Symbol.iterator, {
+    value() {
+      ownIteratorCalls += 1;
+      return Array.prototype[Symbol.iterator].call(this);
+    },
+  });
+
+  let inheritedIteratorGetterCalls = 0;
+  const inheritedIteratorGetterPrototype = Object.create(Array.prototype);
+  Object.defineProperty(inheritedIteratorGetterPrototype, Symbol.iterator, {
+    get() {
+      inheritedIteratorGetterCalls += 1;
+      return Array.prototype[Symbol.iterator];
+    },
+  });
+  const inheritedIteratorGetter = ["safe"];
+  Object.setPrototypeOf(inheritedIteratorGetter, inheritedIteratorGetterPrototype);
+
+  let deceptiveIteratorCalls = 0;
+  const deceptiveIteratorPrototype = Object.create(Array.prototype);
+  Object.defineProperty(deceptiveIteratorPrototype, Symbol.iterator, {
+    value() {
+      deceptiveIteratorCalls += 1;
+      return ["valid-looking prerequisite"][Symbol.iterator]();
+    },
+  });
+  const deceptiveIterator = [123];
+  Object.setPrototypeOf(deceptiveIterator, deceptiveIteratorPrototype);
+
+  let inheritedNumericGetterCalls = 0;
+  const inheritedNumericPrototype = Object.create(Array.prototype);
+  Object.defineProperty(inheritedNumericPrototype, "0", {
+    get() {
+      inheritedNumericGetterCalls += 1;
+      return "valid-looking prerequisite";
+    },
+  });
+  const inheritedNumericGetter = new Array(1);
+  Object.setPrototypeOf(inheritedNumericGetter, inheritedNumericPrototype);
+
+  const cases = [
+    ["own Symbol.iterator getter", ownIteratorGetter],
+    ["own Symbol.iterator function", ownIteratorFunction],
+    ["inherited Symbol.iterator getter", inheritedIteratorGetter],
+    ["deceptive inherited iterator", deceptiveIterator],
+    ["inherited numeric getter", inheritedNumericGetter],
+  ];
+  for (const [name, array] of cases) {
+    const definition = contentFixture({ prerequisites: array });
+    assert.doesNotThrow(() => validateLessonContentDefinition(definition), name);
+    assert.ok(validateLessonContentDefinition(definition).length > 0, name);
+    assert.throws(
+      () => createLessonContentRegistry([definition]),
+      /Lesson architecture validation failed/,
+      name,
+    );
+  }
+
+  assert.equal(ownIteratorGetterCalls, 0);
+  assert.equal(ownIteratorCalls, 0);
+  assert.equal(inheritedIteratorGetterCalls, 0);
+  assert.equal(deceptiveIteratorCalls, 0);
+  assert.equal(inheritedNumericGetterCalls, 0);
+});
+
+test("array validation rejects large sparse arrays without expanding them", () => {
+  const largeSparse = new Array(2 ** 32 - 1);
+  const definition = contentFixture({ prerequisites: largeSparse });
+  const issues = validateLessonContentDefinition(definition);
+  assert.ok(issues.some((issue) => issue.includes("sparse array")));
+  assert.throws(
+    () => createLessonContentRegistry([definition]),
+    /Lesson architecture validation failed/,
+  );
+  assert.deepEqual(validateLessonContentDefinition(contentFixture()), []);
+});
+
 test("sparse publishable arrays fail closed in content and bundle validation", () => {
   const sparse = contentFixture({
     learningOutcomes: new Array(1),
