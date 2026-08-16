@@ -20,6 +20,7 @@ import {
   type CourseProgressSnapshot,
   type LessonProgressStatus,
 } from "@/lib/course-progress";
+import { FOUNDATION_CURRICULUM_VERSION } from "@/lib/progress-manifest";
 
 type FoundationCourseProgressPanelProps = {
   levels: CourseLevel[];
@@ -40,7 +41,7 @@ const EMPTY_LESSON_PROGRESS: LessonProgressStatus = {
 
 const EMPTY_COURSE_SNAPSHOT: CourseProgressSnapshot = {
   version: 1,
-  courseVersion: 2,
+  courseVersion: FOUNDATION_CURRICULUM_VERSION,
   legacyLevel1Access: false,
   lastVisitedLesson: null,
   lessonOrder: [...foundationPublishedOrder],
@@ -162,7 +163,7 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
   async function clearCourse() {
     if (
       !window.confirm(
-        "Reset all published Foundation progress? You will need to complete Level 0 and Level 1 again.",
+        "Reset all published Foundation progress? You will need to complete the published path again.",
       )
     ) {
       return;
@@ -189,7 +190,7 @@ export function FoundationCourseProgressPanel({ levels }: FoundationCourseProgre
     <section className="foundation-progress-panel" aria-labelledby="foundation-progress-title">
       <div className="foundation-progress-panel-header">
         <div>
-          <p className="eyebrow">Developer Foundations · Level 0 + Level 1</p>
+          <p className="eyebrow">Developer Foundations · published path</p>
           <h2 id="foundation-progress-title">Your published learning path</h2>
           <p>
             {snapshot.completedLessons.length} of {FOUNDATION_PUBLISHED_TOTAL_LESSONS} published lessons completed.

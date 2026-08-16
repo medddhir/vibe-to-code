@@ -2,6 +2,8 @@
 require("./test-support");
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const { test } = require("node:test");
 
 const { courses } = require("../src/data/curriculum.ts");
@@ -17,6 +19,9 @@ const {
 } = require("../src/data/lesson-content-registry.ts");
 const { LESSON_PUBLICATION_RECORD } = require("../src/data/lesson-publication.ts");
 const {
+  internetWebBrowserServerLesson,
+} = require("../src/data/lessons/foundations/internet-web-browser-server.ts");
+const {
   LESSON_CONTENT_SCHEMA_VERSION,
   SUPPORTED_LESSON_BLOCK_TYPES,
 } = require("../src/data/lesson-schema.ts");
@@ -24,6 +29,8 @@ const { getLessonStorageKey } = require("../src/lib/lesson-progress-storage.ts")
 const {
   FOUNDATION_CURRICULUM_VERSION,
   FOUNDATION_PROGRESS_MANIFEST,
+  FOUNDATION_PROGRESS_MANIFEST_VERSION_2,
+  FOUNDATION_PROGRESS_LEVEL1_LESSON_SLUGS,
   FOUNDATION_PROGRESS_SCHEMA_VERSION,
 } = require("../src/lib/progress-manifest.ts");
 const {
@@ -39,9 +46,12 @@ const {
   validatePublishedLessonRegistry,
 } = require("../src/lib/lesson-validation.ts");
 const {
-  getGuidedStepsForLessonDefinition,
   getLessonBlockRendererKind,
+  getOrderingCheckpointDisplayOrder,
 } = require("../src/components/generic-lesson-renderer.tsx");
+const {
+  getGuidedStepsForLessonDefinition,
+} = require("../src/lib/guided-lesson-definition.ts");
 
 const publishedSlugs = [
   "what-is-code",
@@ -58,6 +68,7 @@ const publishedSlugs = [
   "interpreters-compilers-runtimes",
   "packages-dependencies-environments",
   "frontend-backend-api-database-cloud",
+  "internet-web-browser-server",
 ];
 
 const published = getPublishedLessonCatalogEntries();
@@ -122,7 +133,7 @@ const publishableCatalogFixture = (overrides = {}) => ({
   ...overrides,
 });
 
-test("keeps the exact 14 explicit publication records, slugs, and order", () => {
+test("keeps the exact 15 explicit publication records, slugs, and order", () => {
   assert.equal(Object.isFrozen(LESSON_PUBLICATION_RECORD), true);
   assert.equal(LESSON_PUBLICATION_RECORD.every(Object.isFrozen), true);
   assert.deepEqual(LESSON_PUBLICATION_RECORD.map((entry) => entry.lessonSlug), publishedSlugs);
@@ -131,12 +142,12 @@ test("keeps the exact 14 explicit publication records, slugs, and order", () => 
     LESSON_PUBLICATION_RECORD.map((entry) => entry.lessonSlug),
     FOUNDATION_PROGRESS_MANIFEST.map((entry) => entry.slug),
   );
-  assert.equal(published.length, 14);
+  assert.equal(published.length, 15);
 });
 
 test("a progress-manifest entry alone cannot publish a lesson", () => {
   const fakeManifestEntry = {
-    slug: "planned-foundations-level-2-lesson-0",
+    slug: "planned-foundations-level-2-lesson-1",
     lessonVersion: 1,
     stepIds: ["manifest-step"],
     activityIds: [],
@@ -147,10 +158,10 @@ test("a progress-manifest entry alone cannot publish a lesson", () => {
     [...FOUNDATION_PROGRESS_MANIFEST, fakeManifestEntry],
   );
   const plannedLesson = catalog.find(
-    (entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2 && entry.lessonIndex === 0,
+    (entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2 && entry.lessonIndex === 1,
   );
 
-  assert.equal(catalog.filter((entry) => entry.publicationState === "published").length, 14);
+  assert.equal(catalog.filter((entry) => entry.publicationState === "published").length, 15);
   assert.deepEqual(plannedLesson.progressStepIds, []);
   assert.deepEqual(plannedLesson.activityIds, []);
   assert.equal(plannedLesson.publicationState, "planned");
@@ -160,12 +171,12 @@ test("a progress-manifest entry alone cannot publish a lesson", () => {
   assert.equal(plannedLesson.nextLessonSlug, null);
 });
 
-test("keeps Lesson 1 public and the other 13 published routes authenticated", () => {
+test("keeps Lesson 1 public and the other 14 published routes authenticated", () => {
   assert.deepEqual(
     published.filter((entry) => entry.access === "public").map((entry) => entry.route),
     ["/lessons/what-is-code"],
   );
-  assert.equal(published.filter((entry) => entry.access === "authenticated").length, 13);
+  assert.equal(published.filter((entry) => entry.access === "authenticated").length, 14);
   assert.deepEqual(validateLessonCatalog(LESSON_CATALOG), []);
 });
 
@@ -237,33 +248,55 @@ test("catalog and bundle validators reject authorization-contract drift", () => 
   ));
 });
 
-test("keeps 362 declared, 202 cataloged, 14 published, and 188 planned lessons", () => {
+test("keeps 362 declared, 202 cataloged, 15 published, and 187 planned lessons", () => {
   assert.equal(courses.length, 6);
   assert.equal(courses.reduce((total, course) => total + course.lessonCount, 0), 362);
   assert.equal(LESSON_CATALOG.length, 202);
-  assert.equal(LESSON_CATALOG.filter((entry) => entry.publicationState === "published").length, 14);
-  assert.equal(LESSON_CATALOG.filter((entry) => entry.publicationState === "planned").length, 188);
+  assert.equal(LESSON_CATALOG.filter((entry) => entry.publicationState === "published").length, 15);
+  assert.equal(LESSON_CATALOG.filter((entry) => entry.publicationState === "planned").length, 187);
 });
 
-test("uses permanent published slugs and position-based provisional planned identities", () => {
+test("publishes only Level 2 Lesson 1 and leaves the other eight Level 2 lessons inaccessible", () => {
+  const level2 = LESSON_CATALOG.filter(
+    (entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2,
+  );
+  assert.equal(level2.length, 9);
+  assert.deepEqual(
+    level2.filter((entry) => entry.publicationState === "published").map((entry) => entry.lessonSlug),
+    ["internet-web-browser-server"],
+  );
+  assert.equal(level2.filter((entry) => entry.publicationState === "planned").length, 8);
+  assert.equal(
+    level2.slice(1).every((entry) => entry.route === null && entry.access === "unavailable"),
+    true,
+  );
+});
+
+test("uses the approved Lesson 15 slug while keeping Lesson 16 provisional", () => {
   assert.equal(published.every((entry) => entry.slugState === "permanent"), true);
   const lesson15 = LESSON_CATALOG.find(
     (entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2 && entry.lessonIndex === 0,
   );
   assert.equal(lesson15.catalogId, "foundations:level:2:lesson:0");
-  assert.equal(lesson15.slugState, "provisional");
-  assert.equal(lesson15.lessonSlug, "planned-foundations-level-2-lesson-0");
-  assert.equal(lesson15.publicationState, "planned");
+  assert.equal(lesson15.slugState, "permanent");
+  assert.equal(lesson15.lessonSlug, "internet-web-browser-server");
+  assert.equal(lesson15.publicationState, "published");
+  const lesson16 = LESSON_CATALOG.find(
+    (entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2 && entry.lessonIndex === 1,
+  );
+  assert.equal(lesson16.slugState, "provisional");
+  assert.equal(lesson16.lessonSlug, "planned-foundations-level-2-lesson-1");
+  assert.equal(lesson16.publicationState, "planned");
 });
 
 test("reserved provisional placeholders cannot become permanent, draft, or published", () => {
-  const lesson15 = LESSON_CATALOG.find(
-    (entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2 && entry.lessonIndex === 0,
+  const lesson16 = LESSON_CATALOG.find(
+    (entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2 && entry.lessonIndex === 1,
   );
   for (const candidate of [
-    { ...lesson15, slugState: "permanent" },
-    { ...lesson15, slugState: "permanent", publicationState: "draft" },
-    { ...lesson15, slugState: "permanent", publicationState: "published", route: `/lessons/${lesson15.lessonSlug}`, access: "authenticated" },
+    { ...lesson16, slugState: "permanent" },
+    { ...lesson16, slugState: "permanent", publicationState: "draft" },
+    { ...lesson16, slugState: "permanent", publicationState: "published", route: `/lessons/${lesson16.lessonSlug}`, access: "authenticated" },
   ]) {
     assert.ok(validateLessonCatalog([sampleCatalogEntry, candidate]).some(
       (issue) => issue.includes("reserved provisional placeholder"),
@@ -273,16 +306,16 @@ test("reserved provisional placeholders cannot become permanent, draft, or publi
   const attemptedPublication = [...LESSON_PUBLICATION_RECORD, {
     courseSlug: "foundations",
     levelIndex: 2,
-    lessonIndex: 0,
-    lessonSlug: lesson15.lessonSlug,
-    route: `/lessons/${lesson15.lessonSlug}`,
+    lessonIndex: 1,
+    lessonSlug: lesson16.lessonSlug,
+    route: `/lessons/${lesson16.lessonSlug}`,
     renderMode: "data-driven",
     access: "authenticated",
   }];
   assert.throws(
     () => createLessonCatalog(courses, attemptedPublication, [
       ...FOUNDATION_PROGRESS_MANIFEST,
-      { slug: lesson15.lessonSlug, lessonVersion: 1, stepIds: [], activityIds: [] },
+      { slug: lesson16.lessonSlug, lessonVersion: 1, stepIds: [], activityIds: [] },
     ]),
     /Reserved provisional slug/,
   );
@@ -753,7 +786,11 @@ test("trusted content registry rejects duplicate slugs regardless of input order
       /Duplicate trusted lesson content slug: fixture-lesson/,
     );
   }
-  assert.deepEqual(lessonContentRegistry.all(), []);
+  assert.equal(lessonContentRegistry.all().length, 1);
+  assert.equal(
+    lessonContentRegistry.all()[0].lessonSlug,
+    "internet-web-browser-server",
+  );
   assert.equal(lessonContentRegistry.bySlug("fixture-lesson"), null);
 });
 
@@ -829,15 +866,46 @@ test("published registry rejects draft/planned injection and malformed container
   assert.ok(validatePublishedLessonRegistry(null, null).length > 0);
 });
 
-test("keeps progress versions, identifiers, manifest, and storage keys unchanged", () => {
+test("bumps only the curriculum version and appends the exact Lesson 15 IDs", () => {
   assert.equal(FOUNDATION_PROGRESS_SCHEMA_VERSION, 2);
-  assert.equal(FOUNDATION_CURRICULUM_VERSION, 2);
-  assert.equal(FOUNDATION_PROGRESS_MANIFEST.length, 14);
+  assert.equal(FOUNDATION_CURRICULUM_VERSION, 3);
+  assert.equal(FOUNDATION_PROGRESS_MANIFEST.length, 15);
+  assert.equal(FOUNDATION_PROGRESS_MANIFEST_VERSION_2.length, 14);
+  assert.equal(FOUNDATION_PROGRESS_LEVEL1_LESSON_SLUGS.length, 7);
+  assert.equal(
+    FOUNDATION_PROGRESS_LEVEL1_LESSON_SLUGS.includes("internet-web-browser-server"),
+    false,
+  );
+  assert.deepEqual(
+    FOUNDATION_PROGRESS_MANIFEST_VERSION_2,
+    FOUNDATION_PROGRESS_MANIFEST.slice(0, 14),
+  );
   assert.deepEqual(
     published.map(({ lessonSlug, lessonVersion, progressStepIds, activityIds }) => ({ lessonSlug, lessonVersion, progressStepIds, activityIds })),
     FOUNDATION_PROGRESS_MANIFEST.map(({ slug, lessonVersion, stepIds, activityIds }) => ({ lessonSlug: slug, lessonVersion, progressStepIds: stepIds, activityIds })),
   );
   assert.equal(getLessonStorageKey("what-is-code", 3), "vibe-to-code:lesson-progress:v1:what-is-code:lesson-v3");
+});
+
+test("Lesson 15 is a valid trusted publishable bundle with the exact completion rule", () => {
+  const catalogEntry = getPublishedLessonBySlug("internet-web-browser-server");
+  assert.deepEqual(validateLessonContentDefinition(internetWebBrowserServerLesson), []);
+  assert.deepEqual(validatePublishableLessonBundle(catalogEntry, lessonContentRegistry), []);
+  assert.deepEqual(internetWebBrowserServerLesson.completionRule.requiredActivityIds, [
+    "classify-web-roles",
+    "order-page-journey",
+    "identify-missing-layer",
+  ]);
+  assert.equal(internetWebBrowserServerLesson.guidedSteps.length, 6);
+  assert.equal(internetWebBrowserServerLesson.sources.length, 5);
+  assert.equal(internetWebBrowserServerLesson.sourceVerifiedAt, "2026-08-16");
+  assert.deepEqual(internetWebBrowserServerLesson.sources, [
+    { title: "Internet — MDN Glossary", url: "https://developer.mozilla.org/en-US/docs/Glossary/Internet" },
+    { title: "World Wide Web — MDN Glossary", url: "https://developer.mozilla.org/en-US/docs/Glossary/World_Wide_Web" },
+    { title: "Browser — MDN Glossary", url: "https://developer.mozilla.org/en-US/docs/Glossary/Browser" },
+    { title: "What is a web server? — MDN Learn", url: "https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Web_mechanics/What_is_a_web_server" },
+    { title: "How the web works — MDN Learn", url: "https://developer.mozilla.org/en-US/docs/Learn_web_development/Getting_started/Web_standards/How_the_web_works" },
+  ]);
 });
 
 test("generic renderer dispatches only trusted blocks and preserves completion requirements", () => {
@@ -850,4 +918,60 @@ test("generic renderer dispatches only trusted blocks and preserves completion r
   const steps = getGuidedStepsForLessonDefinition(contentFixture());
   assert.deepEqual(steps[0].requiredActivityIds, ["fixture-check"]);
   assert.equal(steps[0].requiresPractice, true);
+});
+
+test("completed ordering restoration always displays the verified correct order", () => {
+  const activity = internetWebBrowserServerLesson.activities.find(
+    (candidate) => candidate.id === "order-page-journey",
+  );
+  const scrambled = activity.items.map((item) => item.id);
+  assert.notDeepEqual(scrambled, activity.correctOrder);
+  assert.deepEqual(
+    getOrderingCheckpointDisplayOrder(activity, scrambled, false),
+    scrambled,
+  );
+  assert.deepEqual(
+    getOrderingCheckpointDisplayOrder(activity, scrambled, true),
+    activity.correctOrder,
+  );
+});
+
+test("generic checkpoints retain focus, announce every move and failure, and use touch-safe buttons", () => {
+  const renderer = fs.readFileSync(
+    path.join(process.cwd(), "src/components/generic-lesson-renderer.tsx"),
+    "utf8",
+  );
+  const styles = fs.readFileSync(path.join(process.cwd(), "src/app/globals.css"), "utf8");
+  assert.match(renderer, /movementControls\.current/);
+  assert.match(renderer, /target\.focus\(\)/);
+  assert.match(renderer, /Moved \$\{item\?\.label/);
+  assert.match(renderer, /Incorrect attempt \$\{failedSubmissions\.current\}/);
+  assert.match(renderer, /aria-live="polite"/);
+  assert.match(renderer, /aria-atomic="true"/);
+  assert.match(renderer, /type="button"/);
+  assert.doesNotMatch(renderer, /draggable|onDrag|setTimeout|setInterval|requestAnimationFrame/);
+  assert.match(styles, /\.ordering-checkpoint-controls[\s\S]*flex-wrap: wrap/);
+  assert.match(styles, /\.ordering-checkpoint-controls \.button[\s\S]*min-height: 44px/);
+});
+
+test("ChoiceCheckpoint reserves the checkmark for a verified answer", () => {
+  const source = fs.readFileSync(
+    path.join(process.cwd(), "src/components/choice-checkpoint.tsx"),
+    "utf8",
+  );
+  assert.match(source, /completed \|\| answerCorrect \? "✓" : "•"/);
+  assert.doesNotMatch(source, /selected \? "✓"/);
+});
+
+test("the data-driven renderer has no executable network, HTML, iframe, timer, or drag path", () => {
+  const renderer = fs.readFileSync(
+    path.join(process.cwd(), "src/components/generic-lesson-renderer.tsx"),
+    "utf8",
+  );
+  for (const forbidden of [
+    "dangerouslySetInnerHTML", "<iframe", "<script", "eval(", "new Function",
+    "fetch(", "XMLHttpRequest", "WebSocket", "setTimeout", "setInterval", "draggable", "onDrag",
+  ]) {
+    assert.equal(renderer.includes(forbidden), false, forbidden);
+  }
 });

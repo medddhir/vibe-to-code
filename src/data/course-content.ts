@@ -149,6 +149,7 @@ export const foundationLevels: CourseLevel[] = [
         "Distinguish the network, the web, a browser, and a server.",
         "Arrange browser, internet, server, and response in the correct order.",
         "Treating Chrome, Google, the internet, and the web as synonyms.",
+        "internet-web-browser-server",
       ),
       lesson(
         "URLs, domains, DNS, paths, and queries",

@@ -10,6 +10,7 @@ const {
   isLessonUnlocked,
   recordLessonAttempt,
   recordLessonHint,
+  readCourseProgress,
   getLessonProgressState,
   resetLessonProgress,
   resetCourseProgress,
@@ -18,17 +19,18 @@ const {
   getCourseStorageKey,
   foundationLevel0Order,
   foundationLevel1Order,
+  foundationPublishedOrder,
 } = require("../src/lib/course-progress.ts");
 
 test("creates a versioned foundation progress record", () => {
   const snapshot = getCourseProgressSnapshot("foundations");
   const expected = getLessonOrder("foundations");
   assert.equal(snapshot.version, 1);
-  assert.equal(snapshot.courseVersion, 2);
-  assert.equal(snapshot.lessonOrder.length, 14);
+  assert.equal(snapshot.courseVersion, 3);
+  assert.equal(snapshot.lessonOrder.length, 15);
   assert.equal(snapshot.legacyLevel1Access, false);
   assert.deepEqual(snapshot.lessonOrder, expected);
-  assert.deepEqual(snapshot.lessonOrder, [...foundationLevel0Order, ...foundationLevel1Order]);
+  assert.deepEqual(snapshot.lessonOrder, foundationPublishedOrder);
 });
 
 test("supports attempts, hints, and completion checkpoints", () => {
@@ -91,12 +93,55 @@ test("migrates the former Level 1-only record without losing progress or access"
   }));
 
   const migrated = getCourseProgressSnapshot("foundations");
-  assert.equal(migrated.courseVersion, 2);
-  assert.equal(migrated.lessonOrder.length, 14);
+  assert.equal(migrated.courseVersion, 3);
+  assert.equal(migrated.lessonOrder.length, 15);
   assert.equal(migrated.legacyLevel1Access, true);
   assert.equal(migrated.lessons[legacyLesson].completed, true);
   assert.equal(migrated.lessons[legacyLesson].totalAttempts, 2);
   assert.equal(isLessonUnlocked("foundations", legacyLesson), true);
+
+  resetCourseProgress("foundations");
+});
+
+test("migrates version-2 local progress losslessly and adds only an empty Lesson 15 record", () => {
+  const storageKey = getCourseStorageKey("foundations");
+  const lesson14 = foundationLevel1Order.at(-1);
+  const saved = {
+    completedAt: "2026-08-15T09:00:00.000Z",
+    currentCheckpoint: "lesson-recap",
+    completedCheckpointIds: ["journey-mission"],
+    stepAttempts: { "journey-mission": 4 },
+    stepHints: { "journey-mission": 2 },
+  };
+  localStorage.setItem(storageKey, JSON.stringify({
+    version: 1,
+    courseVersion: 2,
+    legacyLevel1Access: true,
+    lastVisitedLesson: lesson14,
+    lessonOrder: [...foundationLevel0Order, ...foundationLevel1Order],
+    lessons: { [lesson14]: saved },
+    updatedAt: "2026-08-15T09:01:00.000Z",
+  }));
+
+  const migrated = getCourseProgressSnapshot("foundations");
+  const migratedRecord = readCourseProgress("foundations");
+  assert.equal(migrated.courseVersion, 3);
+  assert.equal(migrated.legacyLevel1Access, true);
+  assert.equal(migrated.lastVisitedLesson, lesson14);
+  assert.equal(migrated.lessons[lesson14].completed, true);
+  assert.equal(migrated.lessons[lesson14].currentCheckpoint, "lesson-recap");
+  assert.equal(migrated.lessons[lesson14].completedCheckpointCount, 1);
+  assert.equal(migrated.lessons[lesson14].totalAttempts, 4);
+  assert.equal(migrated.lessons[lesson14].totalHints, 2);
+  assert.deepEqual(migratedRecord.lessons[lesson14], saved);
+  assert.equal(migratedRecord.updatedAt, "2026-08-15T09:01:00.000Z");
+  assert.deepEqual(migrated.lessons["internet-web-browser-server"], {
+    completed: false,
+    currentCheckpoint: null,
+    completedCheckpointCount: 0,
+    totalAttempts: 0,
+    totalHints: 0,
+  });
 
   resetCourseProgress("foundations");
 });

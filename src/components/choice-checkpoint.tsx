@@ -109,7 +109,9 @@ export function ChoiceCheckpoint({
                     }}
                   />
                   <span aria-hidden="true">
-                    {selected ? "✓" : String.fromCharCode(65 + index)}
+                    {selected
+                      ? (completed || answerCorrect ? "✓" : "•")
+                      : String.fromCharCode(65 + index)}
                   </span>
                   <strong>{option.label}</strong>
                 </label>

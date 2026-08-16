@@ -17,7 +17,7 @@ export const PUBLIC_LESSON_IDENTITY = Object.freeze({
 });
 
 /** Explicit publication authority. Progress metadata alone never publishes a lesson. */
-export const LESSON_PUBLICATION_RECORD = Object.freeze([
+const LEGACY_FOUNDATION_PUBLICATION_RECORD = [
   [0, 0, "what-is-code", "public"],
   [0, 1, "source-code-running-output", "authenticated"],
   [0, 2, "hardware-operating-systems-apps", "authenticated"],
@@ -40,4 +40,17 @@ export const LESSON_PUBLICATION_RECORD = Object.freeze([
   route: `/lessons/${lessonSlug}`,
   renderMode: "legacy-bespoke" as const,
   access: access as "public" | "authenticated",
-}))) satisfies readonly LessonPublicationRecord[];
+})) satisfies readonly LessonPublicationRecord[];
+
+export const LESSON_PUBLICATION_RECORD = Object.freeze([
+  ...LEGACY_FOUNDATION_PUBLICATION_RECORD,
+  Object.freeze({
+    courseSlug: "foundations",
+    levelIndex: 2,
+    lessonIndex: 0,
+    lessonSlug: "internet-web-browser-server",
+    route: "/lessons/internet-web-browser-server",
+    renderMode: "data-driven" as const,
+    access: "authenticated" as const,
+  }),
+]) satisfies readonly LessonPublicationRecord[];

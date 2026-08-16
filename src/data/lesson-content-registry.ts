@@ -1,4 +1,5 @@
 import type { LessonContentDefinition } from "@/data/lesson-schema";
+import { internetWebBrowserServerLesson } from "@/data/lessons/foundations/internet-web-browser-server";
 import {
   assertValidLessonContentDefinition,
   LessonValidationError,
@@ -42,5 +43,6 @@ export function createLessonContentRegistry(
   });
 }
 
-/** No data-driven lesson content is trusted or published in this architecture PR. */
-export const lessonContentRegistry = createLessonContentRegistry([]);
+export const lessonContentRegistry = createLessonContentRegistry([
+  internetWebBrowserServerLesson,
+]);
