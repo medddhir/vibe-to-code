@@ -32,6 +32,24 @@ export function createLessonCatalog(
   publicationRecords: readonly LessonPublicationRecord[],
   progressManifest: readonly FoundationProgressLessonManifest[],
 ) {
+  const publicationCatalogIds = new Set<string>();
+  const publicationSlugs = new Set<string>();
+  const publicationRoutes = new Set<string>();
+  publicationRecords.forEach((record) => {
+    const id = catalogId(record.courseSlug, record.levelIndex, record.lessonIndex);
+    if (publicationCatalogIds.has(id)) {
+      throw new Error(`Duplicate publication catalog ID: ${id}`);
+    }
+    if (publicationSlugs.has(record.lessonSlug)) {
+      throw new Error(`Duplicate publication lesson slug: ${record.lessonSlug}`);
+    }
+    if (publicationRoutes.has(record.route)) {
+      throw new Error(`Duplicate publication route: ${record.route}`);
+    }
+    publicationCatalogIds.add(id);
+    publicationSlugs.add(record.lessonSlug);
+    publicationRoutes.add(record.route);
+  });
   const publicRecords = publicationRecords.filter((record) => record.access === "public");
   const requiredPublicRecord = publicationRecords.find(
     (record) => record.courseSlug === PUBLIC_LESSON_IDENTITY.courseSlug &&
@@ -127,10 +145,20 @@ export function createLessonCatalog(
     }));
   });
 
-  return Object.freeze(entries.map((entry) => Object.freeze({
+  const catalog = Object.freeze(entries.map((entry) => Object.freeze({
     ...entry,
     ...(navigation.get(entry.lessonSlug) ?? {}),
   })));
+  const publicEntries = catalog.filter((entry) => entry.access === "public");
+  if (
+    publicEntries.length !== 1 ||
+    publicEntries[0]?.courseSlug !== PUBLIC_LESSON_IDENTITY.courseSlug ||
+    publicEntries[0]?.lessonSlug !== PUBLIC_LESSON_IDENTITY.lessonSlug ||
+    publicEntries[0]?.route !== PUBLIC_LESSON_IDENTITY.route
+  ) {
+    throw new Error("Constructed catalog must keep what-is-code as the only public lesson");
+  }
+  return catalog;
 }
 
 /** Includes outlined lessons only; aggregate-only course counts remain in curriculum data. */

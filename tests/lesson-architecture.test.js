@@ -190,6 +190,36 @@ test("construction rejects a second public lesson or authenticating what-is-code
   );
 });
 
+test("construction rejects duplicate publication identity before Map construction", () => {
+  const duplicate = [
+    ...LESSON_PUBLICATION_RECORD,
+    {
+      ...LESSON_PUBLICATION_RECORD[0],
+      access: "authenticated",
+    },
+  ];
+  assert.throws(
+    () => createLessonCatalog(courses, duplicate, FOUNDATION_PROGRESS_MANIFEST),
+    /Duplicate publication catalog ID: foundations:level:0:lesson:0/,
+  );
+
+  const duplicateSlug = LESSON_PUBLICATION_RECORD.map((record, index) =>
+    index === 1 ? { ...record, lessonSlug: LESSON_PUBLICATION_RECORD[0].lessonSlug } : record,
+  );
+  assert.throws(
+    () => createLessonCatalog(courses, duplicateSlug, FOUNDATION_PROGRESS_MANIFEST),
+    /Duplicate publication lesson slug: what-is-code/,
+  );
+
+  const duplicateRoute = LESSON_PUBLICATION_RECORD.map((record, index) =>
+    index === 1 ? { ...record, route: LESSON_PUBLICATION_RECORD[0].route } : record,
+  );
+  assert.throws(
+    () => createLessonCatalog(courses, duplicateRoute, FOUNDATION_PROGRESS_MANIFEST),
+    /Duplicate publication route: \/lessons\/what-is-code/,
+  );
+});
+
 test("catalog and bundle validators reject authorization-contract drift", () => {
   const secondPublic = LESSON_CATALOG.map((entry) =>
     entry.lessonSlug === "source-code-running-output" ? { ...entry, access: "public" } : entry,
@@ -408,6 +438,56 @@ test("content validator rejects every non-serializable runtime value without rec
   cyclic.cycle = cyclic;
   assert.doesNotThrow(() => validateLessonContentDefinition(cyclic));
   assert.ok(validateLessonContentDefinition(cyclic).some((issue) => issue.includes("cyclic")));
+});
+
+test("array serializability rejects hidden own properties, accessors, cycles, and holes", () => {
+  const cases = [];
+
+  const functionProperty = [];
+  functionProperty.evil = () => 1;
+  cases.push(["function property", functionProperty]);
+
+  const bigintProperty = [];
+  bigintProperty.evil = 1n;
+  cases.push(["bigint property", bigintProperty]);
+
+  const symbolProperty = [];
+  symbolProperty[Symbol("evil")] = "x";
+  cases.push(["symbol property", symbolProperty]);
+
+  const forbiddenProperty = [];
+  forbiddenProperty.rawHtml = "<script>";
+  cases.push(["forbidden property", forbiddenProperty]);
+
+  const cyclicProperty = [];
+  cyclicProperty.self = cyclicProperty;
+  cases.push(["cyclic property", cyclicProperty]);
+
+  let getterInvoked = false;
+  const accessorProperty = [];
+  Object.defineProperty(accessorProperty, "evil", {
+    enumerable: true,
+    get() {
+      getterInvoked = true;
+      return "x";
+    },
+  });
+  cases.push(["accessor property", accessorProperty]);
+
+  cases.push(["sparse array", new Array(1)]);
+
+  for (const [name, array] of cases) {
+    const definition = contentFixture({ prerequisites: array });
+    assert.doesNotThrow(() => validateLessonContentDefinition(definition), name);
+    assert.ok(validateLessonContentDefinition(definition).length > 0, name);
+    assert.throws(
+      () => createLessonContentRegistry([definition]),
+      /Lesson architecture validation failed/,
+      name,
+    );
+  }
+  assert.equal(getterInvoked, false);
+  assert.deepEqual(validateLessonContentDefinition(contentFixture()), []);
 });
 
 test("sparse publishable arrays fail closed in content and bundle validation", () => {

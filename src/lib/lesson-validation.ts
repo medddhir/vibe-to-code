@@ -254,30 +254,65 @@ function scanSerializable(
   path: string,
   issues: string[],
   ancestors: WeakSet<object>,
-) {
-  if (value === null || typeof value === "string" || typeof value === "boolean") return;
+): boolean {
+  if (value === null || typeof value === "string" || typeof value === "boolean") return false;
   if (typeof value === "number") {
     if (!Number.isFinite(value)) issues.push(`${path} contains a non-finite number`);
-    return;
+    return false;
   }
   if (typeof value === "undefined" || typeof value === "bigint" ||
       typeof value === "symbol" || typeof value === "function") {
     issues.push(`${path} contains non-serializable ${typeof value}`);
-    return;
+    return false;
   }
   if (ancestors.has(value)) {
     issues.push(`${path} contains a cyclic reference`);
-    return;
+    return false;
   }
   ancestors.add(value);
+  let hasUnsafeAccessor = false;
   try {
     if (Array.isArray(value)) {
-      value.forEach((item, index) => scanSerializable(item, `${path}[${index}]`, issues, ancestors));
-      return;
+      const indexDescriptors: Array<[number, PropertyDescriptor]> = [];
+      Reflect.ownKeys(value).forEach((key) => {
+        if (key === "length") return;
+        if (typeof key === "symbol") {
+          issues.push(`${path} contains a symbol key`);
+          return;
+        }
+        const descriptor = Object.getOwnPropertyDescriptor(value, key);
+        if (!descriptor || descriptor.get || descriptor.set) {
+          issues.push(`${path}.${key} contains executable property access`);
+          hasUnsafeAccessor = true;
+          return;
+        }
+        const isCanonicalIndex = /^(0|[1-9]\d*)$/.test(key) &&
+          Number.isSafeInteger(Number(key)) && Number(key) < value.length;
+        if (!isCanonicalIndex) {
+          if (FORBIDDEN_CONTENT_KEYS.has(key)) issues.push(`${path}.${key} is not allowed in lesson data`);
+          issues.push(`${path}.${key} is not an allowed array property`);
+          if (scanSerializable(descriptor.value, `${path}.${key}`, issues, ancestors)) {
+            hasUnsafeAccessor = true;
+          }
+          return;
+        }
+        indexDescriptors.push([Number(key), descriptor]);
+      });
+      indexDescriptors.sort(([left], [right]) => left - right);
+      if (indexDescriptors.length !== value.length ||
+          indexDescriptors.some(([index], position) => index !== position)) {
+        issues.push(`${path} contains sparse array holes`);
+      }
+      indexDescriptors.forEach(([index, descriptor]) => {
+        if (scanSerializable(descriptor.value, `${path}[${index}]`, issues, ancestors)) {
+          hasUnsafeAccessor = true;
+        }
+      });
+      return hasUnsafeAccessor;
     }
     if (!isPlainRecord(value)) {
       issues.push(`${path} contains a non-plain object`);
-      return;
+      return false;
     }
     Reflect.ownKeys(value).forEach((key) => {
       if (typeof key === "symbol") {
@@ -288,10 +323,14 @@ function scanSerializable(
       const descriptor = Object.getOwnPropertyDescriptor(value, key);
       if (!descriptor || descriptor.get || descriptor.set) {
         issues.push(`${path}.${key} contains executable property access`);
+        hasUnsafeAccessor = true;
         return;
       }
-      scanSerializable(descriptor.value, `${path}.${key}`, issues, ancestors);
+      if (scanSerializable(descriptor.value, `${path}.${key}`, issues, ancestors)) {
+        hasUnsafeAccessor = true;
+      }
     });
+    return hasUnsafeAccessor;
   } finally {
     ancestors.delete(value);
   }
@@ -414,7 +453,8 @@ function validateActivity(activity: unknown, path: string, issues: string[]) {
 }
 
 function validateContentInternal(input: unknown, issues: string[]) {
-  scanSerializable(input, "content", issues, new WeakSet());
+  const hasUnsafeAccessor = scanSerializable(input, "content", issues, new WeakSet());
+  if (hasUnsafeAccessor) return null;
   if (!isPlainRecord(input)) {
     issues.push("content must be a plain object");
     return null;
