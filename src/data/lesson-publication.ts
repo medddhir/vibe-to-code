@@ -10,6 +10,12 @@ export type LessonPublicationRecord = {
   access: Exclude<LessonAccess, "unavailable">;
 };
 
+export const PUBLIC_LESSON_IDENTITY = Object.freeze({
+  courseSlug: "foundations",
+  lessonSlug: "what-is-code",
+  route: "/lessons/what-is-code",
+});
+
 /** Explicit publication authority. Progress metadata alone never publishes a lesson. */
 export const LESSON_PUBLICATION_RECORD = Object.freeze([
   [0, 0, "what-is-code", "public"],

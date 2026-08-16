@@ -1,4 +1,5 @@
 import type { LessonContentDefinition } from "@/data/lesson-schema";
+import { assertValidLessonContentDefinition } from "@/lib/lesson-validation";
 
 function deepFreeze<T>(value: T): T {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
@@ -15,11 +16,18 @@ function immutableContent(definition: LessonContentDefinition) {
 export function createLessonContentRegistry(
   definitions: readonly LessonContentDefinition[],
 ) {
-  const all = Object.freeze(definitions.map(immutableContent));
+  const bySlug = new Map<string, Readonly<LessonContentDefinition>>();
+  definitions.forEach((definition) => {
+    assertValidLessonContentDefinition(definition);
+    if (bySlug.has(definition.lessonSlug)) {
+      throw new Error(`Duplicate trusted lesson content slug: ${definition.lessonSlug}`);
+    }
+    bySlug.set(definition.lessonSlug, immutableContent(definition));
+  });
+  const all = Object.freeze([...bySlug.values()]);
   return Object.freeze({
     all: () => all,
-    bySlug: (lessonSlug: string) =>
-      all.find((definition) => definition.lessonSlug === lessonSlug) ?? null,
+    bySlug: (lessonSlug: string) => bySlug.get(lessonSlug) ?? null,
   });
 }
 

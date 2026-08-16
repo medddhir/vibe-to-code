@@ -4,6 +4,7 @@ import {
   LESSON_PUBLICATION_STATES,
   SUPPORTED_LESSON_BLOCK_TYPES,
 } from "@/data/lesson-schema";
+import { PUBLIC_LESSON_IDENTITY } from "@/data/lesson-publication";
 
 export class LessonValidationError extends Error {
   readonly issues: readonly string[];
@@ -20,6 +21,7 @@ type RecordValue = Record<string, unknown>;
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ROUTE_PATTERN = /^\/lessons\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const CATALOG_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*:level:\d+:lesson:\d+$/;
+const RESERVED_PROVISIONAL_SLUG_PATTERN = /^planned-[a-z0-9]+(?:-[a-z0-9]+)*-level-\d+-lesson-\d+$/;
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const FORBIDDEN_CONTENT_KEYS = new Set([
   "component",
@@ -80,7 +82,11 @@ function arrayValue(value: unknown, path: string, issues: string[]) {
     issues.push(`${path} must be an array`);
     return null;
   }
-  return value as unknown[];
+  const dense = Array.from(value as unknown[]);
+  for (let index = 0; index < value.length; index += 1) {
+    if (!Object.hasOwn(value, index)) issues.push(`${path}[${index}] is a sparse array hole`);
+  }
+  return dense;
 }
 
 function stringIdArray(value: unknown, path: string, issues: string[]) {
@@ -122,6 +128,9 @@ function validateCatalogEntry(entry: unknown, path: string, issues: string[]) {
   const lessonSlug = nonblank(entry.lessonSlug, `${path}.lessonSlug`, issues);
   if (courseSlug && !SLUG_PATTERN.test(courseSlug)) issues.push(`${path}.courseSlug is malformed`);
   if (lessonSlug && !SLUG_PATTERN.test(lessonSlug)) issues.push(`${path}.lessonSlug is malformed`);
+  if (lessonSlug && RESERVED_PROVISIONAL_SLUG_PATTERN.test(lessonSlug) && entry.slugState !== "provisional") {
+    issues.push(`${path}.lessonSlug is a reserved provisional placeholder`);
+  }
   const levelIndex = nonnegativeInteger(entry.levelIndex, `${path}.levelIndex`, issues);
   const lessonIndex = nonnegativeInteger(entry.lessonIndex, `${path}.lessonIndex`, issues);
   positiveInteger(entry.lessonVersion, `${path}.lessonVersion`, issues);
@@ -158,6 +167,16 @@ function validateCatalogEntry(entry: unknown, path: string, issues: string[]) {
   } else {
     if (entry.route !== null) issues.push(`${path} is unpublished but has a route`);
     if (entry.access !== "unavailable") issues.push(`${path} is unpublished but has routable access`);
+  }
+  const isRequiredPublicLesson = courseSlug === PUBLIC_LESSON_IDENTITY.courseSlug &&
+    lessonSlug === PUBLIC_LESSON_IDENTITY.lessonSlug;
+  if (entry.access === "public" && (
+    !isRequiredPublicLesson || entry.route !== PUBLIC_LESSON_IDENTITY.route
+  )) {
+    issues.push(`${path} attempts to create a second public lesson`);
+  }
+  if (entry.publicationState === "published" && isRequiredPublicLesson && entry.access !== "public") {
+    issues.push(`${path} must keep what-is-code public`);
   }
   if (entry.publicationState === "draft" && entry.slugState !== "permanent") {
     issues.push(`${path} must have a permanent slug before draft`);
@@ -202,6 +221,18 @@ function validateCatalogInternal(input: unknown, issues: string[]) {
       Number(left.entry.levelIndex) - Number(right.entry.levelIndex) ||
       Number(left.entry.lessonIndex) - Number(right.entry.lessonIndex),
     );
+  const requiredPublic = published.filter(({ entry }) =>
+    entry.courseSlug === PUBLIC_LESSON_IDENTITY.courseSlug &&
+    entry.lessonSlug === PUBLIC_LESSON_IDENTITY.lessonSlug &&
+    entry.route === PUBLIC_LESSON_IDENTITY.route &&
+    entry.access === "public",
+  );
+  const otherPublic = published.filter(({ entry }) => entry.access === "public" &&
+    !(entry.courseSlug === PUBLIC_LESSON_IDENTITY.courseSlug &&
+      entry.lessonSlug === PUBLIC_LESSON_IDENTITY.lessonSlug &&
+      entry.route === PUBLIC_LESSON_IDENTITY.route));
+  if (requiredPublic.length !== 1) issues.push("Catalog must contain what-is-code as the one public lesson");
+  if (otherPublic.length > 0) issues.push("Catalog contains a second public lesson");
   published.forEach(({ entry }, index) => {
     const previous = published[index - 1]?.entry.courseSlug === entry.courseSlug
       ? published[index - 1].entry.lessonSlug
@@ -270,8 +301,13 @@ function validateTextArray(value: unknown, path: string, issues: string[], requi
   const values = arrayValue(value, path, issues);
   if (!values) return [];
   if (requireOne && values.length === 0) issues.push(`${path} must not be empty`);
-  values.forEach((item, index) => nonblank(item, `${path}[${index}]`, issues));
-  return values;
+  const valid: string[] = [];
+  values.forEach((item, index) => {
+    const text = nonblank(item, `${path}[${index}]`, issues);
+    if (text) valid.push(text);
+  });
+  if (requireOne && valid.length === 0) issues.push(`${path} must contain at least one real value`);
+  return valid;
 }
 
 function validateBlock(block: unknown, path: string, issues: string[]) {
@@ -469,19 +505,31 @@ function validateContentInternal(input: unknown, issues: string[]) {
   }));
 
   const sources = arrayValue(input.sources, "content.sources", issues);
+  const inspectedSources: RecordValue[] = [];
+  let validSourceCount = 0;
   if (sources) sources.forEach((source, index) => {
     if (!isPlainRecord(source)) {
       issues.push(`content.sources[${index}] must be a plain object`);
       return;
     }
-    nonblank(source.title, `content.sources[${index}].title`, issues);
-    nonblank(source.url, `content.sources[${index}].url`, issues);
+    inspectedSources.push(source);
+    const title = nonblank(source.title, `content.sources[${index}].title`, issues);
+    const url = nonblank(source.url, `content.sources[${index}].url`, issues);
+    if (title && url) validSourceCount += 1;
   });
   if (input.sourceVerifiedAt !== null && typeof input.sourceVerifiedAt !== "string") {
     issues.push("content.sourceVerifiedAt must be a string or null");
   }
 
-  return { input, lessonSlug, stepIds, activityIds: [...activities.keys()], outcomes, sources };
+  return {
+    input,
+    lessonSlug,
+    stepIds,
+    activityIds: [...activities.keys()],
+    outcomes,
+    sources: inspectedSources,
+    validSourceCount,
+  };
 }
 
 export function validateLessonContentDefinition(input: unknown) {
@@ -521,6 +569,16 @@ export function validatePublishableLessonBundle(catalogEntry: unknown, contentRe
     if (entry.renderMode !== "data-driven") issues.push("catalogEntry must use data-driven render mode");
     if (entry.route !== `/lessons/${catalog.lessonSlug}`) issues.push("catalogEntry route is inconsistent");
     if (entry.access !== "public" && entry.access !== "authenticated") issues.push("catalogEntry access is inconsistent");
+    if (entry.access === "public" && !(
+      entry.courseSlug === PUBLIC_LESSON_IDENTITY.courseSlug &&
+      entry.lessonSlug === PUBLIC_LESSON_IDENTITY.lessonSlug &&
+      entry.route === PUBLIC_LESSON_IDENTITY.route
+    )) issues.push("Only what-is-code may be a public publishable lesson");
+    if (
+      entry.courseSlug === PUBLIC_LESSON_IDENTITY.courseSlug &&
+      entry.lessonSlug === PUBLIC_LESSON_IDENTITY.lessonSlug &&
+      entry.access !== "public"
+    ) issues.push("Publishable what-is-code must remain public");
 
     const definition = trustedContentBySlug(contentRegistry, catalog.lessonSlug, issues);
     if (!definition) {
@@ -538,7 +596,8 @@ export function validatePublishableLessonBundle(catalogEntry: unknown, contentRe
       issues.push("Content activity IDs do not exactly match catalog activityIds");
     }
     if (content.outcomes.length === 0) issues.push("Publishable content requires at least one learning outcome");
-    if (!content.sources || content.sources.length === 0) issues.push("Publishable content requires at least one source");
+    if (content.stepIds.length === 0) issues.push("Publishable content requires at least one real guided step");
+    if (content.validSourceCount === 0) issues.push("Publishable content requires at least one source with valid fields");
     content.sources?.forEach((source, index) => {
       if (!isPlainRecord(source) || typeof source.url !== "string") return;
       try {

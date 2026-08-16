@@ -166,6 +166,45 @@ test("keeps Lesson 1 public and the other 13 published routes authenticated", ()
     ["/lessons/what-is-code"],
   );
   assert.equal(published.filter((entry) => entry.access === "authenticated").length, 13);
+  assert.deepEqual(validateLessonCatalog(LESSON_CATALOG), []);
+});
+
+test("construction rejects a second public lesson or authenticating what-is-code", () => {
+  const secondPublic = LESSON_PUBLICATION_RECORD.map((record) =>
+    record.lessonSlug === "source-code-running-output"
+      ? { ...record, access: "public" }
+      : record,
+  );
+  const publicRemoved = LESSON_PUBLICATION_RECORD.map((record) =>
+    record.lessonSlug === "what-is-code"
+      ? { ...record, access: "authenticated" }
+      : record,
+  );
+  assert.throws(
+    () => createLessonCatalog(courses, secondPublic, FOUNDATION_PROGRESS_MANIFEST),
+    /only public lesson/,
+  );
+  assert.throws(
+    () => createLessonCatalog(courses, publicRemoved, FOUNDATION_PROGRESS_MANIFEST),
+    /only public lesson/,
+  );
+});
+
+test("catalog and bundle validators reject authorization-contract drift", () => {
+  const secondPublic = LESSON_CATALOG.map((entry) =>
+    entry.lessonSlug === "source-code-running-output" ? { ...entry, access: "public" } : entry,
+  );
+  const publicRemoved = LESSON_CATALOG.map((entry) =>
+    entry.lessonSlug === "what-is-code" ? { ...entry, access: "authenticated" } : entry,
+  );
+  assert.ok(validateLessonCatalog(secondPublic).some((issue) => issue.includes("second public")));
+  assert.ok(validateLessonCatalog(publicRemoved).some((issue) => issue.includes("what-is-code")));
+
+  const futurePublic = publishableCatalogFixture({ access: "public" });
+  const registry = createLessonContentRegistry([contentFixture()]);
+  assert.ok(validatePublishableLessonBundle(futurePublic, registry).some(
+    (issue) => issue.includes("Only what-is-code"),
+  ));
 });
 
 test("keeps 362 declared, 202 cataloged, 14 published, and 188 planned lessons", () => {
@@ -185,6 +224,83 @@ test("uses permanent published slugs and position-based provisional planned iden
   assert.equal(lesson15.slugState, "provisional");
   assert.equal(lesson15.lessonSlug, "planned-foundations-level-2-lesson-0");
   assert.equal(lesson15.publicationState, "planned");
+});
+
+test("reserved provisional placeholders cannot become permanent, draft, or published", () => {
+  const lesson15 = LESSON_CATALOG.find(
+    (entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2 && entry.lessonIndex === 0,
+  );
+  for (const candidate of [
+    { ...lesson15, slugState: "permanent" },
+    { ...lesson15, slugState: "permanent", publicationState: "draft" },
+    { ...lesson15, slugState: "permanent", publicationState: "published", route: `/lessons/${lesson15.lessonSlug}`, access: "authenticated" },
+  ]) {
+    assert.ok(validateLessonCatalog([sampleCatalogEntry, candidate]).some(
+      (issue) => issue.includes("reserved provisional placeholder"),
+    ));
+  }
+
+  const attemptedPublication = [...LESSON_PUBLICATION_RECORD, {
+    courseSlug: "foundations",
+    levelIndex: 2,
+    lessonIndex: 0,
+    lessonSlug: lesson15.lessonSlug,
+    route: `/lessons/${lesson15.lessonSlug}`,
+    renderMode: "data-driven",
+    access: "authenticated",
+  }];
+  assert.throws(
+    () => createLessonCatalog(courses, attemptedPublication, [
+      ...FOUNDATION_PROGRESS_MANIFEST,
+      { slug: lesson15.lessonSlug, lessonVersion: 1, stepIds: [], activityIds: [] },
+    ]),
+    /Reserved provisional slug/,
+  );
+});
+
+test("catalog construction builds independent ordered navigation per course", () => {
+  const course = (slug, lessons) => ({
+    slug,
+    name: slug,
+    shortName: slug,
+    eyebrow: slug,
+    description: slug,
+    status: "In progress",
+    accent: "blue",
+    lessonCount: lessons.length,
+    levelCount: 1,
+    levels: [{ label: "Level 0", title: "Level", description: "Level", lessons }],
+  });
+  const syntheticCourses = [
+    course("foundations", [{ title: "Public", slug: "what-is-code", duration: "10 min" }]),
+    course("second-course", [
+      { title: "First", slug: "second-first", duration: "10 min" },
+      { title: "Second", slug: "second-second", duration: "12 min" },
+    ]),
+  ];
+  const syntheticPublications = [
+    { courseSlug: "foundations", levelIndex: 0, lessonIndex: 0, lessonSlug: "what-is-code", route: "/lessons/what-is-code", renderMode: "legacy-bespoke", access: "public" },
+    { courseSlug: "second-course", levelIndex: 0, lessonIndex: 0, lessonSlug: "second-first", route: "/lessons/second-first", renderMode: "data-driven", access: "authenticated" },
+    { courseSlug: "second-course", levelIndex: 0, lessonIndex: 1, lessonSlug: "second-second", route: "/lessons/second-second", renderMode: "data-driven", access: "authenticated" },
+  ];
+  const syntheticManifest = syntheticPublications.map((entry) => ({
+    slug: entry.lessonSlug,
+    lessonVersion: 1,
+    stepIds: [],
+    activityIds: [],
+  }));
+  const catalog = createLessonCatalog(syntheticCourses, syntheticPublications, syntheticManifest);
+  const foundation = catalog.find((entry) => entry.lessonSlug === "what-is-code");
+  const first = catalog.find((entry) => entry.lessonSlug === "second-first");
+  const second = catalog.find((entry) => entry.lessonSlug === "second-second");
+
+  assert.equal(foundation.previousLessonSlug, null);
+  assert.equal(foundation.nextLessonSlug, null);
+  assert.equal(first.previousLessonSlug, null);
+  assert.equal(first.nextLessonSlug, "second-second");
+  assert.equal(second.previousLessonSlug, "second-first");
+  assert.equal(second.nextLessonSlug, null);
+  assert.deepEqual(validateLessonCatalog(catalog), []);
 });
 
 test("parses only exact whole-minute durations and standardizes Lesson 1 to 10 minutes", () => {
@@ -294,6 +410,31 @@ test("content validator rejects every non-serializable runtime value without rec
   assert.ok(validateLessonContentDefinition(cyclic).some((issue) => issue.includes("cyclic")));
 });
 
+test("sparse publishable arrays fail closed in content and bundle validation", () => {
+  const sparse = contentFixture({
+    learningOutcomes: new Array(1),
+    guidedSteps: new Array(1),
+    activities: [],
+    completionRule: { type: "all-steps-and-required-activities", requiredActivityIds: [] },
+    sources: new Array(1),
+    sourceVerifiedAt: "2026-08-16",
+  });
+  const contentIssues = validateLessonContentDefinition(sparse);
+  assert.ok(contentIssues.some((issue) => issue.includes("learningOutcomes[0]") && issue.includes("sparse")));
+  assert.ok(contentIssues.some((issue) => issue.includes("guidedSteps[0]") && issue.includes("sparse")));
+  assert.ok(contentIssues.some((issue) => issue.includes("sources[0]") && issue.includes("sparse")));
+
+  const bundleIssues = validatePublishableLessonBundle(
+    publishableCatalogFixture({ progressStepIds: [], activityIds: [] }),
+    { bySlug: () => sparse },
+  );
+  assert.ok(bundleIssues.some((issue) => issue.includes("learningOutcomes[0]")));
+  assert.ok(bundleIssues.some((issue) => issue.includes("guidedSteps[0]")));
+  assert.ok(bundleIssues.some((issue) => issue.includes("sources[0]")));
+  assert.ok(bundleIssues.some((issue) => issue.includes("real guided step")));
+  assert.ok(bundleIssues.some((issue) => issue.includes("at least one source")));
+});
+
 test("content validator rejects invalid structure, discriminants, blanks, and undersized activities", () => {
   const malformed = contentFixture({
     objective: "",
@@ -374,6 +515,36 @@ test("valid publishable data-driven bundles cross-check catalog, content, regist
   const definition = contentFixture();
   const registry = createLessonContentRegistry([definition]);
   assert.deepEqual(validatePublishableLessonBundle(publishableCatalogFixture(), registry), []);
+});
+
+test("trusted content registry rejects duplicate slugs regardless of input order", () => {
+  const first = contentFixture({ objective: "First valid objective." });
+  const second = contentFixture({ objective: "Second valid objective." });
+  for (const definitions of [[first, second], [second, first]]) {
+    assert.throws(
+      () => createLessonContentRegistry(definitions),
+      /Duplicate trusted lesson content slug: fixture-lesson/,
+    );
+  }
+  assert.deepEqual(lessonContentRegistry.all(), []);
+  assert.equal(lessonContentRegistry.bySlug("fixture-lesson"), null);
+});
+
+test("trusted content registry validates first and returns immutable cloned definitions", () => {
+  const original = contentFixture();
+  const registry = createLessonContentRegistry([original]);
+  original.objective = "Mutated";
+  original.guidedSteps[0].title = "Mutated";
+  const snapshot = registry.bySlug("fixture-lesson");
+  assert.equal(snapshot.objective, "Validate a local architecture fixture.");
+  assert.equal(snapshot.guidedSteps[0].title, "Fixture step");
+  assert.equal(Object.isFrozen(snapshot), true);
+  assert.equal(Object.isFrozen(snapshot.guidedSteps), true);
+  assert.equal(Object.isFrozen(snapshot.guidedSteps[0]), true);
+
+  const cyclic = contentFixture();
+  cyclic.self = cyclic;
+  assert.throws(() => createLessonContentRegistry([cyclic]), /cyclic reference/);
 });
 
 test("publishable bundle validation fails closed on missing or mismatched trusted content", () => {

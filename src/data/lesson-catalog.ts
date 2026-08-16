@@ -1,9 +1,14 @@
 import { courses, type Course } from "@/data/curriculum";
-import { LESSON_PUBLICATION_RECORD, type LessonPublicationRecord } from "@/data/lesson-publication";
+import {
+  LESSON_PUBLICATION_RECORD,
+  PUBLIC_LESSON_IDENTITY,
+  type LessonPublicationRecord,
+} from "@/data/lesson-publication";
 import { LESSON_CATALOG_SCHEMA_VERSION, type LessonCatalogEntry } from "@/data/lesson-schema";
 import { FOUNDATION_PROGRESS_MANIFEST, type FoundationProgressLessonManifest } from "@/lib/progress-manifest";
 
 const DURATION_PATTERN = /^([1-9]\d*) min$/;
+const RESERVED_PROVISIONAL_SLUG_PATTERN = /^planned-[a-z0-9]+(?:-[a-z0-9]+)*-level-\d+-lesson-\d+$/;
 
 export function parseLessonDuration(duration: unknown) {
   if (typeof duration !== "string") throw new Error("Lesson duration must be a string");
@@ -27,6 +32,28 @@ export function createLessonCatalog(
   publicationRecords: readonly LessonPublicationRecord[],
   progressManifest: readonly FoundationProgressLessonManifest[],
 ) {
+  const publicRecords = publicationRecords.filter((record) => record.access === "public");
+  const requiredPublicRecord = publicationRecords.find(
+    (record) => record.courseSlug === PUBLIC_LESSON_IDENTITY.courseSlug &&
+      record.lessonSlug === PUBLIC_LESSON_IDENTITY.lessonSlug,
+  );
+  if (
+    publicRecords.length !== 1 ||
+    publicRecords[0]?.courseSlug !== PUBLIC_LESSON_IDENTITY.courseSlug ||
+    publicRecords[0]?.lessonSlug !== PUBLIC_LESSON_IDENTITY.lessonSlug ||
+    publicRecords[0]?.route !== PUBLIC_LESSON_IDENTITY.route ||
+    requiredPublicRecord?.access !== "public"
+  ) {
+    throw new Error("Publication record must keep what-is-code as the only public lesson");
+  }
+  publicationRecords.forEach((record) => {
+    if (RESERVED_PROVISIONAL_SLUG_PATTERN.test(record.lessonSlug)) {
+      throw new Error(`Reserved provisional slug cannot be published: ${record.lessonSlug}`);
+    }
+    if (record.access !== "public" && record.access !== "authenticated") {
+      throw new Error(`Published lesson has invalid access: ${record.lessonSlug}`);
+    }
+  });
   const publicationByPosition = new Map(
     publicationRecords.map((record) => [
       catalogId(record.courseSlug, record.levelIndex, record.lessonIndex),
@@ -83,10 +110,22 @@ export function createLessonCatalog(
     if (!entry) throw new Error(`Published lesson ${record.lessonSlug} is missing from the catalog`);
     return entry;
   });
-  const navigation = new Map(published.map((entry, index) => [entry.lessonSlug, {
-    previousLessonSlug: published[index - 1]?.lessonSlug ?? null,
-    nextLessonSlug: published[index + 1]?.lessonSlug ?? null,
-  }]));
+  const navigation = new Map<string, {
+    previousLessonSlug: string | null;
+    nextLessonSlug: string | null;
+  }>();
+  const publishedCourseSlugs = [...new Set(published.map((entry) => entry.courseSlug))];
+  publishedCourseSlugs.forEach((courseSlug) => {
+    const courseEntries = published
+      .filter((entry) => entry.courseSlug === courseSlug)
+      .sort((left, right) =>
+        left.levelIndex - right.levelIndex || left.lessonIndex - right.lessonIndex,
+      );
+    courseEntries.forEach((entry, index) => navigation.set(entry.lessonSlug, {
+      previousLessonSlug: courseEntries[index - 1]?.lessonSlug ?? null,
+      nextLessonSlug: courseEntries[index + 1]?.lessonSlug ?? null,
+    }));
+  });
 
   return Object.freeze(entries.map((entry) => Object.freeze({
     ...entry,

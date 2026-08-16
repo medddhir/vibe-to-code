@@ -13,6 +13,12 @@ progress manifest is a compatibility contract for already-published progress
 IDs and versions, not publication authority. Adding a progress row cannot add a
 route, access, navigation, or published state.
 
+The publication and validation boundary also owns the authorization invariant:
+`foundations/what-is-code` at `/lessons/what-is-code` is the only lesson that
+may be public. It must remain public, and every other published lesson must be
+authenticated. Published navigation is ordered and linked independently inside
+each course, never across course boundaries.
+
 `LessonContentDefinition` is the serializable input for future data-driven
 lessons. It contains the learning objective, prerequisites, outcomes,
 misconception, guided steps, activities, completion rule, sources, and source
@@ -20,6 +26,11 @@ verification date. Its trusted block union contains only explanation, callout,
 example, single-answer checkpoint, ordering checkpoint, recap, and transfer
 challenge blocks. It cannot hold JSX, HTML, scripts, executable strings,
 component names, iframes, or network instructions.
+
+Runtime validation treats sparse arrays as malformed, checks real validated
+elements rather than array length, and rejects cyclic or non-JSON values. The
+trusted content registry validates before cloning, rejects duplicate slugs, and
+stores deeply frozen definitions in a private lookup map.
 
 `getGuidedStepsForLessonDefinition` converts stable step and required-activity
 IDs into the existing guided-flow gate format. The final step also carries the
@@ -44,8 +55,9 @@ six-course total of 362 lessons.
 Planned outline slugs are position-based placeholders with
 `slugState: "provisional"`; they are not permanent identifiers and must not be
 linked, routed, or added to progress contracts. A human-approved permanent slug
-is required before draft or publication. In particular, Lesson 15 has only a
-provisional catalog identity in this PR.
+is required before draft or publication. The reserved `planned-...-level-...`
+format can never be promoted merely by changing `slugState`. In particular,
+Lesson 15 has only a provisional catalog identity in this PR.
 
 ## Publication workflow
 
