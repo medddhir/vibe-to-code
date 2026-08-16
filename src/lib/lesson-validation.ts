@@ -124,6 +124,11 @@ function readSafeArray(value: unknown, path: string, issues: string[]) {
       safe = false;
       continue;
     }
+    if (descriptor.enumerable !== true) {
+      issues.push(`${path}[${key}] must be enumerable`);
+      safe = false;
+      continue;
+    }
     indexDescriptors.push([Number(key), descriptor]);
   }
 
@@ -324,17 +329,17 @@ function scanSerializable(
     return false;
   }
   ancestors.add(value);
-  let hasUnsafeAccessor = false;
+  let unsafeToInspect = false;
   try {
     if (Array.isArray(value)) {
       const values = readSafeArray(value, path, issues);
       if (!values) return true;
       for (let index = 0; index < values.length; index += 1) {
         if (scanSerializable(values[index], `${path}[${index}]`, issues, ancestors)) {
-          hasUnsafeAccessor = true;
+          unsafeToInspect = true;
         }
       }
-      return hasUnsafeAccessor;
+      return unsafeToInspect;
     }
     if (!isPlainRecord(value)) {
       issues.push(`${path} contains a non-plain object`);
@@ -349,14 +354,19 @@ function scanSerializable(
       const descriptor = Object.getOwnPropertyDescriptor(value, key);
       if (!descriptor || descriptor.get || descriptor.set) {
         issues.push(`${path}.${key} contains executable property access`);
-        hasUnsafeAccessor = true;
+        unsafeToInspect = true;
+        return;
+      }
+      if (descriptor.enumerable !== true) {
+        issues.push(`${path}.${key} must be enumerable`);
+        unsafeToInspect = true;
         return;
       }
       if (scanSerializable(descriptor.value, `${path}.${key}`, issues, ancestors)) {
-        hasUnsafeAccessor = true;
+        unsafeToInspect = true;
       }
     });
-    return hasUnsafeAccessor;
+    return unsafeToInspect;
   } finally {
     ancestors.delete(value);
   }
@@ -479,8 +489,8 @@ function validateActivity(activity: unknown, path: string, issues: string[]) {
 }
 
 function validateContentInternal(input: unknown, issues: string[]) {
-  const hasUnsafeAccessor = scanSerializable(input, "content", issues, new WeakSet());
-  if (hasUnsafeAccessor) return null;
+  const unsafeToInspect = scanSerializable(input, "content", issues, new WeakSet());
+  if (unsafeToInspect) return null;
   if (!isPlainRecord(input)) {
     issues.push("content must be a plain object");
     return null;

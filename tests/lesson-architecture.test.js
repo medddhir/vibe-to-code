@@ -579,6 +579,64 @@ test("array validation rejects large sparse arrays without expanding them", () =
   assert.deepEqual(validateLessonContentDefinition(contentFixture()), []);
 });
 
+test("clone parity rejects non-enumerable lesson fields and array indexes", () => {
+  const rootSlug = contentFixture();
+  Object.defineProperty(rootSlug, "lessonSlug", {
+    value: rootSlug.lessonSlug,
+    enumerable: false,
+  });
+
+  const rootObjective = contentFixture();
+  Object.defineProperty(rootObjective, "objective", {
+    value: rootObjective.objective,
+    enumerable: false,
+  });
+
+  const nestedTitle = contentFixture();
+  Object.defineProperty(nestedTitle.guidedSteps[0], "title", {
+    value: nestedTitle.guidedSteps[0].title,
+    enumerable: false,
+  });
+
+  const hiddenIndex = ["Visible only by direct indexing"];
+  Object.defineProperty(hiddenIndex, "0", {
+    value: hiddenIndex[0],
+    enumerable: false,
+  });
+  const arrayIndex = contentFixture({ prerequisites: hiddenIndex });
+
+  const cases = [
+    ["root lessonSlug", rootSlug],
+    ["root objective", rootObjective],
+    ["nested guided step title", nestedTitle],
+    ["array index", arrayIndex],
+  ];
+  for (const [name, definition] of cases) {
+    const issues = validateLessonContentDefinition(definition);
+    assert.ok(issues.some((issue) => issue.includes("must be enumerable")), name);
+    assert.throws(
+      () => createLessonContentRegistry([definition]),
+      /Lesson architecture validation failed/,
+      name,
+    );
+  }
+});
+
+test("every accepted registry clone revalidates and is keyed by its stored slug", () => {
+  const definitions = [
+    contentFixture(),
+    contentFixture({ lessonSlug: "second-fixture-lesson" }),
+  ];
+  const registry = createLessonContentRegistry(definitions);
+  assert.equal(registry.all().length, 2);
+  registry.all().forEach((snapshot, index) => {
+    assert.deepEqual(snapshot, definitions[index]);
+    assert.deepEqual(validateLessonContentDefinition(snapshot), []);
+    assert.equal(registry.bySlug(snapshot.lessonSlug), snapshot);
+    assert.equal(Object.isFrozen(snapshot), true);
+  });
+});
+
 test("sparse publishable arrays fail closed in content and bundle validation", () => {
   const sparse = contentFixture({
     learningOutcomes: new Array(1),

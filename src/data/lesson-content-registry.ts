@@ -1,5 +1,8 @@
 import type { LessonContentDefinition } from "@/data/lesson-schema";
-import { assertValidLessonContentDefinition } from "@/lib/lesson-validation";
+import {
+  assertValidLessonContentDefinition,
+  LessonValidationError,
+} from "@/lib/lesson-validation";
 
 function deepFreeze<T>(value: T): T {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
@@ -10,7 +13,7 @@ function deepFreeze<T>(value: T): T {
 }
 
 function immutableContent(definition: LessonContentDefinition) {
-  return deepFreeze(structuredClone(definition)) as Readonly<LessonContentDefinition>;
+  return deepFreeze(definition) as Readonly<LessonContentDefinition>;
 }
 
 export function createLessonContentRegistry(
@@ -19,10 +22,18 @@ export function createLessonContentRegistry(
   const bySlug = new Map<string, Readonly<LessonContentDefinition>>();
   definitions.forEach((definition) => {
     assertValidLessonContentDefinition(definition);
-    if (bySlug.has(definition.lessonSlug)) {
-      throw new Error(`Duplicate trusted lesson content slug: ${definition.lessonSlug}`);
+    let clone: LessonContentDefinition;
+    try {
+      clone = structuredClone(definition);
+    } catch {
+      throw new LessonValidationError(["Validated lesson content could not be cloned"]);
     }
-    bySlug.set(definition.lessonSlug, immutableContent(definition));
+    assertValidLessonContentDefinition(clone);
+    const lessonSlug = clone.lessonSlug;
+    if (bySlug.has(lessonSlug)) {
+      throw new Error(`Duplicate trusted lesson content slug: ${lessonSlug}`);
+    }
+    bySlug.set(lessonSlug, immutableContent(clone));
   });
   const all = Object.freeze([...bySlug.values()]);
   return Object.freeze({
