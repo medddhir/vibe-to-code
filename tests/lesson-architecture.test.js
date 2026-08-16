@@ -5,7 +5,17 @@ const assert = require("node:assert/strict");
 const { test } = require("node:test");
 
 const { courses } = require("../src/data/curriculum.ts");
-const { LESSON_CATALOG } = require("../src/data/lesson-catalog.ts");
+const { foundationLevels } = require("../src/data/course-content.ts");
+const {
+  LESSON_CATALOG,
+  createLessonCatalog,
+  parseLessonDuration,
+} = require("../src/data/lesson-catalog.ts");
+const {
+  createLessonContentRegistry,
+  lessonContentRegistry,
+} = require("../src/data/lesson-content-registry.ts");
+const { LESSON_PUBLICATION_RECORD } = require("../src/data/lesson-publication.ts");
 const {
   LESSON_CONTENT_SCHEMA_VERSION,
   SUPPORTED_LESSON_BLOCK_TYPES,
@@ -24,6 +34,8 @@ const {
 const {
   validateLessonCatalog,
   validateLessonContentDefinition,
+  validatePublishableLessonBundle,
+  validatePublishedDataDrivenLessons,
   validatePublishedLessonRegistry,
 } = require("../src/lib/lesson-validation.ts");
 const {
@@ -54,7 +66,8 @@ const sampleCatalogEntry = published[0];
 const contentFixture = (overrides = {}) => ({
   schemaVersion: LESSON_CONTENT_SCHEMA_VERSION,
   lessonSlug: "fixture-lesson",
-  objective: "Prove the architecture with local test data.",
+  lessonVersion: 1,
+  objective: "Validate a local architecture fixture.",
   prerequisites: [],
   learningOutcomes: ["Recognize a trusted block."],
   misconception: "Any data can safely become interface code.",
@@ -82,18 +95,69 @@ const contentFixture = (overrides = {}) => ({
     type: "all-steps-and-required-activities",
     requiredActivityIds: ["fixture-check"],
   },
-  sources: [],
-  sourceVerifiedAt: null,
+  sources: [{ title: "Fixture source", url: "https://example.com/reference" }],
+  sourceVerifiedAt: "2026-08-16",
   ...overrides,
 });
 
-test("keeps the exact 14 published lesson slugs and order", () => {
+const publishableCatalogFixture = (overrides = {}) => ({
+  schemaVersion: 1,
+  catalogId: "fixtures:level:0:lesson:0",
+  courseSlug: "fixtures",
+  levelIndex: 0,
+  lessonIndex: 0,
+  lessonSlug: "fixture-lesson",
+  slugState: "permanent",
+  lessonVersion: 1,
+  route: "/lessons/fixture-lesson",
+  title: "Fixture lesson",
+  estimatedMinutes: 10,
+  publicationState: "published",
+  renderMode: "data-driven",
+  access: "authenticated",
+  previousLessonSlug: null,
+  nextLessonSlug: null,
+  progressStepIds: ["fixture-step"],
+  activityIds: ["fixture-check"],
+  ...overrides,
+});
+
+test("keeps the exact 14 explicit publication records, slugs, and order", () => {
+  assert.equal(Object.isFrozen(LESSON_PUBLICATION_RECORD), true);
+  assert.equal(LESSON_PUBLICATION_RECORD.every(Object.isFrozen), true);
+  assert.deepEqual(LESSON_PUBLICATION_RECORD.map((entry) => entry.lessonSlug), publishedSlugs);
   assert.deepEqual(published.map((entry) => entry.lessonSlug), publishedSlugs);
-  assert.equal(published.length, 14);
   assert.deepEqual(
-    published.map((entry) => entry.lessonSlug),
+    LESSON_PUBLICATION_RECORD.map((entry) => entry.lessonSlug),
     FOUNDATION_PROGRESS_MANIFEST.map((entry) => entry.slug),
   );
+  assert.equal(published.length, 14);
+});
+
+test("a progress-manifest entry alone cannot publish a lesson", () => {
+  const fakeManifestEntry = {
+    slug: "planned-foundations-level-2-lesson-0",
+    lessonVersion: 1,
+    stepIds: ["manifest-step"],
+    activityIds: [],
+  };
+  const catalog = createLessonCatalog(
+    courses,
+    LESSON_PUBLICATION_RECORD,
+    [...FOUNDATION_PROGRESS_MANIFEST, fakeManifestEntry],
+  );
+  const plannedLesson = catalog.find(
+    (entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2 && entry.lessonIndex === 0,
+  );
+
+  assert.equal(catalog.filter((entry) => entry.publicationState === "published").length, 14);
+  assert.deepEqual(plannedLesson.progressStepIds, []);
+  assert.deepEqual(plannedLesson.activityIds, []);
+  assert.equal(plannedLesson.publicationState, "planned");
+  assert.equal(plannedLesson.route, null);
+  assert.equal(plannedLesson.access, "unavailable");
+  assert.equal(plannedLesson.previousLessonSlug, null);
+  assert.equal(plannedLesson.nextLessonSlug, null);
 });
 
 test("keeps Lesson 1 public and the other 13 published routes authenticated", () => {
@@ -104,138 +168,288 @@ test("keeps Lesson 1 public and the other 13 published routes authenticated", ()
   assert.equal(published.filter((entry) => entry.access === "authenticated").length, 13);
 });
 
+test("keeps 362 declared, 202 cataloged, 14 published, and 188 planned lessons", () => {
+  assert.equal(courses.length, 6);
+  assert.equal(courses.reduce((total, course) => total + course.lessonCount, 0), 362);
+  assert.equal(LESSON_CATALOG.length, 202);
+  assert.equal(LESSON_CATALOG.filter((entry) => entry.publicationState === "published").length, 14);
+  assert.equal(LESSON_CATALOG.filter((entry) => entry.publicationState === "planned").length, 188);
+});
+
+test("uses permanent published slugs and position-based provisional planned identities", () => {
+  assert.equal(published.every((entry) => entry.slugState === "permanent"), true);
+  const lesson15 = LESSON_CATALOG.find(
+    (entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2 && entry.lessonIndex === 0,
+  );
+  assert.equal(lesson15.catalogId, "foundations:level:2:lesson:0");
+  assert.equal(lesson15.slugState, "provisional");
+  assert.equal(lesson15.lessonSlug, "planned-foundations-level-2-lesson-0");
+  assert.equal(lesson15.publicationState, "planned");
+});
+
+test("parses only exact whole-minute durations and standardizes Lesson 1 to 10 minutes", () => {
+  assert.equal(parseLessonDuration("10 min"), 10);
+  for (const invalid of ["10.5 min", "12 nonsense", "unknown", "", " 10 min", 10]) {
+    assert.throws(() => parseLessonDuration(invalid), /duration/i);
+  }
+  assert.equal(foundationLevels[0].lessons[0].duration, "10 min");
+  assert.equal(getPublishedLessonBySlug("what-is-code").estimatedMinutes, 10);
+});
+
 test("published lookup never returns draft or planned entries", () => {
-  const draft = { ...sampleCatalogEntry, lessonSlug: "draft-fixture", route: null, publicationState: "draft", access: "unavailable" };
-  const planned = { ...sampleCatalogEntry, lessonSlug: "planned-fixture", route: null, publicationState: "planned", access: "unavailable" };
+  const draft = { ...sampleCatalogEntry, catalogId: "fixtures:level:0:lesson:0", courseSlug: "fixtures", levelIndex: 0, lessonIndex: 0, lessonSlug: "draft-fixture", route: null, publicationState: "draft", access: "unavailable" };
+  const planned = { ...draft, catalogId: "fixtures:level:0:lesson:1", lessonIndex: 1, lessonSlug: "planned-fixtures-level-0-lesson-1", slugState: "provisional", publicationState: "planned" };
   const registry = createLessonRegistry([sampleCatalogEntry, draft, planned]);
-
   assert.equal(registry.publishedBySlug("draft-fixture"), null);
-  assert.equal(registry.publishedBySlug("planned-fixture"), null);
-  assert.equal(getPublishedLessonBySlug("what-is-code").lessonSlug, "what-is-code");
+  assert.equal(registry.publishedBySlug("planned-fixtures-level-0-lesson-1"), null);
 });
 
-test("accepts the current catalog and exact published registry", () => {
+test("registry snapshots cannot be changed through original input or returned entries", () => {
+  const original = publishableCatalogFixture();
+  const registry = createLessonRegistry([original]);
+  original.publicationState = "planned";
+  original.route = null;
+  original.progressStepIds.push("corrupt-step");
+  original.activityIds.push("corrupt-activity");
+
+  const snapshot = registry.publishedBySlug("fixture-lesson");
+  assert.equal(registry.published().length, 1);
+  assert.equal(snapshot.publicationState, "published");
+  assert.equal(snapshot.route, "/lessons/fixture-lesson");
+  assert.deepEqual(snapshot.progressStepIds, ["fixture-step"]);
+  assert.deepEqual(snapshot.activityIds, ["fixture-check"]);
+  assert.equal(Object.isFrozen(snapshot), true);
+  assert.equal(Object.isFrozen(snapshot.progressStepIds), true);
+  assert.equal(Object.isFrozen(snapshot.activityIds), true);
+});
+
+test("catalog validator accepts current data and rejects malformed identity and metadata", () => {
   assert.deepEqual(validateLessonCatalog(LESSON_CATALOG), []);
-  assert.deepEqual(validatePublishedLessonRegistry(LESSON_CATALOG, published), []);
+  const malformed = {
+    ...sampleCatalogEntry,
+    catalogId: "wrong",
+    courseSlug: " ",
+    levelIndex: -1,
+    lessonIndex: 1.5,
+    lessonSlug: "Bad/Slug",
+    slugState: "temporary",
+    lessonVersion: 0,
+    route: "lessons/no-leading-slash?x=1",
+    title: "",
+    estimatedMinutes: Infinity,
+    publicationState: "preview",
+    renderMode: "component-name",
+    access: "everyone",
+    progressStepIds: ["", "same", "same"],
+    activityIds: null,
+  };
+  const issues = validateLessonCatalog([malformed]);
+  for (const expected of [
+    "catalogId", "courseSlug", "levelIndex", "lessonIndex", "lessonSlug",
+    "slugState", "lessonVersion", "route", "title", "estimatedMinutes",
+    "publicationState", "renderMode", "access", "duplicate ID", "activityIds must be an array",
+  ]) assert.ok(issues.some((issue) => issue.includes(expected)), expected);
 });
 
-test("rejects duplicate lesson slugs, routes, and positions", () => {
+test("catalog validator rejects duplicate slugs, routes, positions, IDs, and broken navigation", () => {
   const duplicate = { ...sampleCatalogEntry };
   const issues = validateLessonCatalog([sampleCatalogEntry, duplicate]);
   assert.ok(issues.some((issue) => issue.includes("Duplicate lesson slug")));
   assert.ok(issues.some((issue) => issue.includes("Duplicate lesson route")));
   assert.ok(issues.some((issue) => issue.includes("Duplicate course/level/lesson position")));
-});
+  assert.ok(issues.some((issue) => issue.includes("Duplicate catalog ID")));
 
-test("rejects duplicate step and activity IDs", () => {
-  const issues = validateLessonCatalog([{
-    ...sampleCatalogEntry,
-    progressStepIds: ["same", "same"],
-    activityIds: ["activity", "activity"],
-  }]);
-  assert.ok(issues.some((issue) => issue.includes("duplicate step ID")));
-  assert.ok(issues.some((issue) => issue.includes("duplicate activity ID")));
-});
-
-test("rejects missing required activities", () => {
-  const definition = contentFixture({
-    completionRule: {
-      type: "all-steps-and-required-activities",
-      requiredActivityIds: ["missing"],
-    },
-  });
-  assert.ok(validateLessonContentDefinition(definition).some(
-    (issue) => issue.includes("requires missing activity ID: missing"),
-  ));
-});
-
-test("rejects broken navigation relationships", () => {
   const broken = published.map((entry) => ({ ...entry }));
   broken[1].previousLessonSlug = null;
-  assert.ok(validateLessonCatalog(broken).some(
-    (issue) => issue.includes("broken previous relationship"),
+  assert.ok(validateLessonCatalog(broken).some((issue) => issue.includes("broken previous")));
+});
+
+test("validators are total and fail closed for arbitrary missing runtime structures", () => {
+  const malformedInputs = [undefined, null, true, 3, "lesson", {}, { guidedSteps: null }];
+  malformedInputs.forEach((input) => {
+    assert.doesNotThrow(() => validateLessonCatalog(input));
+    assert.doesNotThrow(() => validateLessonContentDefinition(input));
+    assert.ok(validateLessonContentDefinition(input).length > 0);
+  });
+});
+
+test("content validator rejects every non-serializable runtime value without recursion overflow", () => {
+  const cases = [
+    ["undefined", undefined],
+    ["bigint", 1n],
+    ["symbol", Symbol("unsafe")],
+    ["function", () => true],
+    ["NaN", Number.NaN],
+    ["Infinity", Number.POSITIVE_INFINITY],
+    ["non-plain", new Date()],
+  ];
+  for (const [name, value] of cases) {
+    const definition = contentFixture({ unsafeValue: value });
+    const issues = validateLessonContentDefinition(definition);
+    assert.ok(issues.length > 0, name);
+  }
+  const cyclic = contentFixture();
+  cyclic.cycle = cyclic;
+  assert.doesNotThrow(() => validateLessonContentDefinition(cyclic));
+  assert.ok(validateLessonContentDefinition(cyclic).some((issue) => issue.includes("cyclic")));
+});
+
+test("content validator rejects invalid structure, discriminants, blanks, and undersized activities", () => {
+  const malformed = contentFixture({
+    objective: "",
+    learningOutcomes: [""],
+    misconception: " ",
+    guidedSteps: [{ id: "", title: "", eyebrow: "", blocks: [], requiredActivityIds: null }],
+    activities: [
+      { type: "single-answer", id: "one", title: "", question: "", options: [{ id: "", label: "", feedback: "" }], correctOptionId: "missing", successMessage: "", hint: "" },
+      { type: "ordering", id: "order", title: "Order", prompt: "Order", items: [{ id: "x", label: "X" }], correctOrder: ["x", "x"], successMessage: "Yes", errorMessage: "No" },
+      { type: "unknown", id: "bad", title: "Bad" },
+    ],
+    completionRule: { type: "anything", requiredActivityIds: null },
+  });
+  const issues = validateLessonContentDefinition(malformed);
+  for (const expected of [
+    "objective", "learningOutcomes", "misconception", "guidedSteps[0].id",
+    "blocks must not be empty", "requiredActivityIds must be an array",
+    "at least two options", "at least two items", "correctOrder", "activities[2].type",
+    "completionRule.type",
+  ]) assert.ok(issues.some((issue) => issue.includes(expected)), expected);
+
+  assert.ok(validateLessonContentDefinition(contentFixture({ guidedSteps: [] })).some(
+    (issue) => issue.includes("guidedSteps must not be empty"),
   ));
 });
 
-test("rejects invalid publication metadata and missing objectives", () => {
-  const issues = validateLessonCatalog([{
-    ...sampleCatalogEntry,
-    schemaVersion: 99,
-    lessonVersion: 0,
-    estimatedMinutes: 0,
-    title: "",
-    publicationState: "preview",
-    route: null,
-  }]);
-  assert.ok(issues.some((issue) => issue.includes("invalid catalog schema version")));
-  assert.ok(issues.some((issue) => issue.includes("invalid lesson version")));
-  assert.ok(issues.some((issue) => issue.includes("invalid estimated duration")));
-  assert.ok(issues.some((issue) => issue.includes("missing a title")));
-  assert.ok(issues.some((issue) => issue.includes("invalid publication state")));
-  assert.ok(validateLessonContentDefinition(contentFixture({ objective: "" })).some(
-    (issue) => issue.includes("missing an objective"),
-  ));
-
-  const missingRoute = validateLessonCatalog([{ ...sampleCatalogEntry, route: null }]);
-  assert.ok(missingRoute.some((issue) => issue.includes("published without a route")));
+test("content validator rejects unsupported or unsafe block data", () => {
+  const unsupported = contentFixture({
+    guidedSteps: [{ id: "fixture-step", title: "Step", eyebrow: "Test", blocks: [{ type: "component-name", componentName: "Unsafe" }], requiredActivityIds: [] }],
+    activities: [],
+    completionRule: { type: "all-steps-and-required-activities", requiredActivityIds: [] },
+    rawHtml: "<script>run()</script>",
+  });
+  const issues = validateLessonContentDefinition(unsupported);
+  assert.ok(issues.some((issue) => issue.includes("componentName is not allowed")));
+  assert.ok(issues.some((issue) => issue.includes("rawHtml is not allowed")));
+  assert.ok(issues.some((issue) => issue.includes("blocks[0].type is invalid")));
 });
 
-test("rejects draft or planned entries injected into a published registry", () => {
+test("activity validation enforces type compatibility and exactly-once rendering", () => {
+  const wrongType = contentFixture({
+    guidedSteps: [{ id: "fixture-step", title: "Step", eyebrow: "Test", blocks: [{ type: "ordering-checkpoint", activityId: "fixture-check" }], requiredActivityIds: ["fixture-check"] }],
+  });
+  assert.ok(validateLessonContentDefinition(wrongType).some((issue) => issue.includes("checkpoint type does not match")));
+
+  const duplicateRender = contentFixture({
+    guidedSteps: [{ id: "fixture-step", title: "Step", eyebrow: "Test", blocks: [
+      { type: "single-answer-checkpoint", activityId: "fixture-check" },
+      { type: "single-answer-checkpoint", activityId: "fixture-check" },
+    ], requiredActivityIds: ["fixture-check"] }],
+  });
+  assert.ok(validateLessonContentDefinition(duplicateRender).some((issue) => issue.includes("rendered more than once")));
+
+  const unknown = contentFixture({
+    guidedSteps: [{ id: "fixture-step", title: "Step", eyebrow: "Test", blocks: [{ type: "single-answer-checkpoint", activityId: "unknown" }], requiredActivityIds: [] }],
+  });
+  assert.ok(validateLessonContentDefinition(unknown).some((issue) => issue.includes("unknown activity")));
+});
+
+test("activity validation rejects unreachable and cross-step required activities", () => {
+  const unreachable = contentFixture({
+    guidedSteps: [{ id: "fixture-step", title: "Step", eyebrow: "Test", blocks: [{ type: "recap", heading: "Recap", points: ["Point"] }], requiredActivityIds: ["fixture-check"] }],
+  });
+  const unreachableIssues = validateLessonContentDefinition(unreachable);
+  assert.ok(unreachableIssues.some((issue) => issue.includes("no rendered checkpoint")));
+  assert.ok(unreachableIssues.some((issue) => issue.includes("unreachable activity")));
+
+  const crossStep = contentFixture({
+    guidedSteps: [
+      { id: "first", title: "First", eyebrow: "Test", blocks: [{ type: "recap", heading: "Recap", points: ["Point"] }], requiredActivityIds: ["fixture-check"] },
+      { id: "second", title: "Second", eyebrow: "Test", blocks: [{ type: "single-answer-checkpoint", activityId: "fixture-check" }], requiredActivityIds: [] },
+    ],
+  });
+  assert.ok(validateLessonContentDefinition(crossStep).some((issue) => issue.includes("rendered in step second")));
+});
+
+test("valid publishable data-driven bundles cross-check catalog, content, registry, and sources", () => {
+  const definition = contentFixture();
+  const registry = createLessonContentRegistry([definition]);
+  assert.deepEqual(validatePublishableLessonBundle(publishableCatalogFixture(), registry), []);
+});
+
+test("publishable bundle validation fails closed on missing or mismatched trusted content", () => {
+  assert.ok(validatePublishableLessonBundle(publishableCatalogFixture(), createLessonContentRegistry([])).some(
+    (issue) => issue.includes("missing"),
+  ));
+  const mismatchedRegistry = { bySlug: () => contentFixture({ lessonSlug: "different", lessonVersion: 2 }) };
+  const issues = validatePublishableLessonBundle(publishableCatalogFixture(), mismatchedRegistry);
+  assert.ok(issues.some((issue) => issue.includes("slugs do not match")));
+  assert.ok(issues.some((issue) => issue.includes("versions do not match")));
+});
+
+test("publishable bundle validation requires exact ordered progress IDs", () => {
+  const definition = contentFixture();
+  const registry = createLessonContentRegistry([definition]);
+  assert.ok(validatePublishableLessonBundle(
+    publishableCatalogFixture({ progressStepIds: ["other"], activityIds: ["other"] }),
+    registry,
+  ).some((issue) => issue.includes("step IDs")));
+  assert.ok(validatePublishableLessonBundle(
+    publishableCatalogFixture({ progressStepIds: ["other"], activityIds: ["other"] }),
+    registry,
+  ).some((issue) => issue.includes("activity IDs")));
+});
+
+test("publishable bundle validation requires outcomes, HTTPS sources, and a real date", () => {
+  const invalid = contentFixture({
+    learningOutcomes: [],
+    sources: [{ title: "", url: "http://example.com" }],
+    sourceVerifiedAt: "2026-02-30",
+  });
+  const registry = { bySlug: () => invalid };
+  const issues = validatePublishableLessonBundle(publishableCatalogFixture(), registry);
+  assert.ok(issues.some((issue) => issue.includes("learning outcome")));
+  assert.ok(issues.some((issue) => issue.includes("sources[0].title")));
+  assert.ok(issues.some((issue) => issue.includes("absolute HTTPS")));
+  assert.ok(issues.some((issue) => issue.includes("real YYYY-MM-DD")));
+});
+
+test("every published data-driven entry must have trusted valid content", () => {
+  assert.deepEqual(validatePublishedDataDrivenLessons(LESSON_CATALOG, lessonContentRegistry), []);
+  const future = publishableCatalogFixture();
+  assert.ok(validatePublishedDataDrivenLessons([future], createLessonContentRegistry([])).some(
+    (issue) => issue.includes("missing"),
+  ));
+});
+
+test("published registry rejects draft/planned injection and malformed containers", () => {
+  assert.deepEqual(validatePublishedLessonRegistry(LESSON_CATALOG, published), []);
   const planned = LESSON_CATALOG.find((entry) => entry.publicationState === "planned");
-  const issues = validatePublishedLessonRegistry(LESSON_CATALOG, [...published, planned]);
-  assert.ok(issues.some((issue) => issue.includes("not published")));
+  assert.ok(validatePublishedLessonRegistry(LESSON_CATALOG, [...published, planned]).some(
+    (issue) => issue.includes("not published"),
+  ));
+  assert.doesNotThrow(() => validatePublishedLessonRegistry(null, null));
+  assert.ok(validatePublishedLessonRegistry(null, null).length > 0);
 });
 
-test("keeps curriculum, progress versions, identifiers, and storage keys unchanged", () => {
-  assert.equal(courses.length, 6);
-  assert.equal(courses.reduce((total, course) => total + course.lessonCount, 0), 362);
+test("keeps progress versions, identifiers, manifest, and storage keys unchanged", () => {
   assert.equal(FOUNDATION_PROGRESS_SCHEMA_VERSION, 2);
   assert.equal(FOUNDATION_CURRICULUM_VERSION, 2);
   assert.equal(FOUNDATION_PROGRESS_MANIFEST.length, 14);
   assert.deepEqual(
-    published.map(({ lessonSlug, lessonVersion, progressStepIds, activityIds }) => ({
-      lessonSlug,
-      lessonVersion,
-      progressStepIds,
-      activityIds,
-    })),
-    FOUNDATION_PROGRESS_MANIFEST.map(({ slug, lessonVersion, stepIds, activityIds }) => ({
-      lessonSlug: slug,
-      lessonVersion,
-      progressStepIds: stepIds,
-      activityIds,
-    })),
+    published.map(({ lessonSlug, lessonVersion, progressStepIds, activityIds }) => ({ lessonSlug, lessonVersion, progressStepIds, activityIds })),
+    FOUNDATION_PROGRESS_MANIFEST.map(({ slug, lessonVersion, stepIds, activityIds }) => ({ lessonSlug: slug, lessonVersion, progressStepIds: stepIds, activityIds })),
   );
-  assert.equal(
-    getLessonStorageKey("what-is-code", 3),
-    "vibe-to-code:lesson-progress:v1:what-is-code:lesson-v3",
-  );
+  assert.equal(getLessonStorageKey("what-is-code", 3), "vibe-to-code:lesson-progress:v1:what-is-code:lesson-v3");
 });
 
-test("generic renderer dispatches only the seven trusted block types", () => {
+test("generic renderer dispatches only trusted blocks and preserves completion requirements", () => {
   assert.deepEqual(SUPPORTED_LESSON_BLOCK_TYPES, [
-    "explanation",
-    "callout",
-    "example",
-    "single-answer-checkpoint",
-    "ordering-checkpoint",
-    "recap",
-    "transfer-challenge",
+    "explanation", "callout", "example", "single-answer-checkpoint",
+    "ordering-checkpoint", "recap", "transfer-challenge",
   ]);
-  SUPPORTED_LESSON_BLOCK_TYPES.forEach((type) => {
-    assert.equal(getLessonBlockRendererKind({ type }), type);
-  });
-  assert.throws(
-    () => getLessonBlockRendererKind({ type: "component-name" }),
-    /Unsupported lesson block type/,
-  );
-
+  SUPPORTED_LESSON_BLOCK_TYPES.forEach((type) => assert.equal(getLessonBlockRendererKind({ type }), type));
+  assert.throws(() => getLessonBlockRendererKind({ type: "component-name" }), /Unsupported/);
   const steps = getGuidedStepsForLessonDefinition(contentFixture());
   assert.deepEqual(steps[0].requiredActivityIds, ["fixture-check"]);
   assert.equal(steps[0].requiresPractice, true);
-
-  const unsafe = contentFixture({ rawHtml: "<script>run()</script>" });
-  assert.ok(validateLessonContentDefinition(unsafe).some(
-    (issue) => issue.includes("rawHtml is not allowed"),
-  ));
 });

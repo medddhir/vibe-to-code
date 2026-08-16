@@ -1,97 +1,102 @@
-import { courses } from "@/data/curriculum";
-import {
-  LESSON_CATALOG_SCHEMA_VERSION,
-  type LessonCatalogEntry,
-} from "@/data/lesson-schema";
-import {
-  FOUNDATION_PROGRESS_MANIFEST,
-} from "@/lib/progress-manifest";
+import { courses, type Course } from "@/data/curriculum";
+import { LESSON_PUBLICATION_RECORD, type LessonPublicationRecord } from "@/data/lesson-publication";
+import { LESSON_CATALOG_SCHEMA_VERSION, type LessonCatalogEntry } from "@/data/lesson-schema";
+import { FOUNDATION_PROGRESS_MANIFEST, type FoundationProgressLessonManifest } from "@/lib/progress-manifest";
 
-const publishedManifestBySlug = new Map(
-  FOUNDATION_PROGRESS_MANIFEST.map((lesson) => [lesson.slug, lesson]),
-);
+const DURATION_PATTERN = /^([1-9]\d*) min$/;
 
-const publishedOrder = FOUNDATION_PROGRESS_MANIFEST.map((lesson) => lesson.slug);
-
-function createPlannedSlug(courseSlug: string, title: string, position: string) {
-  const titleSlug = title
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 80);
-  return `${courseSlug}-${titleSlug || position}`;
+export function parseLessonDuration(duration: unknown) {
+  if (typeof duration !== "string") throw new Error("Lesson duration must be a string");
+  const match = DURATION_PATTERN.exec(duration);
+  if (!match) throw new Error(`Invalid lesson duration: ${JSON.stringify(duration)}`);
+  const minutes = Number(match[1]);
+  if (!Number.isSafeInteger(minutes)) throw new Error(`Invalid lesson duration: ${JSON.stringify(duration)}`);
+  return minutes;
 }
 
-function parseMinutes(duration: string) {
-  const minutes = Number.parseInt(duration, 10);
-  return Number.isFinite(minutes) ? minutes : 1;
+function catalogId(courseSlug: string, levelIndex: number, lessonIndex: number) {
+  return `${courseSlug}:level:${levelIndex}:lesson:${lessonIndex}`;
 }
 
-const outlinedEntries = courses.flatMap((course) =>
-  course.levels.flatMap((level, levelIndex) =>
-    level.lessons.map((lesson, lessonIndex) => {
-      const manifest = course.slug === "foundations" && lesson.slug
-        ? publishedManifestBySlug.get(lesson.slug as (typeof FOUNDATION_PROGRESS_MANIFEST)[number]["slug"])
-        : undefined;
-      const isPublished = Boolean(manifest);
-      const lessonSlug = lesson.slug ?? createPlannedSlug(
-        course.slug,
-        lesson.title,
-        `${levelIndex + 1}-${lessonIndex + 1}`,
-      );
+function provisionalSlug(courseSlug: string, levelIndex: number, lessonIndex: number) {
+  return `planned-${courseSlug}-level-${levelIndex}-lesson-${lessonIndex}`;
+}
 
-      return {
-        schemaVersion: LESSON_CATALOG_SCHEMA_VERSION,
-        courseSlug: course.slug,
-        levelIndex,
-        lessonIndex,
-        lessonSlug,
-        lessonVersion: manifest?.lessonVersion ?? 1,
-        route: isPublished ? `/lessons/${lessonSlug}` : null,
-        title: lesson.title,
-        estimatedMinutes:
-          lessonSlug === "what-is-code" ? 10 : parseMinutes(lesson.duration),
-        publicationState: isPublished ? "published" : "planned",
-        renderMode: isPublished ? "legacy-bespoke" : "data-driven",
-        access: isPublished
-          ? lessonSlug === "what-is-code" ? "public" : "authenticated"
-          : "unavailable",
-        previousLessonSlug: null,
-        nextLessonSlug: null,
-        progressStepIds: manifest?.stepIds ?? [],
-        activityIds: manifest?.activityIds ?? [],
-      } satisfies LessonCatalogEntry;
-    }),
-  ),
-);
-
-function withNavigation(entries: readonly LessonCatalogEntry[]) {
-  const orderedPublished = publishedOrder.map((slug) => {
-    const entry = entries.find((candidate) => candidate.lessonSlug === slug);
-    if (!entry) throw new Error(`Published lesson ${slug} is missing from the catalog`);
-    return entry;
-  });
-
-  const publishedNavigation = new Map(
-    orderedPublished.map((entry, index) => [
-      entry.lessonSlug,
-      {
-        previousLessonSlug: orderedPublished[index - 1]?.lessonSlug ?? null,
-        nextLessonSlug: orderedPublished[index + 1]?.lessonSlug ?? null,
-      },
+export function createLessonCatalog(
+  courseDefinitions: readonly Course[],
+  publicationRecords: readonly LessonPublicationRecord[],
+  progressManifest: readonly FoundationProgressLessonManifest[],
+) {
+  const publicationByPosition = new Map(
+    publicationRecords.map((record) => [
+      catalogId(record.courseSlug, record.levelIndex, record.lessonIndex),
+      record,
     ]),
   );
+  const manifestBySlug = new Map(progressManifest.map((lesson) => [lesson.slug, lesson]));
 
-  return entries.map((entry) => ({
+  const entries = courseDefinitions.flatMap((course) =>
+    course.levels.flatMap((level, levelIndex) =>
+      level.lessons.map((lesson, lessonIndex) => {
+        const id = catalogId(course.slug, levelIndex, lessonIndex);
+        const publication = publicationByPosition.get(id);
+        if (publication && lesson.slug !== publication.lessonSlug) {
+          throw new Error(`Publication record does not match curriculum position ${id}`);
+        }
+        const manifest = publication ? manifestBySlug.get(publication.lessonSlug) : undefined;
+        if (publication && !manifest) {
+          throw new Error(`Published lesson ${publication.lessonSlug} is missing progress compatibility metadata`);
+        }
+        const isPublished = Boolean(publication);
+        const lessonSlug = publication?.lessonSlug ?? provisionalSlug(course.slug, levelIndex, lessonIndex);
+
+        return {
+          schemaVersion: LESSON_CATALOG_SCHEMA_VERSION,
+          catalogId: id,
+          courseSlug: course.slug,
+          levelIndex,
+          lessonIndex,
+          lessonSlug,
+          slugState: isPublished ? "permanent" : "provisional",
+          lessonVersion: manifest?.lessonVersion ?? 1,
+          route: publication?.route ?? null,
+          title: lesson.title,
+          estimatedMinutes: parseLessonDuration(lesson.duration),
+          publicationState: isPublished ? "published" : "planned",
+          renderMode: publication?.renderMode ?? "data-driven",
+          access: publication?.access ?? "unavailable",
+          previousLessonSlug: null,
+          nextLessonSlug: null,
+          progressStepIds: Object.freeze([...(manifest?.stepIds ?? [])]),
+          activityIds: Object.freeze([...(manifest?.activityIds ?? [])]),
+        } satisfies LessonCatalogEntry;
+      }),
+    ),
+  );
+
+  const published = publicationRecords.map((record) => {
+    const entry = entries.find((candidate) => candidate.catalogId === catalogId(
+      record.courseSlug,
+      record.levelIndex,
+      record.lessonIndex,
+    ));
+    if (!entry) throw new Error(`Published lesson ${record.lessonSlug} is missing from the catalog`);
+    return entry;
+  });
+  const navigation = new Map(published.map((entry, index) => [entry.lessonSlug, {
+    previousLessonSlug: published[index - 1]?.lessonSlug ?? null,
+    nextLessonSlug: published[index + 1]?.lessonSlug ?? null,
+  }]));
+
+  return Object.freeze(entries.map((entry) => Object.freeze({
     ...entry,
-    ...(publishedNavigation.get(entry.lessonSlug) ?? {}),
-  }));
+    ...(navigation.get(entry.lessonSlug) ?? {}),
+  })));
 }
 
-/**
- * The catalog includes every lesson with an existing curriculum outline.
- * Courses that currently declare only aggregate counts remain represented by
- * the curriculum, not by invented lesson metadata.
- */
-export const LESSON_CATALOG = Object.freeze(withNavigation(outlinedEntries));
+/** Includes outlined lessons only; aggregate-only course counts remain in curriculum data. */
+export const LESSON_CATALOG = createLessonCatalog(
+  courses,
+  LESSON_PUBLICATION_RECORD,
+  FOUNDATION_PROGRESS_MANIFEST,
+);

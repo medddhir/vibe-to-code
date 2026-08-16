@@ -6,13 +6,16 @@ export type LessonPublicationState = (typeof LESSON_PUBLICATION_STATES)[number];
 
 export type LessonRenderMode = "legacy-bespoke" | "data-driven";
 export type LessonAccess = "public" | "authenticated" | "unavailable";
+export type LessonSlugState = "provisional" | "permanent";
 
 export type LessonCatalogEntry = {
   schemaVersion: typeof LESSON_CATALOG_SCHEMA_VERSION;
+  catalogId: string;
   courseSlug: string;
   levelIndex: number;
   lessonIndex: number;
   lessonSlug: string;
+  slugState: LessonSlugState;
   lessonVersion: number;
   route: string | null;
   title: string;
@@ -127,6 +130,7 @@ export type LessonCompletionRule = {
 export type LessonContentDefinition = {
   schemaVersion: typeof LESSON_CONTENT_SCHEMA_VERSION;
   lessonSlug: string;
+  lessonVersion: number;
   objective: string;
   prerequisites: readonly string[];
   learningOutcomes: readonly string[];
