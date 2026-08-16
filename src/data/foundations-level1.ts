@@ -1,5 +1,6 @@
 import { foundationLevels } from "@/data/course-content";
 import type { Lesson } from "@/data/curriculum";
+import { getPublishedLessonCatalogEntries } from "@/lib/lesson-registry";
 
 export const FOUNDATION_LEVEL0_LESSONS = foundationLevels[0]?.lessons ?? [];
 export const FOUNDATION_LEVEL1_LESSONS = foundationLevels[1]?.lessons ?? [];
@@ -13,9 +14,18 @@ export const FOUNDATION_TOTAL_LESSONS = foundationLevels.reduce(
   0,
 );
 
-export const FOUNDATION_PUBLISHED_LEVELS = foundationLevels.slice(0, 2);
-export const FOUNDATION_PUBLISHED_LESSONS = FOUNDATION_PUBLISHED_LEVELS.flatMap(
-  (level) => level.lessons,
+const FOUNDATION_PUBLISHED_CATALOG = getPublishedLessonCatalogEntries().filter(
+  (entry) => entry.courseSlug === "foundations",
+);
+
+export const FOUNDATION_PUBLISHED_LEVELS = foundationLevels.filter((_, levelIndex) =>
+  FOUNDATION_PUBLISHED_CATALOG.some((entry) => entry.levelIndex === levelIndex),
+);
+export const FOUNDATION_PUBLISHED_LESSONS = FOUNDATION_PUBLISHED_CATALOG.flatMap(
+  (entry) => {
+    const lesson = foundationLevels[entry.levelIndex]?.lessons[entry.lessonIndex];
+    return lesson?.slug === entry.lessonSlug ? [lesson] : [];
+  },
 );
 export const FOUNDATION_PUBLISHED_TOTAL_LESSONS = FOUNDATION_PUBLISHED_LESSONS.length;
 
