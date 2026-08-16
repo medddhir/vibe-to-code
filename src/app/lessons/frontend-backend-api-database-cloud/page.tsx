@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { requireAuthenticatedLessonAccess } from "@/lib/auth/lesson-access";
 import { ChoiceCheckpoint, type ChoiceCheckpointOption } from "@/components/choice-checkpoint";
 import { FoundationLessonPage } from "@/components/foundations/foundation-lesson-page";
 import { type GuidedLessonStep } from "@/components/guided-lesson-flow";
@@ -10,6 +11,9 @@ import {
   getFoundationsCourseLessonNumber,
   FOUNDATION_LEVEL1_TOTAL_LESSONS,
 } from "@/data/foundations-level1";
+
+export const dynamic = "force-dynamic";
+
 
 const lessonSlug = "frontend-backend-api-database-cloud";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 7;
@@ -123,7 +127,9 @@ export const metadata: Metadata = {
     "Follow a browser click through request preparation, API validation, DB read/write and UI state update.",
 };
 
-export default function FrontendBackendApiDatabaseCloudLesson() {
+export default async function FrontendBackendApiDatabaseCloudLesson() {
+  await requireAuthenticatedLessonAccess("/lessons/frontend-backend-api-database-cloud");
+
   return (
     <FoundationLessonPage
       lessonSlug={lessonSlug}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { requireAuthenticatedLessonAccess } from "@/lib/auth/lesson-access";
 import { ChoiceCheckpoint } from "@/components/choice-checkpoint";
 import { SystemStackLab } from "@/components/foundations/computer-confidence-labs";
 import { FoundationLessonPage } from "@/components/foundations/foundation-lesson-page";
@@ -10,6 +11,9 @@ import {
   getFoundationsCourseLessonNumber,
   getFoundationsLessonNumber,
 } from "@/data/foundations-level1";
+
+export const dynamic = "force-dynamic";
+
 
 const lessonSlug = "hardware-operating-systems-apps";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 3;
@@ -27,7 +31,9 @@ export const metadata: Metadata = {
   description: "Build a simple four-layer picture of a computer and learn to locate problems without mixing up hardware, Windows, Chrome, and websites.",
 };
 
-export default function HardwareOperatingSystemsAppsLesson() {
+export default async function HardwareOperatingSystemsAppsLesson() {
+  await requireAuthenticatedLessonAccess("/lessons/hardware-operating-systems-apps");
+
   return (
     <FoundationLessonPage
       lessonSlug={lessonSlug}

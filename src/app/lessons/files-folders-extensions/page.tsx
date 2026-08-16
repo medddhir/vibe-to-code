@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { requireAuthenticatedLessonAccess } from "@/lib/auth/lesson-access";
 import { ChoiceCheckpoint } from "@/components/choice-checkpoint";
 import { FileExplorerLab } from "@/components/foundations/computer-confidence-labs";
 import { FoundationLessonPage } from "@/components/foundations/foundation-lesson-page";
@@ -10,6 +11,9 @@ import {
   getFoundationsCourseLessonNumber,
   getFoundationsLessonNumber,
 } from "@/data/foundations-level1";
+
+export const dynamic = "force-dynamic";
+
 
 const lessonSlug = "files-folders-extensions";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 4;
@@ -27,7 +31,9 @@ export const metadata: Metadata = {
   description: "Create a tidy project tree and learn why exact filenames and extensions such as .html, .css, and .js matter.",
 };
 
-export default function FilesFoldersExtensionsLesson() {
+export default async function FilesFoldersExtensionsLesson() {
+  await requireAuthenticatedLessonAccess("/lessons/files-folders-extensions");
+
   return (
     <FoundationLessonPage
       lessonSlug={lessonSlug}

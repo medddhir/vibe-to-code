@@ -1,20 +1,26 @@
 # Account, progress, and admin architecture
 
-This document defines the authentication and learner-data boundary. The first rollout is staging-only. It does not attach production domains, copy staging users into production, or make any public lesson require an account.
+This document defines the authentication and learner-data boundary for the current product contract:
+
+- Guests can open Lesson 1 (`/lessons/what-is-code`) without an account.
+- Verified Google sign-ins unlock every published lesson.
+- Progress sync is separate and optional.
 
 ## Product contract
 
 | Visitor state | Learning access | Progress behavior | Primary account action |
 | --- | --- | --- | --- |
-| Guest | All public lessons | Versioned storage on the current device | Optional sign in |
-| Signed in | All public lessons | Guest progress is safely combined, then synced per account | Account and sync status |
+| Guest | Lesson 1 only (`/lessons/what-is-code`) | Versioned storage on the current device | Optional sign in |
+| Signed in (Google) | All published lessons | Progress remains local and can sync per account when the feature is enabled in that environment | Account access and optional sync status |
 | Admin | Separate admin application only | Server-authorized curriculum operations | Role-protected admin session with MFA |
 
-Guest learning remains a first-class path. An account adds cross-device continuity and does not create a paywall.
+Guest access is limited to Lesson 1.
+A verified Google account unlocks all published lessons; learning remains free.
+Progress sync is separate from access control.
 
 ## Provider and domain decision
 
-Use Supabase Auth with the same Supabase Postgres project that stores progress. This keeps identity, row-level security, and learner data in one boundary.
+Use Supabase Auth with the project boundary used for this environment. This keeps identity, row-level security, and learner data in one boundary.
 
 The branded account UI remains first-party:
 
@@ -23,33 +29,30 @@ The branded account UI remains first-party:
 - Production auth/API custom domain later: `https://auth.vibe-to-code.tech`
 - Future admin application: `https://admin.vibe-to-code.tech`
 
-`auth.vibe-to-code.tech` is reserved for the production Supabase API and OAuth callback boundary. It is not a second login website. Keeping the login UI on the website avoids cross-subdomain session handoffs and keeps cookies host-only. Never share auth cookies with `Domain=.vibe-to-code.tech`; staging and production use different projects and signing keys.
+`auth.vibe-to-code.tech` is reserved for a future production Supabase auth custom domain. Keeping the login UI on the website avoids cross-subdomain session handoffs and keeps cookies host-only.
+Never share auth cookies with `Domain=.vibe-to-code.tech`; only the environment that owns a Supabase project should configure matching redirect and OAuth settings.
 
-Supabase custom domains require a paid project and add-on, so staging uses its default `https://<project-ref>.supabase.co` endpoint. The custom production auth domain can be attached immediately before public account launch.
+Supabase custom domains require a paid project and add-on, so this repository documents optional future domain wiring.
 
 ## Sign-in methods
 
 The public account UI currently supports:
 
-1. Google OAuth using a separate Google web client in each environment.
+1. Google OAuth using the configured Google web client.
 
-Passwordless email-code modules remain in the codebase for a later rollout, but the public entry points are hidden and `/verify-email` redirects to `/sign-in` until custom SMTP and the required token template are configured and tested.
-
-Email OTP confirms that the learner controls the inbox before a usable session is created. It does not prove a person's real-world identity and cannot eliminate every disposable inbox. Disposable-domain blocking is intentionally deferred because it creates false positives and needs ongoing list maintenance.
-
-The Supabase email template must render `{{ .Token }}` for the six-digit flow. Custom SMTP is required before enabling email-code sign-in: new Free projects using Supabase's default mailer cannot customize authentication templates, so the required token template cannot be installed there. Account service email is necessary for authentication; marketing email is a separate, unchecked preference with its own timestamped consent record.
+Passwordless email-code modules are not enabled in this contract.
 
 ## Environment isolation
 
-Create two independent Supabase projects and two Google OAuth web clients:
+Recommended isolation uses environment-scoped Supabase + Google OAuth settings:
 
 | Setting | Staging | Production |
 | --- | --- | --- |
 | Website origin | `https://staging.vibe-to-code.tech` | `https://vibe-to-code.tech` |
-| Supabase project | Staging-only | Production-only |
-| Google redirect | `https://<staging-ref>.supabase.co/auth/v1/callback` | Supabase production callback, then `https://auth.vibe-to-code.tech/auth/v1/callback` after activation |
-| SMTP | Staging sender/config | Production sender/config |
-| Learner data | Test accounts and progress only | Real accounts and progress only |
+| Supabase project | environment-scoped Supabase project | environment-scoped Supabase project |
+| Google redirect | environment callback URL | environment callback URL |
+| SMTP | environment sender/config | environment sender/config |
+| Learner data | environment-specific | environment-specific |
 
 Vercel public environment variables:
 
@@ -60,9 +63,12 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 
 The publishable key is safe in the browser only because every private table uses row-level security. Do not add a Supabase secret or service-role key to browser code. Normal account and progress operations do not need one.
 
+Feature previews have no account access unless the exact branch is deliberately configured with branch-scoped Supabase variables.
+If branch-scoped Supabase variables are not set, account-only lessons remain inaccessible. Never place production credentials in generic Preview scope.
+
 ### Staging provisioning values
 
-Use these exact staging boundaries before the first live test:
+Use these values before staging sign-in smoke tests:
 
 | Console | Setting | Value |
 | --- | --- | --- |
@@ -70,19 +76,20 @@ Use these exact staging boundaries before the first live test:
 | Supabase URL configuration | Redirect URL | `https://staging.vibe-to-code.tech/auth/callback` |
 | Google OAuth web client | Authorized JavaScript origin | `https://staging.vibe-to-code.tech` |
 | Google OAuth web client | Authorized redirect URI | `https://<staging-ref>.supabase.co/auth/v1/callback` |
-| Supabase email template | OTP body | Include `{{ .Token }}` so the learner receives a six-digit code |
-| Supabase auth providers | Anonymous sign-ins | Disabled |
 | Vercel staging | Progress flag during auth smoke test | `NEXT_PUBLIC_PROGRESS_SYNC_ENABLED=false` |
 
-Apply the database migration and pass reset/account-switch tests before changing the staging progress flag to `true`. Configure custom SMTP, SPF, DKIM, DMARC, bot protection, and suitable email rate limits before inviting public testers. Do not use wildcard production redirects.
+Apply the database migration and pass reset/account-switch tests before changing the staging progress flag to `true`.
+Configure bot protection and suitable authentication rate limits before inviting broad testers.
+Do not use wildcard production redirects and never place production credentials on generic preview scopes.
 
 ## Session and route boundary
 
 - `@supabase/ssr` creates browser and server clients.
 - Next.js `proxy.ts` refreshes cookie sessions before server code reads them.
-- Server authorization uses verified claims or a fresh `getUser()` result, never `getSession()` alone.
+- Server authorization uses verified claims from `getClaims()`, never `getSession()` alone.
 - `/auth/callback` exchanges the OAuth PKCE code and accepts only a validated same-site relative return path.
-- Learning routes stay public. Account data and progress APIs authenticate on the server.
+- Learning routes are protected by contract; `/lessons/what-is-code` remains public and all other lesson routes require verified Google session claims.
+- Account data and progress APIs authenticate on the server.
 - Google OAuth secrets live in Supabase provider settings, not in Vercel public variables.
 
 ## Existing progress data
@@ -159,10 +166,12 @@ The public website does not link to the admin domain. Attach it only after role 
 
 ## Safe rollout
 
-1. Create the staging Supabase project, Google OAuth client, and SMTP sender.
+This remains the recommended rollout once a separate staging environment is approved and provisioned:
+
+1. Create a staging Supabase project and Google OAuth client.
 2. Apply both tracked files in `supabase/migrations/` to staging in version order.
 3. Configure staging-only Vercel variables and Supabase redirect URLs.
-4. Verify Google and email-code sign-in without enabling cloud migration.
+4. Verify Google sign-in without enabling cloud progress sync.
 5. Enable the two-store import and sync only on staging.
 6. Test new, returning, offline, revoked, reset, multi-tab, multi-device, and account-switch sessions.
 7. Approve privacy and terms copy before collecting production accounts or marketing consent.

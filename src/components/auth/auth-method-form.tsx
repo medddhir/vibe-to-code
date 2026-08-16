@@ -77,7 +77,7 @@ export function AuthMethodForm({
       {!configured ? (
         <div className="auth-config-notice" role="status">
           <strong>Account setup is not connected here yet.</strong>
-          <p>You can keep learning as a guest while account access is being configured.</p>
+          <p>Lesson 1 is still available. Account-only lessons are unavailable until this environment is connected.</p>
         </div>
       ) : null}
 
