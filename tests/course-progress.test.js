@@ -21,6 +21,22 @@ const {
   foundationLevel1Order,
   foundationPublishedOrder,
 } = require("../src/lib/course-progress.ts");
+const {
+  getFoundationServerLessonSnapshot,
+} = require("../src/components/foundations/lesson-state.ts");
+const {
+  FOUNDATION_CURRICULUM_VERSION,
+} = require("../src/lib/progress-manifest.ts");
+
+test("default Foundation server snapshot uses the current complete published path", () => {
+  const snapshot = getFoundationServerLessonSnapshot();
+
+  assert.equal(snapshot.courseVersion, FOUNDATION_CURRICULUM_VERSION);
+  assert.equal(snapshot.courseVersion, 3);
+  assert.equal(snapshot.lessonOrder.length, 15);
+  assert.deepEqual(snapshot.lessonOrder, foundationPublishedOrder);
+  assert.deepEqual(Object.keys(snapshot.lessons), foundationPublishedOrder);
+});
 
 test("creates a versioned foundation progress record", () => {
   const snapshot = getCourseProgressSnapshot("foundations");
