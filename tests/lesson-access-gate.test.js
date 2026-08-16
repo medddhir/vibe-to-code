@@ -28,6 +28,7 @@ const PROTECTED_LESSONS = [
   "interpreters-compilers-runtimes",
   "packages-dependencies-environments",
   "frontend-backend-api-database-cloud",
+  "internet-web-browser-server",
 ];
 
 const allCurrentLessons = [
@@ -83,6 +84,18 @@ test("unknown lesson slugs should 404 without auth fallback", () => {
     fs.existsSync(path.join(process.cwd(), "src/app/lessons/[slug]")),
     false,
   );
+});
+
+test("Lesson 15 is force-dynamic and authenticates before rendering trusted content", () => {
+  const source = fs.readFileSync(lessonPagePath("internet-web-browser-server"), "utf8");
+  assert.match(source, /export const dynamic = "force-dynamic"/);
+  const guard = source.indexOf("await requireAuthenticatedLessonAccess(route)");
+  const lessonJsx = source.indexOf("<FoundationLessonPage", guard);
+  assert.ok(guard >= 0 && lessonJsx > guard);
+  assert.match(source, /lessonContentRegistry\.bySlug\(lessonSlug\)/);
+  assert.match(source, /getPublishedLessonBySlug\(lessonSlug\)/);
+  assert.match(source, /getGuidedStepsForLessonDefinition\(definition\)/);
+  assert.match(source, /definition=\{definition\}[\s\S]*stepId=\{step\.id\}/);
 });
 
 test("legacy lesson 1 remains public and every other lesson uses server-side auth guard", async () => {
@@ -191,7 +204,7 @@ test("permits a valid Google-authenticated session", async () => {
 });
 
 test("rejects malformed, missing, invalid, anonymous, non-google, and auth-error lesson sessions", async () => {
-  const lessonPath = "/lessons/interpreters-compilers-runtimes";
+  const lessonPath = "/lessons/internet-web-browser-server";
 
   const cases = [
     { claims: null, name: "missing-auth-client" },
@@ -231,7 +244,7 @@ test("rejects malformed, missing, invalid, anonymous, non-google, and auth-error
         await lessonAccess.requireAuthenticatedLessonAccess(lessonPath);
         assert.fail(`expected redirect for ${name}`);
       } catch (error) {
-        assert.equal(redirectTarget(error), "/sign-in?next=%2Flessons%2Finterpreters-compilers-runtimes");
+        assert.equal(redirectTarget(error), "/sign-in?next=%2Flessons%2Finternet-web-browser-server");
       } finally {
         resetClient();
       }
@@ -249,7 +262,7 @@ test("rejects malformed, missing, invalid, anonymous, non-google, and auth-error
       await lessonAccess.requireAuthenticatedLessonAccess(lessonPath);
       assert.fail(`expected redirect for ${name}`);
     } catch (error) {
-      assert.equal(redirectTarget(error), "/sign-in?next=%2Flessons%2Finterpreters-compilers-runtimes");
+      assert.equal(redirectTarget(error), "/sign-in?next=%2Flessons%2Finternet-web-browser-server");
     } finally {
       resetClient();
     }
@@ -267,7 +280,7 @@ test("rejects malformed, missing, invalid, anonymous, non-google, and auth-error
     await lessonAccess.requireAuthenticatedLessonAccess(lessonPath);
     assert.fail("expected redirect for auth error");
   } catch (error) {
-    assert.equal(redirectTarget(error), "/sign-in?next=%2Flessons%2Finterpreters-compilers-runtimes");
+    assert.equal(redirectTarget(error), "/sign-in?next=%2Flessons%2Finternet-web-browser-server");
   } finally {
     resetClient();
   }
@@ -287,13 +300,13 @@ test("does not let preview review flag bypass authentication", async () => {
 
   const resetClient = setClient(null);
   try {
-    assert.equal(lessonAccess.isProtectedLessonRoute("/lessons/input-process-output-state"), true);
+    assert.equal(lessonAccess.isProtectedLessonRoute("/lessons/internet-web-browser-server"), true);
 
     try {
-      await lessonAccess.requireAuthenticatedLessonAccess("/lessons/input-process-output-state");
+      await lessonAccess.requireAuthenticatedLessonAccess("/lessons/internet-web-browser-server");
       assert.fail("expected redirect while review flag is enabled");
     } catch (error) {
-      assert.equal(redirectTarget(error), "/sign-in?next=%2Flessons%2Finput-process-output-state");
+      assert.equal(redirectTarget(error), "/sign-in?next=%2Flessons%2Finternet-web-browser-server");
     }
   } finally {
     if (typeof restore === "undefined") {

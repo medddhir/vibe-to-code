@@ -8,8 +8,12 @@ const { beforeEach, describe, it } = require("node:test");
 
 const {
   FOUNDATION_PROGRESS_MANIFEST,
+  FOUNDATION_PROGRESS_MANIFEST_VERSION_2,
   getFoundationProgressLessonManifest,
 } = require("../src/lib/progress-manifest.ts");
+const {
+  internetWebBrowserServerLesson,
+} = require("../src/data/lessons/foundations/internet-web-browser-server.ts");
 const {
   clearStoredLessonProgress,
   getLessonStorageKey,
@@ -28,6 +32,7 @@ const {
   getLegacyImportFingerprintStorageKey,
   mergeCanonicalFoundationProgress,
   normalizeCanonicalFoundationProgress,
+  parseCanonicalFoundationProgress,
   reconcileCanonicalFoundationProgressCheckpoint,
   reconcileCanonicalFoundationProgressWithServer,
   subtractClaimedGuestProgress,
@@ -63,7 +68,7 @@ function legacyAggregate(lessonSlug, lesson = {}) {
     courseVersion: 2,
     legacyLevel1Access: false,
     lastVisitedLesson: lessonSlug,
-    lessonOrder: FOUNDATION_PROGRESS_MANIFEST.map((item) => item.slug),
+    lessonOrder: FOUNDATION_PROGRESS_MANIFEST_VERSION_2.map((item) => item.slug),
     lessons: { [lessonSlug]: lesson },
     updatedAt: importedAt,
   };
@@ -80,8 +85,8 @@ beforeEach(() => {
 });
 
 describe("Foundation progress manifest and legacy import", () => {
-  it("declares all 14 published lessons and the exact current detailed versions", () => {
-    assert.equal(FOUNDATION_PROGRESS_MANIFEST.length, 14);
+  it("declares all 15 published lessons and the exact current detailed versions", () => {
+    assert.equal(FOUNDATION_PROGRESS_MANIFEST.length, 15);
     assert.deepEqual(
       FOUNDATION_PROGRESS_MANIFEST.map((lesson) => lesson.slug),
       foundationPublishedOrder,
@@ -97,6 +102,17 @@ describe("Foundation progress manifest and legacy import", () => {
 
   it("keeps the manifest aligned with mechanically extractable lesson and activity IDs", () => {
     for (const lesson of FOUNDATION_PROGRESS_MANIFEST) {
+      if (lesson.slug === internetWebBrowserServerLesson.lessonSlug) {
+        assert.deepEqual(
+          lesson.stepIds,
+          internetWebBrowserServerLesson.guidedSteps.map((step) => step.id),
+        );
+        assert.deepEqual(
+          lesson.activityIds,
+          internetWebBrowserServerLesson.activities.map((activity) => activity.id),
+        );
+        continue;
+      }
       const source = fs.readFileSync(
         path.join(process.cwd(), "src/app/lessons", lesson.slug, "page.tsx"),
         "utf8",
@@ -130,6 +146,59 @@ describe("Foundation progress manifest and legacy import", () => {
         `${lesson.slug} activity IDs drifted`,
       );
     }
+  });
+
+  it("upgrades canonical version 2 losslessly and adds only empty Lesson 15", () => {
+    const version2 = createEmptyCanonicalFoundationProgress(importedAt);
+    version2.curriculumVersion = 2;
+    delete version2.lessons["internet-web-browser-server"];
+    version2.courseEpoch = 4;
+    version2.revision = 9;
+    version2.legacyLevel1Access = true;
+    version2.lastVisited = {
+      value: "frontend-backend-api-database-cloud",
+      updatedAt: laterAt,
+    };
+    version2.updatedAt = latestAt;
+    const lesson14 = version2.lessons["frontend-backend-api-database-cloud"];
+    lesson14.lessonEpoch = 3;
+    lesson14.completedAt = laterAt;
+    const lesson14Version = lesson14.versions["1"];
+    lesson14Version.currentStep = { value: "journey-mission", updatedAt: laterAt };
+    lesson14Version.completedStepsAt = { "journey-concept": importedAt };
+    lesson14Version.completedActivitiesAt = { "backend-validation-check": laterAt };
+    lesson14Version.attempts = { "journey-mission": { "device-a": 7 } };
+    lesson14Version.hints = { "journey-mission": { "device-a": 2 } };
+    lesson14Version.savedCode = {
+      "journey-mission": { value: "preserve exactly", updatedAt: latestAt },
+    };
+
+    const migrated = parseCanonicalFoundationProgress(version2);
+    assert.equal(migrated.curriculumVersion, 3);
+    assert.equal(migrated.courseEpoch, 4);
+    assert.equal(migrated.revision, 9);
+    assert.equal(migrated.legacyLevel1Access, true);
+    assert.deepEqual(migrated.lastVisited, version2.lastVisited);
+    assert.equal(migrated.updatedAt, latestAt);
+    assert.deepEqual(
+      migrated.lessons["frontend-backend-api-database-cloud"],
+      lesson14,
+    );
+    assert.deepEqual(migrated.lessons["internet-web-browser-server"], {
+      lessonEpoch: 0,
+      completedAt: null,
+      versions: {
+        1: {
+          lessonVersion: 1,
+          currentStep: null,
+          completedStepsAt: {},
+          completedActivitiesAt: {},
+          attempts: {},
+          hints: {},
+          savedCode: {},
+        },
+      },
+    });
   });
 
   it("imports both stores, uses the v3 first-lesson key, and never doubles mirrored attempts", () => {

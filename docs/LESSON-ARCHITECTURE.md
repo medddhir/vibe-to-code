@@ -39,14 +39,14 @@ every required deterministic activity has passed.
 
 ## Current compatibility rule
 
-The 14 published Developer Foundations lessons remain `legacy-bespoke`. Their
-catalog metadata is joined from the existing curriculum outline and the
-unchanged 14-entry progress manifest. The registry supplies published ordering
-to the existing Foundation compatibility exports, but the page modules and
-their content, components, auth guards, navigation UI, progress versions, step
-IDs, activity IDs, and storage behavior remain unchanged.
+The original 14 published Developer Foundations lessons remain
+`legacy-bespoke`. Lesson 15 is the first `data-driven` lesson and uses the
+trusted content registry and generic renderer. The registry supplies the full
+15-lesson published order to the existing Foundation compatibility exports;
+the original page modules, identifiers, storage keys, and progress records are
+preserved while curriculum version 3 appends an empty Lesson 15 record.
 
-The catalog also marks the 188 lessons that already have curriculum outlines as
+The catalog also marks the 187 lessons that already have curriculum outlines as
 planned and unroutable. The Web Development and SQL courses currently declare
 only aggregate lesson counts, so the architecture does not invent 160 titles,
 slugs, or educational claims for them. The curriculum remains the source of the
@@ -56,17 +56,19 @@ Planned outline slugs are position-based placeholders with
 `slugState: "provisional"`; they are not permanent identifiers and must not be
 linked, routed, or added to progress contracts. A human-approved permanent slug
 is required before draft or publication. The reserved `planned-...-level-...`
-format can never be promoted merely by changing `slugState`. In particular,
-Lesson 15 has only a provisional catalog identity in this PR.
+format can never be promoted merely by changing `slugState`. Lesson 15 uses its
+reviewed permanent slug; Lesson 16 and the remaining planned lessons retain
+position-based provisional identities.
 
 ## Publication workflow
 
-Before a future data-driven lesson is routed, its catalog and content definition
+Before a data-driven lesson is routed, its catalog and content definition
 must both pass the pure validators. Publication also requires a separate review
 of authentication, sitemap visibility, navigation, progress-manifest/version
 changes, storage migration, server allowlists, and database compatibility.
-Lesson 15 therefore cannot be published by changing `publicationState` alone.
-It still requires a separate reviewed PR covering:
+This Lesson 15 change supplies those gates together. A future lesson cannot be
+published by changing `publicationState` alone; it still requires a separate
+reviewed PR covering:
 
 - final content and verified sources;
 - permanent slug approval;

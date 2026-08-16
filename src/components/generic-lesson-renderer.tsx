@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ChoiceCheckpoint } from "@/components/choice-checkpoint";
 import { CodeWindow } from "@/components/code-window";
@@ -13,24 +13,6 @@ import {
   type TrustedLessonBlock,
 } from "@/data/lesson-schema";
 
-export function getGuidedStepsForLessonDefinition(
-  definition: LessonContentDefinition,
-) {
-  const completionActivityIds = definition.completionRule.requiredActivityIds;
-  return definition.guidedSteps.map((step, index) => {
-    const requiredActivityIds = index === definition.guidedSteps.length - 1
-      ? [...new Set([...step.requiredActivityIds, ...completionActivityIds])]
-      : [...step.requiredActivityIds];
-    return {
-      id: step.id,
-      title: step.title,
-      eyebrow: step.eyebrow,
-      requiresPractice: requiredActivityIds.length > 0,
-      requiredActivityIds,
-    };
-  });
-}
-
 export function getLessonBlockRendererKind(block: { type: string }) {
   if (!isSupportedLessonBlockType(block.type)) {
     throw new Error(`Unsupported lesson block type: ${block.type}`);
@@ -38,21 +20,82 @@ export function getLessonBlockRendererKind(block: { type: string }) {
   return block.type;
 }
 
+export function getOrderingCheckpointDisplayOrder(
+  activity: OrderingActivity,
+  currentOrder: readonly string[],
+  completed: boolean,
+) {
+  return completed ? [...activity.correctOrder] : [...currentOrder];
+}
+
+export function getOrderingCheckpointDisplayState(
+  activity: OrderingActivity,
+  currentOrder: readonly string[],
+  feedback: string,
+  announcement: string,
+  completed: boolean,
+) {
+  return completed
+    ? {
+      order: [...activity.correctOrder],
+      feedback: activity.successMessage,
+      announcement: activity.successMessage,
+    }
+    : { order: [...currentOrder], feedback, announcement };
+}
+
 function OrderingCheckpoint({ activity }: { activity: OrderingActivity }) {
   const { completePractice, practiceCompletedIds, recordFailedAttempt } =
     useLessonProgress();
   const [order, setOrder] = useState(() => activity.items.map((item) => item.id));
   const [feedback, setFeedback] = useState("");
+  const [announcement, setAnnouncement] = useState({ sequence: 0, message: "" });
+  const [focusTarget, setFocusTarget] = useState<{
+    itemId: string;
+    direction: -1 | 1;
+    sequence: number;
+  } | null>(null);
+  const movementControls = useRef(new Map<string, HTMLButtonElement>());
   const completed = practiceCompletedIds.includes(activity.id);
+  const displayState = getOrderingCheckpointDisplayState(
+    activity,
+    order,
+    feedback,
+    announcement.message,
+    completed,
+  );
+
+  useEffect(() => {
+    if (!focusTarget) return;
+    const preferred = movementControls.current.get(
+      `${focusTarget.itemId}:${focusTarget.direction}`,
+    );
+    const fallback = movementControls.current.get(
+      `${focusTarget.itemId}:${focusTarget.direction === -1 ? 1 : -1}`,
+    );
+    const target = preferred && !preferred.disabled ? preferred : fallback;
+    if (target && !target.disabled) target.focus();
+  }, [focusTarget, order]);
 
   function move(index: number, direction: -1 | 1) {
     const destination = index + direction;
     if (completed || destination < 0 || destination >= order.length) return;
+    const movingId = order[index];
+    const item = activity.items.find((candidate) => candidate.id === movingId);
     setOrder((current) => {
       const next = [...current];
       [next[index], next[destination]] = [next[destination], next[index]];
       return next;
     });
+    setFocusTarget((current) => ({
+      itemId: movingId,
+      direction,
+      sequence: (current?.sequence ?? 0) + 1,
+    }));
+    setAnnouncement((current) => ({
+      sequence: current.sequence + 1,
+      message: `Moved ${item?.label ?? "item"} to position ${destination + 1} of ${order.length}.`,
+    }));
     setFeedback("");
   }
 
@@ -60,10 +103,18 @@ function OrderingCheckpoint({ activity }: { activity: OrderingActivity }) {
     if (order.every((id, index) => id === activity.correctOrder[index])) {
       completePractice(activity.id);
       setFeedback(activity.successMessage);
+      setAnnouncement((current) => ({
+        sequence: current.sequence + 1,
+        message: activity.successMessage,
+      }));
       return;
     }
     recordFailedAttempt(activity.id);
     setFeedback(activity.errorMessage);
+    setAnnouncement((current) => ({
+      sequence: current.sequence + 1,
+      message: `Incorrect sequence. ${activity.errorMessage}`,
+    }));
   }
 
   return (
@@ -75,30 +126,40 @@ function OrderingCheckpoint({ activity }: { activity: OrderingActivity }) {
         </div>
       </div>
       <p>{activity.prompt}</p>
-      <ol aria-label="Current sequence">
-        {order.map((id, index) => {
+      <ol className="ordering-checkpoint-list" aria-label="Current sequence">
+        {displayState.order.map((id, index) => {
           const item = activity.items.find((candidate) => candidate.id === id);
           return (
             <li key={id}>
               <span>{item?.label}</span>
-              <button
-                className="button button-secondary"
-                type="button"
-                disabled={completed || index === 0}
-                onClick={() => move(index, -1)}
-                aria-label={`Move ${item?.label} earlier`}
-              >
-                Move up
-              </button>
-              <button
-                className="button button-secondary"
-                type="button"
-                disabled={completed || index === order.length - 1}
-                onClick={() => move(index, 1)}
-                aria-label={`Move ${item?.label} later`}
-              >
-                Move down
-              </button>
+              <span className="ordering-checkpoint-controls">
+                <button
+                  ref={(node) => {
+                    if (node) movementControls.current.set(`${id}:-1`, node);
+                    else movementControls.current.delete(`${id}:-1`);
+                  }}
+                  className="button button-secondary"
+                  type="button"
+                  disabled={completed || index === 0}
+                  onClick={() => move(index, -1)}
+                  aria-label={`Move ${item?.label} earlier`}
+                >
+                  Move up
+                </button>
+                <button
+                  ref={(node) => {
+                    if (node) movementControls.current.set(`${id}:1`, node);
+                    else movementControls.current.delete(`${id}:1`);
+                  }}
+                  className="button button-secondary"
+                  type="button"
+                  disabled={completed || index === displayState.order.length - 1}
+                  onClick={() => move(index, 1)}
+                  aria-label={`Move ${item?.label} later`}
+                >
+                  Move down
+                </button>
+              </span>
             </li>
           );
         })}
@@ -111,11 +172,19 @@ function OrderingCheckpoint({ activity }: { activity: OrderingActivity }) {
       >
         {completed ? "Checkpoint cleared" : "Check sequence"}
       </button>
-      {feedback ? (
-        <p className="choice-feedback" role="status" aria-live="polite">
-          {feedback}
+      {displayState.feedback ? (
+        <p className="choice-feedback">
+          {displayState.feedback}
         </p>
       ) : null}
+      <p
+        className="lesson-live-region"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <span key={`${announcement.sequence}:${completed}`}>{displayState.announcement}</span>
+      </p>
     </section>
   );
 }
@@ -199,21 +268,61 @@ function renderBlock(
 /** Renders validated, serializable lesson data. Route and access decisions live elsewhere. */
 export function GenericLessonContentRenderer({
   definition,
+  stepId,
 }: {
   definition: LessonContentDefinition;
+  stepId?: string;
 }) {
-  return definition.guidedSteps.map((step) => (
-    <section
-      id={step.id}
-      className="lesson-section guided-topic mission-topic"
-      key={step.id}
-      aria-labelledby={`${step.id}-heading`}
-    >
-      <p className="eyebrow">{step.eyebrow}</p>
-      <h2 id={`${step.id}-heading`}>{step.title}</h2>
-      {step.blocks.map((block, index) =>
-        renderBlock(block, definition.activities, `${step.id}-${index}`),
-      )}
-    </section>
-  ));
+  const steps = stepId
+    ? definition.guidedSteps.filter((step) => step.id === stepId)
+    : definition.guidedSteps;
+
+  return steps.map((step) => {
+    const isFirstStep = step.id === definition.guidedSteps[0]?.id;
+    const isFinalStep = step.id === definition.guidedSteps.at(-1)?.id;
+    return (
+      <section
+        id={step.id}
+        className="lesson-section guided-topic mission-topic"
+        key={step.id}
+        aria-labelledby={`${step.id}-heading`}
+      >
+        <p className="eyebrow">{step.eyebrow}</p>
+        <h2 id={`${step.id}-heading`}>{step.title}</h2>
+        {isFirstStep ? (
+          <aside
+            className="lesson-ready-note lesson-contract"
+            aria-labelledby={`${step.id}-objective-heading`}
+          >
+            <h3 id={`${step.id}-objective-heading`}>Lesson objective</h3>
+            <p>{definition.objective}</p>
+            <h4>Before you begin</h4>
+            <ul>{definition.prerequisites.map((item) => <li key={item}>{item}</li>)}</ul>
+            <h4>By the end, you can</h4>
+            <ul>{definition.learningOutcomes.map((item) => <li key={item}>{item}</li>)}</ul>
+            <p><strong>Misconception to correct:</strong> {definition.misconception}</p>
+          </aside>
+        ) : null}
+        {step.blocks.map((block, index) =>
+          renderBlock(block, definition.activities, `${step.id}-${index}`),
+        )}
+        {isFinalStep ? (
+          <footer
+            className="lesson-ready-note lesson-sources"
+            aria-labelledby={`${step.id}-sources-heading`}
+          >
+            <h3 id={`${step.id}-sources-heading`}>Sources</h3>
+            <p>Verified {definition.sourceVerifiedAt}.</p>
+            <ul>
+              {definition.sources.map((source) => (
+                <li key={source.url}>
+                  <a href={source.url} rel="noreferrer">{source.title}</a>
+                </li>
+              ))}
+            </ul>
+          </footer>
+        ) : null}
+      </section>
+    );
+  });
 }

@@ -13,6 +13,7 @@ import {
   subscribeToCourseProgress,
   foundationPublishedOrder,
 } from "@/lib/course-progress";
+import { FOUNDATION_CURRICULUM_VERSION } from "@/lib/progress-manifest";
 
 export type LessonAccessState = {
   isUnlocked: boolean;
@@ -33,7 +34,7 @@ const EMPTY_LESSON_PROGRESS: LessonProgressStatus = {
 
 const EMPTY_COURSE_SNAPSHOT: CourseProgressSnapshot = {
   version: 1,
-  courseVersion: 2,
+  courseVersion: FOUNDATION_CURRICULUM_VERSION,
   legacyLevel1Access: false,
   lastVisitedLesson: null,
   lessonOrder: [...foundationPublishedOrder],
@@ -59,8 +60,12 @@ function readSnapshot() {
   return cachedCourseSnapshot;
 }
 
-function readServerSnapshot() {
+export function getFoundationServerLessonSnapshot() {
   return EMPTY_COURSE_SNAPSHOT;
+}
+
+function readServerSnapshot() {
+  return getFoundationServerLessonSnapshot();
 }
 
 function subscribe(callback: () => void) {

@@ -4,6 +4,7 @@ import {
   clearStoredLessonProgressForLessons,
 } from "@/lib/lesson-progress-storage";
 import { FOUNDATION_CURRICULUM_VERSION } from "@/lib/progress-manifest";
+import { getPublishedLessonCatalogEntries } from "@/lib/lesson-registry";
 
 type LessonProgressRecord = {
   completedAt: string | null;
@@ -61,8 +62,9 @@ const FOUNDATION_LEVEL1_ORDER = foundationLevels[1]?.lessons
   .filter((slug): slug is string => typeof slug === "string") ?? [];
 
 const FOUNDATION_PUBLISHED_ORDER = [
-  ...FOUNDATION_LEVEL0_ORDER,
-  ...FOUNDATION_LEVEL1_ORDER,
+  ...getPublishedLessonCatalogEntries()
+    .filter((entry) => entry.courseSlug === "foundations")
+    .map((entry) => entry.lessonSlug),
 ];
 
 function getFoundationLessonOrder() {
@@ -183,7 +185,7 @@ function normalizeCourseRecord(raw: string | null, courseSlug: string): CoursePr
 
     if (
       parsed.version !== COURSE_PROGRESS_VERSION ||
-      (parsed.courseVersion !== 1 && parsed.courseVersion !== FOUNDATION_COURSE_VERSION)
+      ![1, 2, FOUNDATION_COURSE_VERSION].includes(parsed.courseVersion ?? -1)
     ) {
       return fallback;
     }

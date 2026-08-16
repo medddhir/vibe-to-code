@@ -1,5 +1,6 @@
 export const FOUNDATION_PROGRESS_SCHEMA_VERSION = 2;
-export const FOUNDATION_CURRICULUM_VERSION = 2;
+export const FOUNDATION_CURRICULUM_VERSION = 3;
+export const FOUNDATION_PREVIOUS_CURRICULUM_VERSION = 2;
 
 export type FoundationProgressLessonManifest = {
   slug: string;
@@ -112,6 +113,23 @@ export const FOUNDATION_PROGRESS_MANIFEST = [
       "secret-placement-check",
     ],
   },
+  {
+    slug: "internet-web-browser-server",
+    lessonVersion: 1,
+    stepIds: [
+      "separate-internet-and-web",
+      "name-browser-search-and-server",
+      "trace-page-journey",
+      "rebuild-page-journey",
+      "diagnose-connection-layer",
+      "explain-complete-model",
+    ],
+    activityIds: [
+      "classify-web-roles",
+      "order-page-journey",
+      "identify-missing-layer",
+    ],
+  },
 ] as const satisfies readonly FoundationProgressLessonManifest[];
 
 export type FoundationProgressLessonSlug =
@@ -122,8 +140,15 @@ export const FOUNDATION_PROGRESS_LESSON_ORDER = FOUNDATION_PROGRESS_MANIFEST.map
 );
 
 export const FOUNDATION_PROGRESS_LEVEL0_LESSON_COUNT = 7;
+export const FOUNDATION_PROGRESS_LEVEL1_LESSON_COUNT = 7;
 export const FOUNDATION_PROGRESS_LEVEL1_LESSON_SLUGS =
-  FOUNDATION_PROGRESS_LESSON_ORDER.slice(FOUNDATION_PROGRESS_LEVEL0_LESSON_COUNT);
+  FOUNDATION_PROGRESS_LESSON_ORDER.slice(
+    FOUNDATION_PROGRESS_LEVEL0_LESSON_COUNT,
+    FOUNDATION_PROGRESS_LEVEL0_LESSON_COUNT + FOUNDATION_PROGRESS_LEVEL1_LESSON_COUNT,
+  );
+
+export const FOUNDATION_PROGRESS_MANIFEST_VERSION_2 =
+  FOUNDATION_PROGRESS_MANIFEST.slice(0, 14) satisfies readonly FoundationProgressLessonManifest[];
 
 export const FOUNDATION_PROGRESS_BY_SLUG = Object.fromEntries(
   FOUNDATION_PROGRESS_MANIFEST.map((lesson) => [lesson.slug, lesson]),

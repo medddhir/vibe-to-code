@@ -35,9 +35,26 @@ export type ProgressSyncRequest = {
   payload: CanonicalFoundationProgress;
 };
 
+function hasCurrentCurriculumVersion(payload: unknown) {
+  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
+    return false;
+  }
+
+  const descriptor = Object.getOwnPropertyDescriptor(payload, "curriculumVersion");
+  return Boolean(
+    descriptor &&
+    "value" in descriptor &&
+    descriptor.value === FOUNDATION_CURRICULUM_VERSION,
+  );
+}
+
 export function parseProgressSyncRequest(input: unknown): ProgressSyncRequest | null {
   const parsed = progressSyncRequestSchema.safeParse(input);
   if (!parsed.success) return null;
+
+  // Trusted caches and GET normalization may upgrade v2, but mutation requests
+  // must already speak the current curriculum contract.
+  if (!hasCurrentCurriculumVersion(parsed.data.payload)) return null;
 
   try {
     const payload = parseCanonicalFoundationProgress(parsed.data.payload);

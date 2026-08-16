@@ -1,9 +1,10 @@
 import Link from "next/link";
 
 import { foundationLevels } from "@/data/course-content";
-import { FOUNDATION_PUBLISHED_TOTAL_LESSONS } from "@/data/foundations-level1";
-
-const publishedLevels = foundationLevels.slice(0, 2);
+import {
+  FOUNDATION_PUBLISHED_LEVELS,
+  FOUNDATION_PUBLISHED_TOTAL_LESSONS,
+} from "@/data/foundations-level1";
 
 export function LiveCurriculumCard() {
   return (
@@ -19,27 +20,34 @@ export function LiveCurriculumCard() {
       </header>
 
       <div className="vtc-live-levels">
-        {publishedLevels.map((level, index) => (
-          <article key={level.label}>
-            <div className="vtc-live-level-heading">
-              <span>{level.label}</span>
-              <small>{level.lessons.length}/{level.lessons.length} published</small>
-            </div>
-            <h2>{level.title}</h2>
-            <p>{level.description}</p>
-            <ol aria-label={`${level.label} published lesson sequence`}>
-              {level.lessons.map((lesson, lessonIndex) => (
-                <li key={lesson.title}>
-                  <span>{String(lessonIndex + 1).padStart(2, "0")}</span>
-                  <span>{lesson.title}</span>
-                </li>
-              ))}
-            </ol>
-            <Link href={`/courses/foundations#level-${index + 1}`}>
-              Open {level.label} <span aria-hidden="true">↗</span>
-            </Link>
-          </article>
-        ))}
+        {FOUNDATION_PUBLISHED_LEVELS.map((level) => {
+          const levelIndex = foundationLevels.findIndex(
+            (candidate) => candidate.label === level.label && candidate.title === level.title,
+          );
+          const outlinedLessonCount = foundationLevels[levelIndex]?.lessons.length
+            ?? level.lessons.length;
+          return (
+            <article key={level.label}>
+              <div className="vtc-live-level-heading">
+                <span>{level.label}</span>
+                <small>{level.lessons.length}/{outlinedLessonCount} published</small>
+              </div>
+              <h2>{level.title}</h2>
+              <p>{level.description}</p>
+              <ol aria-label={`${level.label} published lesson sequence`}>
+                {level.lessons.map((lesson, lessonIndex) => (
+                  <li key={lesson.title}>
+                    <span>{String(lessonIndex + 1).padStart(2, "0")}</span>
+                    <span>{lesson.title}</span>
+                  </li>
+                ))}
+              </ol>
+              <Link href={`/courses/foundations#level-${levelIndex + 1}`}>
+                Open {level.label} <span aria-hidden="true">↗</span>
+              </Link>
+            </article>
+          );
+        })}
       </div>
 
       <footer>

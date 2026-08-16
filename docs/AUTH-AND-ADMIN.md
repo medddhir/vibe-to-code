@@ -78,7 +78,7 @@ Use these values before staging sign-in smoke tests:
 | Google OAuth web client | Authorized redirect URI | `https://<staging-ref>.supabase.co/auth/v1/callback` |
 | Vercel staging | Progress flag during auth smoke test | `NEXT_PUBLIC_PROGRESS_SYNC_ENABLED=false` |
 
-Apply the database migration and pass reset/account-switch tests before changing the staging progress flag to `true`.
+Apply all pending database migrations and pass reset/account-switch tests before changing the staging progress flag to `true`.
 Configure bot protection and suitable authentication rate limits before inviting broad testers.
 Do not use wildcard production redirects and never place production credentials on generic preview scopes.
 
@@ -143,7 +143,7 @@ The database functions lock each course row, compare the expected revision and e
 
 ## Data model and row-level security
 
-The staging migration creates:
+The staging migration history creates and maintains:
 
 - `profiles`: display attributes keyed by the Supabase auth user ID.
 - `email_preferences`: separate marketing preference and consent/revocation timestamps.
@@ -169,7 +169,7 @@ The public website does not link to the admin domain. Attach it only after role 
 This remains the recommended rollout once a separate staging environment is approved and provisioned:
 
 1. Create a staging Supabase project and Google OAuth client.
-2. Apply both tracked files in `supabase/migrations/` to staging in version order.
+2. Run `supabase migration list`, reconcile local and remote history, then apply every pending tracked migration in ascending timestamp order. Never edit or re-run an applied migration.
 3. Configure staging-only Vercel variables and Supabase redirect URLs.
 4. Verify Google sign-in without enabling cloud progress sync.
 5. Enable the two-store import and sync only on staging.

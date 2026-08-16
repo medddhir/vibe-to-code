@@ -3,6 +3,8 @@ import Link from "next/link";
 import { modelFamilies } from "@/data/course-content";
 import type { Course } from "@/data/curriculum";
 import { FoundationCourseProgressPanel } from "@/components/foundations/foundation-course-progress-panel";
+import { FOUNDATION_PUBLISHED_LEVELS } from "@/data/foundations-level1";
+import { getPublishedLessonByPosition } from "@/lib/lesson-registry";
 
 const learningLoop = [
   { number: "01", title: "Understand", description: "Start with one plain-English mental model." },
@@ -10,6 +12,22 @@ const learningLoop = [
   { number: "03", title: "Try", description: "Make one small change and predict what happens." },
   { number: "04", title: "Break + verify", description: "Repair a mistake and prove the fix with evidence." },
 ];
+
+export function getCourseMapLessonState(
+  courseSlug: string,
+  levelIndex: number,
+  lessonIndex: number,
+) {
+  const entry = getPublishedLessonByPosition(courseSlug, levelIndex, lessonIndex);
+  if (
+    entry?.publicationState === "published" &&
+    typeof entry.route === "string"
+  ) {
+    return { label: "Start" as const, route: entry.route };
+  }
+
+  return { label: "Planned" as const, route: null };
+}
 
 function BasicCourse({ course }: { course: Course }) {
   return (
@@ -47,7 +65,7 @@ function BasicCourse({ course }: { course: Course }) {
       <section className="section">
         <div className="shell narrow-shell">
           <div className="course-levels">
-            {course.levels.map((level) => (
+            {course.levels.map((level, levelIndex) => (
               <section key={`${level.label}-${level.title}`} className="course-level">
                 <div className="level-heading">
                   <span>{level.label}</span>
@@ -58,22 +76,27 @@ function BasicCourse({ course }: { course: Course }) {
                 </div>
                 {level.lessons.length ? (
                   <ol className="lesson-list">
-                    {level.lessons.map((lesson, index) => (
-                      <li key={lesson.title}>
+                    {level.lessons.map((lesson, index) => {
+                      const publication = getCourseMapLessonState(
+                        course.slug,
+                        levelIndex,
+                        index,
+                      );
+                      return <li key={lesson.title}>
                         <span className="lesson-index">{String(index + 1).padStart(2, "0")}</span>
                         <div>
-                          {lesson.slug ? (
-                            <Link href={`/lessons/${lesson.slug}`}>{lesson.title}</Link>
+                          {publication.route ? (
+                            <Link href={publication.route}>{lesson.title}</Link>
                           ) : (
                             <strong>{lesson.title}</strong>
                           )}
                           <small>{lesson.duration}</small>
                         </div>
-                        <span className={lesson.slug ? "lesson-live" : "lesson-planned"}>
-                          {lesson.slug ? "Start" : "Planned"}
+                        <span className={publication.route ? "lesson-live" : "lesson-planned"}>
+                          {publication.label}
                         </span>
-                      </li>
-                    ))}
+                      </li>;
+                    })}
                   </ol>
                 ) : (
                   <div className="empty-lessons">
@@ -233,7 +256,7 @@ function DetailedCourse({ course }: { course: Course }) {
       {course.slug === "foundations" ? (
         <section className="section course-progress-section">
           <div className="shell">
-            <FoundationCourseProgressPanel levels={course.levels.slice(0, 2)} />
+            <FoundationCourseProgressPanel levels={FOUNDATION_PUBLISHED_LEVELS} />
           </div>
         </section>
       ) : null}
@@ -294,7 +317,7 @@ function DetailedCourse({ course }: { course: Course }) {
             </div>
             <p>
               {course.slug === "foundations"
-                ? "Level 0 and Level 1 are live. Complete each lesson to unlock the next; the handoff continues across the level boundary automatically."
+                ? "Published lessons form one guided path. Complete each lesson to unlock the next; handoffs continue across level boundaries automatically."
                 : "Open one level at a time. Only published lessons are marked Start; the rest are being written and tested."}
             </p>
           </div>
@@ -328,6 +351,11 @@ function DetailedCourse({ course }: { course: Course }) {
                 <ol className="detailed-lesson-list" start={levelOffsets[levelIndex] + 1}>
                   {level.lessons.map((item, lessonIndex) => {
                     const courseLessonNumber = levelOffsets[levelIndex] + lessonIndex + 1;
+                    const publication = getCourseMapLessonState(
+                      course.slug,
+                      levelIndex,
+                      lessonIndex,
+                    );
 
                     return (
                       <li key={item.title}>
@@ -338,7 +366,7 @@ function DetailedCourse({ course }: { course: Course }) {
                               <strong>{item.title}</strong>
                               <small>{item.duration}</small>
                             </span>
-                            <span className={item.slug ? "lesson-live" : "lesson-planned"}>{item.slug ? "Start" : "Planned"}</span>
+                            <span className={publication.route ? "lesson-live" : "lesson-planned"}>{publication.label}</span>
                             <span className="lesson-expand" aria-hidden="true">+</span>
                           </summary>
                           <div className="lesson-outline-body">
@@ -354,8 +382,8 @@ function DetailedCourse({ course }: { course: Course }) {
                               <span className="detail-label">Common mistake</span>
                               <p>{item.mistake}</p>
                             </div>
-                            {item.slug ? (
-                              <Link className="lesson-start-link" href={`/lessons/${item.slug}`}>Open this lesson <span aria-hidden="true">→</span></Link>
+                            {publication.route ? (
+                              <Link className="lesson-start-link" href={publication.route}>Open this lesson <span aria-hidden="true">→</span></Link>
                             ) : (
                               <small className="lesson-publishing-note">Detailed lesson page publishing in progress.</small>
                             )}
