@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { requireAuthenticatedLessonAccess } from "@/lib/auth/lesson-access";
 import {
   ChoiceCheckpoint,
   type ChoiceCheckpointOption,
@@ -13,6 +14,9 @@ import {
   getFoundationsCourseLessonNumber,
   FOUNDATION_LEVEL1_TOTAL_LESSONS,
 } from "@/data/foundations-level1";
+
+export const dynamic = "force-dynamic";
+
 
 const lessonSlug = "interpreters-compilers-runtimes";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 5;
@@ -99,7 +103,9 @@ export const metadata: Metadata = {
     "Trace how source passes through interpreters, compilers, runtimes, and output in three different styles.",
 };
 
-export default function InterpretersCompilersRuntimesLesson() {
+export default async function InterpretersCompilersRuntimesLesson() {
+  await requireAuthenticatedLessonAccess("/lessons/interpreters-compilers-runtimes");
+
   return (
     <FoundationLessonPage
       lessonSlug={lessonSlug}

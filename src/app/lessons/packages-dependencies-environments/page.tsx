@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { requireAuthenticatedLessonAccess } from "@/lib/auth/lesson-access";
 import { ChoiceCheckpoint, type ChoiceCheckpointOption } from "@/components/choice-checkpoint";
 import { FoundationLessonPage } from "@/components/foundations/foundation-lesson-page";
 import { type GuidedLessonStep } from "@/components/guided-lesson-flow";
@@ -10,6 +11,9 @@ import {
   getFoundationsCourseLessonNumber,
   FOUNDATION_LEVEL1_TOTAL_LESSONS,
 } from "@/data/foundations-level1";
+
+export const dynamic = "force-dynamic";
+
 
 const lessonSlug = "packages-dependencies-environments";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 6;
@@ -156,7 +160,9 @@ export const metadata: Metadata = {
     "Learn why package manifests and lockfiles matter by running a controlled dependency and environment simulator.",
 };
 
-export default function PackagesDependenciesEnvironmentsLesson() {
+export default async function PackagesDependenciesEnvironmentsLesson() {
+  await requireAuthenticatedLessonAccess("/lessons/packages-dependencies-environments");
+
   return (
     <FoundationLessonPage
       lessonSlug={lessonSlug}

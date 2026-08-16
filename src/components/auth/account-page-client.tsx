@@ -21,9 +21,9 @@ function AccountUnavailable({ error = false }: { error?: boolean }) {
   return (
     <div className="account-empty-state">
       <p className="auth-kicker">Account access</p>
-      <h1>{error ? "We could not check your session." : "Account setup is not connected here yet."}</h1>
+      <h1>{error ? "We could not check your account session." : "Account access is not connected here yet."}</h1>
       <p>
-        Your local learning progress is unchanged. You can continue every public lesson as a guest.
+        Lesson 1 is still available. Other published lessons are account-only in this environment.
       </p>
       <Link className="button button-primary" href="/courses/foundations">
         Continue learning
@@ -84,8 +84,8 @@ export function AccountPageClient() {
     return (
       <div className="account-empty-state">
         <p className="auth-kicker">Your account</p>
-        <h1>Sign in to open your account.</h1>
-        <p>Guest progress remains on this browser until you decide to connect it.</p>
+        <h1>Sign in with Google to open your account.</h1>
+        <p>Lesson 1 is still available without an account. Google is required for later published lessons.</p>
         <Link className="button button-primary" href="/sign-in?next=/account">
           Sign in
         </Link>
@@ -163,7 +163,7 @@ export function AccountPageClient() {
           </div>
           <div>
             <dt>Sign-in method</dt>
-            <dd>{provider === "google" ? "Google" : "Email code"}</dd>
+            <dd>{provider === "google" ? "Google" : "Unsupported provider"}</dd>
           </div>
         </dl>
       </section>
@@ -176,7 +176,7 @@ export function AccountPageClient() {
         <div className="account-sync-state" role="status" aria-live="polite">
           <span><i aria-hidden="true" /> {progressSync.status === "synced" ? "Account progress synced" : "Device copy protected"}</span>
           <p>{progressSync.message}</p>
-          <small>Cloud sync combines completed lessons, practice work, attempts, hints, and bounded saved code without replacing a more complete copy.</small>
+          <small>Progress sync is optional, separate from access, and may remain disabled in some environments.</small>
         </div>
         <div className="account-sync-actions">
           <Link className="button button-secondary" href="/courses/foundations">

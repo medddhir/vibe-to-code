@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { requireAuthenticatedLessonAccess } from "@/lib/auth/lesson-access";
 import { ChoiceCheckpoint } from "@/components/choice-checkpoint";
 import { TerminalNavigationLab } from "@/components/foundations/computer-confidence-labs";
 import { FoundationLessonPage } from "@/components/foundations/foundation-lesson-page";
@@ -10,6 +11,9 @@ import {
   getFoundationsCourseLessonNumber,
   getFoundationsLessonNumber,
 } from "@/data/foundations-level1";
+
+export const dynamic = "force-dynamic";
+
 
 const lessonSlug = "terminal-without-fear";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 7;
@@ -27,7 +31,9 @@ export const metadata: Metadata = {
   description: "Read a prompt and safely practice pwd, ls, mkdir, and cd in a strict browser-only terminal simulator.",
 };
 
-export default function TerminalWithoutFearLesson() {
+export default async function TerminalWithoutFearLesson() {
+  await requireAuthenticatedLessonAccess("/lessons/terminal-without-fear");
+
   return (
     <FoundationLessonPage
       lessonSlug={lessonSlug}

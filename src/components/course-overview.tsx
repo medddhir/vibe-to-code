@@ -226,7 +226,7 @@ function DetailedCourse({ course }: { course: Course }) {
         <div className="shell">
           <div><span>Built for</span><strong>{course.audience}</strong></div>
           <div><span>Status</span><strong>{course.status}</strong></div>
-          <div><span>Account needed</span><strong>No</strong></div>
+          <div><span>Lesson access</span><strong>Lesson 1 is public, later lessons need Google</strong></div>
         </div>
       </section>
 

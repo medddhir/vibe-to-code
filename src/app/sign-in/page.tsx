@@ -27,7 +27,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
     <AuthShell
       kicker="Verified account access"
       title="Welcome back."
-      description="Sign in to continue your lessons on any device once progress sync is connected."
+      description="Lesson 1 is available without an account. Sign in with Google to continue every published lesson on this account."
       footer={
         <p>
           New to Vibe to Code? <Link href={`/sign-up?next=${encodeURIComponent(returnTo)}`}>Create a free account</Link>
