@@ -1,6 +1,6 @@
 -- Publish the complete Developer Foundations path as curriculum version 4.
 -- Versions 2 and 3 remain immutable for rollback and trusted normalization.
-lock table public.curriculum_lessons in share row exclusive mode;
+lock table public.curriculum_lessons in access exclusive mode;
 lock table public.progress_sync_requests in share row exclusive mode;
 lock table public.learner_course_progress in share row exclusive mode;
 
@@ -155,6 +155,42 @@ select
   manifest_ids.progress_id,
   manifest_ids.id_kind
 from manifest_ids;
+
+-- Keep the stored curriculum version current even if an RPC began before this
+-- migration replaced the private mutation functions.
+create or replace function private.enforce_current_learner_curriculum_version()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  current_curriculum_version integer;
+begin
+  select max(lesson.curriculum_version)
+  into current_curriculum_version
+  from public.curriculum_lessons lesson
+  where lesson.course_slug = new.course_slug;
+
+  if current_curriculum_version is null
+    or new.curriculum_version <> current_curriculum_version
+  then
+    raise exception 'Learner progress must use the current curriculum version'
+      using errcode = '22023';
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke execute on function private.enforce_current_learner_curriculum_version()
+  from public, anon, authenticated, service_role;
+
+drop trigger if exists learner_course_progress_current_curriculum_version
+  on public.learner_course_progress;
+create trigger learner_course_progress_current_curriculum_version
+before insert or update on public.learner_course_progress
+for each row execute function private.enforce_current_learner_curriculum_version();
 
 -- Reinstall the existing private mutation functions in-place so their grants
 -- remain unchanged while v4 becomes the only writable curriculum contract.

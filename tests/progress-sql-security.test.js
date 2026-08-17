@@ -193,7 +193,7 @@ test("version-3 migration fails closed before inserts when learner data exists",
 
 test("version-4 migration fails closed before curriculum and progress-ID inserts", () => {
   const sql = version4Migration.sql;
-  const curriculumLock = sql.indexOf("lock table public.curriculum_lessons in share row exclusive mode;");
+  const curriculumLock = sql.indexOf("lock table public.curriculum_lessons in access exclusive mode;");
   const receiptsLock = sql.indexOf("lock table public.progress_sync_requests in share row exclusive mode;");
   const learnerLock = sql.indexOf("lock table public.learner_course_progress in share row exclusive mode;");
   const guard = sql.indexOf("do $$");
@@ -216,6 +216,40 @@ test("version-4 migration fails closed before curriculum and progress-ID inserts
   );
 });
 
+test("version-4 installs a private current-curriculum write invariant", () => {
+  const sql = version4Migration.sql;
+  const curriculumInsert = sql.indexOf("insert into public.curriculum_lessons");
+  const triggerFunction = sql.indexOf(
+    "create or replace function private.enforce_current_learner_curriculum_version()",
+  );
+  const trigger = sql.indexOf(
+    "create trigger learner_course_progress_current_curriculum_version",
+  );
+
+  assert.ok(triggerFunction > curriculumInsert);
+  assert.ok(trigger > triggerFunction);
+  assert.match(
+    sql.slice(triggerFunction, trigger),
+    /returns trigger\s+language plpgsql\s+security invoker\s+set search_path = ''/,
+  );
+  assert.match(
+    sql.slice(triggerFunction, trigger),
+    /select max\(lesson\.curriculum_version\)\s+into current_curriculum_version[\s\S]*where lesson\.course_slug = new\.course_slug/,
+  );
+  assert.match(
+    sql.slice(triggerFunction, trigger),
+    /new\.curriculum_version <> current_curriculum_version[\s\S]*using errcode = '22023'/,
+  );
+  assert.match(
+    sql.slice(trigger),
+    /before insert or update on public\.learner_course_progress\s+for each row execute function private\.enforce_current_learner_curriculum_version\(\)/,
+  );
+  assert.match(
+    sql,
+    /revoke execute on function private\.enforce_current_learner_curriculum_version\(\)\s+from public, anon, authenticated, service_role/,
+  );
+});
+
 test("version-4 reinstalls private mutations with current-version and size enforcement", () => {
   const sql = version4Migration.sql;
   assert.equal(
@@ -228,7 +262,7 @@ test("version-4 reinstalls private mutations with current-version and size enfor
   );
   assert.equal(
     (sql.match(/select max\(lesson\.curriculum_version\)\s+into current_curriculum_version/g) ?? []).length,
-    2,
+    3,
   );
   assert.equal(
     (sql.match(/if p_curriculum_version <> current_curriculum_version then\s+raise exception 'Curriculum migration required'/g) ?? []).length,
@@ -242,6 +276,38 @@ test("version-4 reinstalls private mutations with current-version and size enfor
     sql,
     /octet_length\(convert_to\(p_payload::text, 'UTF8'\)\) > 1000000/,
   );
+});
+
+test("direct commit and reset accept only the registered current curriculum", () => {
+  const sql = version4Migration.sql;
+  const commitStart = sql.indexOf(
+    "create or replace function private.commit_progress_document(",
+  );
+  const resetStart = sql.indexOf(
+    "create or replace function private.reset_progress_document(",
+  );
+  const commitBody = sql.slice(commitStart, resetStart);
+  const resetBody = sql.slice(resetStart);
+
+  assert.equal(curriculumRows(migration, 2).length, 14);
+  assert.equal(curriculumRows(version3Migration.sql, 3).length, 15);
+  assert.equal(curriculumRows(sql, 4).length, 23);
+  for (const body of [commitBody, resetBody]) {
+    const currentCheck = body.indexOf(
+      "if p_curriculum_version <> current_curriculum_version then",
+    );
+    assert.ok(currentCheck >= 0);
+    assert.match(
+      body.slice(currentCheck),
+      /raise exception 'Curriculum migration required' using errcode = '22023'/,
+    );
+    const firstMutation = Math.min(
+      ...["delete from public.progress_sync_requests", "insert into public.learner_course_progress"]
+        .map((statement) => body.indexOf(statement))
+        .filter((index) => index >= 0),
+    );
+    assert.ok(currentCheck < firstMutation);
+  }
 });
 
 test("SQL progress allowlist contains every canonical manifest ID", () => {
