@@ -53,4 +53,22 @@ export const LESSON_PUBLICATION_RECORD = Object.freeze([
     renderMode: "data-driven" as const,
     access: "authenticated" as const,
   }),
+  ...[
+    "urls-domains-dns-paths-queries",
+    "requests-responses-http-https",
+    "browser-developer-tools",
+    "first-html-document",
+    "meaningful-html-text-links-images-controls",
+    "css-selectors-colour-spacing-cascade",
+    "box-model-layout-responsive-design",
+    "javascript-dom-events",
+  ].map((lessonSlug, index) => Object.freeze({
+    courseSlug: "foundations",
+    levelIndex: 2,
+    lessonIndex: index + 1,
+    lessonSlug,
+    route: `/lessons/${lessonSlug}`,
+    renderMode: "data-driven" as const,
+    access: "authenticated" as const,
+  })),
 ]) satisfies readonly LessonPublicationRecord[];

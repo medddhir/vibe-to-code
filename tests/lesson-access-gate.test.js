@@ -29,6 +29,14 @@ const PROTECTED_LESSONS = [
   "packages-dependencies-environments",
   "frontend-backend-api-database-cloud",
   "internet-web-browser-server",
+  "urls-domains-dns-paths-queries",
+  "requests-responses-http-https",
+  "browser-developer-tools",
+  "first-html-document",
+  "meaningful-html-text-links-images-controls",
+  "css-selectors-colour-spacing-cascade",
+  "box-model-layout-responsive-design",
+  "javascript-dom-events",
 ];
 
 const allCurrentLessons = [
@@ -86,16 +94,18 @@ test("unknown lesson slugs should 404 without auth fallback", () => {
   );
 });
 
-test("Lesson 15 is force-dynamic and authenticates before rendering trusted content", () => {
-  const source = fs.readFileSync(lessonPagePath("internet-web-browser-server"), "utf8");
-  assert.match(source, /export const dynamic = "force-dynamic"/);
-  const guard = source.indexOf("await requireAuthenticatedLessonAccess(route)");
-  const lessonJsx = source.indexOf("<FoundationLessonPage", guard);
-  assert.ok(guard >= 0 && lessonJsx > guard);
-  assert.match(source, /lessonContentRegistry\.bySlug\(lessonSlug\)/);
-  assert.match(source, /getPublishedLessonBySlug\(lessonSlug\)/);
-  assert.match(source, /getGuidedStepsForLessonDefinition\(definition\)/);
-  assert.match(source, /definition=\{definition\}[\s\S]*stepId=\{step\.id\}/);
+test("all nine data-driven Level 2 routes are force-dynamic and authenticate before lesson JSX", () => {
+  for (const slug of PROTECTED_LESSONS.slice(-9)) {
+    const source = fs.readFileSync(lessonPagePath(slug), "utf8");
+    assert.match(source, /export const dynamic = "force-dynamic"/, slug);
+    const guard = source.indexOf("await requireAuthenticatedLessonAccess(route)");
+    const lessonJsx = source.indexOf("<FoundationLessonPage", guard);
+    assert.ok(guard >= 0 && lessonJsx > guard, slug);
+    assert.match(source, /lessonContentRegistry\.bySlug\(lessonSlug\)/, slug);
+    assert.match(source, /getPublishedLessonBySlug\(lessonSlug\)/, slug);
+    assert.match(source, /getGuidedStepsForLessonDefinition\(definition\)/, slug);
+    assert.match(source, /definition=\{definition\}[\s\S]*stepId=\{step\.id\}/, slug);
+  }
 });
 
 test("legacy lesson 1 remains public and every other lesson uses server-side auth guard", async () => {

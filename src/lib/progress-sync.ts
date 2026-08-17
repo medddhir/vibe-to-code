@@ -1,9 +1,11 @@
 import { getLessonStorageKey } from "@/lib/lesson-progress-storage";
 import {
   FOUNDATION_CURRICULUM_VERSION,
+  FOUNDATION_LEGACY_CURRICULUM_VERSION,
   FOUNDATION_PROGRESS_LEVEL1_LESSON_SLUGS,
   FOUNDATION_PROGRESS_MANIFEST,
   FOUNDATION_PROGRESS_MANIFEST_VERSION_2,
+  FOUNDATION_PROGRESS_MANIFEST_VERSION_3,
   FOUNDATION_PROGRESS_SCHEMA_VERSION,
   FOUNDATION_PREVIOUS_CURRICULUM_VERSION,
   getFoundationKnownProgressIds,
@@ -255,6 +257,7 @@ function readLegacyAggregate(raw: unknown) {
 
   if (
     parsed.courseVersion !== 1 &&
+    parsed.courseVersion !== FOUNDATION_LEGACY_CURRICULUM_VERSION &&
     parsed.courseVersion !== FOUNDATION_PREVIOUS_CURRICULUM_VERSION &&
     parsed.courseVersion !== FOUNDATION_CURRICULUM_VERSION
   ) {
@@ -677,8 +680,9 @@ function parseCanonicalFoundationProgressVersion(
   };
 }
 
-function upgradeCanonicalFoundationProgressVersion2(
+function upgradeCanonicalFoundationProgress(
   parsed: ParsedCanonicalFoundationProgress,
+  previousManifest: readonly FoundationProgressLessonManifest[],
 ): CanonicalFoundationProgress {
   const upgraded = createEmptyCanonicalFoundationProgress(parsed.updatedAt);
   upgraded.courseEpoch = parsed.courseEpoch;
@@ -686,7 +690,7 @@ function upgradeCanonicalFoundationProgressVersion2(
   upgraded.legacyLevel1Access = parsed.legacyLevel1Access;
   upgraded.lastVisited = parsed.lastVisited as TimestampedValue<FoundationProgressLessonSlug> | null;
 
-  for (const lesson of FOUNDATION_PROGRESS_MANIFEST_VERSION_2) {
+  for (const lesson of previousManifest) {
     upgraded.lessons[lesson.slug as FoundationProgressLessonSlug] = structuredClone(
       parsed.lessons[lesson.slug],
     );
@@ -702,13 +706,25 @@ function upgradeCanonicalFoundationProgressVersion2(
 export function parseCanonicalFoundationProgress(
   input: unknown,
 ): CanonicalFoundationProgress {
+  if (isRecord(input) && input.curriculumVersion === FOUNDATION_LEGACY_CURRICULUM_VERSION) {
+    return upgradeCanonicalFoundationProgress(
+      parseCanonicalFoundationProgressVersion(
+        input,
+        FOUNDATION_LEGACY_CURRICULUM_VERSION,
+        FOUNDATION_PROGRESS_MANIFEST_VERSION_2,
+      ),
+      FOUNDATION_PROGRESS_MANIFEST_VERSION_2,
+    );
+  }
+
   if (isRecord(input) && input.curriculumVersion === FOUNDATION_PREVIOUS_CURRICULUM_VERSION) {
-    return upgradeCanonicalFoundationProgressVersion2(
+    return upgradeCanonicalFoundationProgress(
       parseCanonicalFoundationProgressVersion(
         input,
         FOUNDATION_PREVIOUS_CURRICULUM_VERSION,
-        FOUNDATION_PROGRESS_MANIFEST_VERSION_2,
+        FOUNDATION_PROGRESS_MANIFEST_VERSION_3,
       ),
+      FOUNDATION_PROGRESS_MANIFEST_VERSION_3,
     );
   }
 

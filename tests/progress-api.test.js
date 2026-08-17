@@ -18,7 +18,7 @@ const now = "2026-08-12T12:00:00.000Z";
 function createVersion2Progress() {
   const payload = createEmptyCanonicalFoundationProgress(now);
   payload.curriculumVersion = 2;
-  delete payload.lessons["internet-web-browser-server"];
+  Object.keys(payload.lessons).slice(14).forEach((slug) => delete payload.lessons[slug]);
   payload.courseEpoch = 4;
   payload.revision = 9;
   payload.lessons["frontend-backend-api-database-cloud"].completedAt = now;
@@ -56,7 +56,7 @@ test("keeps trusted v2 normalization lossless while rejecting raw v2 API writes"
   const version2 = createVersion2Progress();
   const normalized = parseCanonicalFoundationProgress(version2);
 
-  assert.equal(normalized.curriculumVersion, 3);
+  assert.equal(normalized.curriculumVersion, 4);
   assert.equal(normalized.courseEpoch, version2.courseEpoch);
   assert.equal(normalized.revision, version2.revision);
   assert.deepEqual(
@@ -68,6 +68,30 @@ test("keeps trusted v2 normalization lossless while rejecting raw v2 API writes"
     baseRevision: version2.revision,
     courseEpoch: version2.courseEpoch,
     payload: version2,
+  }), null);
+});
+
+test("keeps trusted v3 normalization lossless while rejecting raw v3 API writes", () => {
+  const version3 = createEmptyCanonicalFoundationProgress(now);
+  version3.curriculumVersion = 3;
+  Object.keys(version3.lessons).slice(15).forEach((slug) => delete version3.lessons[slug]);
+  version3.courseEpoch = 5;
+  version3.revision = 11;
+  version3.lessons["internet-web-browser-server"].completedAt = now;
+
+  const normalized = parseCanonicalFoundationProgress(version3);
+  assert.equal(normalized.curriculumVersion, 4);
+  assert.equal(normalized.courseEpoch, version3.courseEpoch);
+  assert.equal(normalized.revision, version3.revision);
+  assert.deepEqual(
+    normalized.lessons["internet-web-browser-server"],
+    version3.lessons["internet-web-browser-server"],
+  );
+  assert.equal(parseProgressSyncRequest({
+    source: "local-v2",
+    baseRevision: version3.revision,
+    courseEpoch: version3.courseEpoch,
+    payload: version3,
   }), null);
 });
 

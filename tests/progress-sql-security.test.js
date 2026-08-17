@@ -2,6 +2,7 @@
 require("./test-support");
 
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const { test } = require("node:test");
@@ -23,6 +24,9 @@ const migration = migrationHistory.find(
 ).sql;
 const version3Migration = migrationHistory.find(
   ({ file }) => file.endsWith("_add_foundations_lesson_15_manifest.sql"),
+);
+const version4Migration = migrationHistory.find(
+  ({ file }) => file.endsWith("_publish_foundations_level_2.sql"),
 );
 const defaultPrivilegeMigration = fs.readFileSync(
   path.join(
@@ -108,12 +112,14 @@ function curriculumRows(sql, version) {
   ))].map((match) => ({ slug: match[1], order: Number(match[2]), lessonVersion: Number(match[3]) }));
 }
 
-test("sorted SQL history preserves version 2 and adds the exact version-3 manifest", () => {
-  assert.equal(migrationFiles.at(-1), version3Migration.file);
+test("sorted SQL history preserves versions 2 and 3 and adds the exact version-4 manifest", () => {
+  assert.equal(migrationFiles.at(-1), version4Migration.file);
   const version2Lessons = curriculumRows(migration, 2);
   const version3Lessons = curriculumRows(version3Migration.sql, 3);
+  const version4Lessons = curriculumRows(version4Migration.sql, 4);
   const version2Ids = sqlManifest(migration);
   const version3Ids = sqlManifest(version3Migration.sql);
+  const version4Ids = sqlManifest(version4Migration.sql);
   const countIds = (entries) => entries.reduce(
     (total, lesson) => total + lesson.stepIds.length + lesson.activityIds.length,
     0,
@@ -123,16 +129,26 @@ test("sorted SQL history preserves version 2 and adds the exact version-3 manife
   assert.equal(countIds(version2Ids), 99);
   assert.equal(version3Lessons.length, 15);
   assert.equal(countIds(version3Ids), 108);
-  assert.equal(version2Lessons.length + version3Lessons.length, 29);
-  assert.equal(countIds(version2Ids) + countIds(version3Ids), 207);
-  assert.deepEqual(version3Lessons.map((lesson) => lesson.slug), FOUNDATION_PROGRESS_MANIFEST.map((lesson) => lesson.slug));
-  assert.deepEqual(version3Ids, FOUNDATION_PROGRESS_MANIFEST.map((lesson) => ({
+  assert.equal(version4Lessons.length, 23);
+  assert.equal(countIds(version4Ids), 180);
+  assert.deepEqual(version4Lessons.map((lesson) => lesson.slug), FOUNDATION_PROGRESS_MANIFEST.map((lesson) => lesson.slug));
+  assert.deepEqual(version4Ids, FOUNDATION_PROGRESS_MANIFEST.map((lesson) => ({
     slug: lesson.slug,
     stepIds: [...lesson.stepIds],
     activityIds: [...lesson.activityIds],
   })));
   assert.doesNotMatch(version3Migration.sql, /update\s+public\.learner_course_progress/i);
   assert.doesNotMatch(version3Migration.sql, /progress_sync_requests\s+(?:set|values)/i);
+  assert.doesNotMatch(version4Migration.sql, /update\s+public\.learner_course_progress/i);
+  assert.doesNotMatch(version4Migration.sql, /progress_sync_requests\s+(?:set|values)/i);
+  assert.equal(
+    crypto.createHash("sha256").update(migration).digest("hex"),
+    "791b372e9d257bd5a7133d27840e7b81f1ac381722ed9a04ced63509ed03fd4c",
+  );
+  assert.equal(
+    crypto.createHash("sha256").update(version3Migration.sql).digest("hex"),
+    "b061d9d3beb7ac6f6af87caf879094b0d21b0505abce15e1513e119c0cd6ba05",
+  );
 });
 
 test("version-3 migration fails closed before inserts when learner data exists", () => {
@@ -171,13 +187,33 @@ test("version-3 migration fails closed before inserts when learner data exists",
   );
 });
 
+test("version-4 migration fails closed before curriculum and progress-ID inserts", () => {
+  const sql = version4Migration.sql;
+  const guard = sql.indexOf("do $$");
+  const guardEnd = sql.indexOf("$$;", guard);
+  const curriculumInsert = sql.indexOf("insert into public.curriculum_lessons");
+  const progressIdsInsert = sql.indexOf("insert into private.curriculum_progress_ids");
+
+  assert.ok(guard >= 0 && guardEnd > guard);
+  assert.match(sql.slice(guard, guardEnd), /exists \(select 1 from public\.learner_course_progress\)/);
+  assert.match(sql.slice(guard, guardEnd), /exists \(select 1 from public\.progress_sync_requests\)/);
+  assert.match(sql.slice(guard, guardEnd), /Foundations curriculum v4 requires reviewed learner-progress migration/);
+  assert.ok(curriculumInsert > guardEnd);
+  assert.ok(progressIdsInsert > curriculumInsert);
+  assert.equal(curriculumRows(sql, 4).length, 23);
+  assert.equal(
+    sqlManifest(sql).reduce((total, lesson) => total + lesson.stepIds.length + lesson.activityIds.length, 0),
+    180,
+  );
+});
+
 test("SQL progress allowlist contains every canonical manifest ID", () => {
   for (const lesson of FOUNDATION_PROGRESS_MANIFEST) {
-    assert.match(version3Migration.sql, new RegExp(`'${lesson.slug}'`));
+    assert.match(version4Migration.sql, new RegExp(`'${lesson.slug}'`));
 
     for (const progressId of [...lesson.stepIds, ...lesson.activityIds]) {
       assert.match(
-        version3Migration.sql,
+        version4Migration.sql,
         new RegExp(`'${progressId}'`),
         `SQL allowlist is missing ${lesson.slug}:${progressId}`,
       );
