@@ -9,11 +9,18 @@ const {
   parseCanonicalFoundationProgress,
 } = require("../src/lib/progress-sync.ts");
 const {
+  PROGRESS_SYNC_REQUEST_LIMIT_BYTES,
   parseProgressSyncRequest,
   progressResetRequestSchema,
 } = require("../src/lib/progress-api.ts");
+const { MAX_CANONICAL_PROGRESS_BYTES } = require("../src/lib/progress-sync.ts");
 
 const now = "2026-08-12T12:00:00.000Z";
+
+test("aligns the v4 canonical and wrapped request size contracts", () => {
+  assert.equal(MAX_CANONICAL_PROGRESS_BYTES, 1_048_576);
+  assert.equal(PROGRESS_SYNC_REQUEST_LIMIT_BYTES, MAX_CANONICAL_PROGRESS_BYTES + 8_192);
+});
 
 function createVersion2Progress() {
   const payload = createEmptyCanonicalFoundationProgress(now);

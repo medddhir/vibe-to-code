@@ -19,6 +19,8 @@ const {
   writeLessonProgressSnapshot,
 } = require("../src/lib/lesson-progress-storage.ts");
 const {
+  HISTORICAL_MAX_CANONICAL_PROGRESS_BYTES,
+  MAX_CANONICAL_PROGRESS_BYTES,
   MAX_SAVED_CODE_UNITS,
   applyAcknowledgedFoundationProgressReset,
   canProjectFoundationProgressForPrincipal,
@@ -36,6 +38,10 @@ const {
   reconcileCanonicalFoundationProgressWithServer,
   subtractClaimedGuestProgress,
 } = require("../src/lib/progress-sync.ts");
+const {
+  PROGRESS_SYNC_REQUEST_LIMIT_BYTES,
+  parseProgressSyncRequest,
+} = require("../src/lib/progress-api.ts");
 const {
   applyCanonicalFoundationProgressToLegacyStores,
   clearCanonicalProgressCache,
@@ -71,6 +77,45 @@ function legacyAggregate(lessonSlug, lesson = {}) {
     lessons: { [lessonSlug]: lesson },
     updatedAt: importedAt,
   };
+}
+
+function serializedBytes(value) {
+  return new TextEncoder().encode(JSON.stringify(value)).length;
+}
+
+function createNearLimitHistoricalProgress(curriculumVersion, manifest) {
+  const payload = createEmptyCanonicalFoundationProgress(importedAt);
+  payload.curriculumVersion = curriculumVersion;
+  const historicalSlugs = new Set(manifest.map((lesson) => lesson.slug));
+  Object.keys(payload.lessons).forEach((slug) => {
+    if (!historicalSlugs.has(slug)) delete payload.lessons[slug];
+  });
+  payload.courseEpoch = curriculumVersion + 10;
+  payload.revision = curriculumVersion + 20;
+
+  const slots = [];
+  for (const lesson of manifest) {
+    const lessonVersion = payload.lessons[lesson.slug].versions[String(lesson.lessonVersion)];
+    for (const progressId of [...lesson.stepIds, ...lesson.activityIds]) {
+      lessonVersion.savedCode[progressId] = {
+        value: "x".repeat(8_000),
+        updatedAt: importedAt,
+      };
+      slots.push(lessonVersion.savedCode[progressId]);
+    }
+  }
+
+  const targetBytes = 999_500;
+  for (const slot of slots) {
+    const size = serializedBytes(payload);
+    if (size >= targetBytes) break;
+    const availableUnits = MAX_SAVED_CODE_UNITS - slot.value.length;
+    const unitsToAdd = Math.min(availableUnits, targetBytes - size);
+    slot.value += "x".repeat(unitsToAdd);
+  }
+
+  assert.equal(serializedBytes(payload), targetBytes);
+  return payload;
 }
 
 beforeEach(() => {
@@ -376,6 +421,50 @@ describe("Foundation progress manifest and legacy import", () => {
 
     assert.equal(normalizeCanonicalFoundationProgress(progress), null);
   });
+});
+
+describe("historical near-limit curriculum upgrades", () => {
+  for (const [curriculumVersion, manifest] of [
+    [2, FOUNDATION_PROGRESS_MANIFEST_VERSION_2],
+    [3, FOUNDATION_PROGRESS_MANIFEST_VERSION_3],
+  ]) {
+    it(`losslessly upgrades and caches a near-limit v${curriculumVersion} document`, () => {
+      const historical = createNearLimitHistoricalProgress(curriculumVersion, manifest);
+      const original = structuredClone(historical);
+      const upgraded = parseCanonicalFoundationProgress(historical);
+
+      assert.equal(HISTORICAL_MAX_CANONICAL_PROGRESS_BYTES, 1_000_000);
+      assert.equal(MAX_CANONICAL_PROGRESS_BYTES, 1_048_576);
+      assert.ok(serializedBytes(historical) <= HISTORICAL_MAX_CANONICAL_PROGRESS_BYTES);
+      assert.ok(serializedBytes(upgraded) > HISTORICAL_MAX_CANONICAL_PROGRESS_BYTES);
+      assert.ok(serializedBytes(upgraded) <= MAX_CANONICAL_PROGRESS_BYTES);
+      assert.deepEqual(historical, original);
+      for (const lesson of manifest) {
+        assert.deepEqual(upgraded.lessons[lesson.slug], original.lessons[lesson.slug]);
+      }
+
+      const emptyCurrent = createEmptyCanonicalFoundationProgress(importedAt);
+      const oldSlugs = new Set(manifest.map((lesson) => lesson.slug));
+      for (const lesson of FOUNDATION_PROGRESS_MANIFEST) {
+        if (!oldSlugs.has(lesson.slug)) {
+          assert.deepEqual(upgraded.lessons[lesson.slug], emptyCurrent.lessons[lesson.slug]);
+        }
+      }
+
+      const cacheId = `near-limit-v${curriculumVersion}`;
+      assert.equal(writeCanonicalProgressCache(cacheId, historical), true);
+      assert.deepEqual(readCanonicalProgressCache(cacheId), upgraded);
+
+      const request = {
+        source: "local-v2",
+        baseRevision: upgraded.revision,
+        courseEpoch: upgraded.courseEpoch,
+        payload: upgraded,
+      };
+      assert.ok(serializedBytes(request) <= PROGRESS_SYNC_REQUEST_LIMIT_BYTES);
+      assert.deepEqual(parseProgressSyncRequest(request)?.payload, upgraded);
+    });
+  }
 });
 
 describe("Canonical progress merge", () => {

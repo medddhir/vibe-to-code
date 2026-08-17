@@ -31,6 +31,8 @@ export const firstHtmlDocumentLesson = {
           body: [
             "`<!doctype html>` belongs at the top and tells the browser to use the modern HTML document mode. It is a declaration, not a visible page element.",
             "The `<html>` element is the root that contains the document's `<head>` and `<body>`. Closing it at the end makes the nesting easy to read.",
+            "The `lang=\"en\"` attribute says the document's main language is English, helping assistive technologies and other tools interpret the text. Use the appropriate language tag when the document is primarily in another language.",
+            "An HTML comment begins with `<!--` and ends with `-->`. Browsers do not display the comment as page content; here it is only a note showing where the head and body will go.",
           ],
         },
         {
@@ -51,6 +53,7 @@ export const firstHtmlDocumentLesson = {
           heading: "Metadata and visible content have different homes",
           body: [
             "The `<head>` contains information about the document, including its `<title>`. That title commonly appears in the browser tab and bookmarks.",
+            "`<meta charset=\"utf-8\">` declares UTF-8 character encoding so the browser interprets the document's text consistently. Put it near the beginning of `<head>`.",
             "The `<body>` contains the content displayed in the page, such as headings and paragraphs.",
           ],
         },
@@ -115,8 +118,9 @@ export const firstHtmlDocumentLesson = {
           heading: "A small document still has a complete structure",
           points: [
             "The doctype selects modern HTML behavior.",
-            "`<html>` wraps the head and body.",
-            "`<head>` contains the tab title and other metadata; `<body>` contains visible page content.",
+            "`<html lang=\"en\">` wraps the head and body and declares English as the document's main language.",
+            "`<head>` contains UTF-8 character encoding, the tab title, and other metadata; `<body>` contains visible page content.",
+            "HTML comments are non-visible notes between `<!--` and `-->`.",
             "`<h1>` and `<p>` describe a main heading and paragraph.",
           ],
         },
@@ -126,7 +130,7 @@ export const firstHtmlDocumentLesson = {
           prompt: "Write a complete `index.html` for a page called ‘My learning log’ with one visible heading and one paragraph. Explain each structural line.",
           successCriteria: [
             "Starts with `<!doctype html>` and contains one root `<html>` element.",
-            "Places `<title>` inside `<head>`.",
+            "Declares the document language and places UTF-8 charset metadata plus `<title>` inside `<head>`.",
             "Places `<h1>` and `<p>` inside `<body>`.",
             "Uses correctly nested opening and closing tags without adding CSS or JavaScript.",
           ],
@@ -190,6 +194,8 @@ export const firstHtmlDocumentLesson = {
   sources: [
     { title: "Basic HTML syntax — MDN Learn", url: "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Structuring_content/Basic_HTML_syntax" },
     { title: "The HTML document element — MDN", url: "https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/html" },
+    { title: "The metadata element — MDN", url: "https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/meta" },
+    { title: "Using HTML comments — MDN", url: "https://developer.mozilla.org/en-US/docs/Web/HTML/Guides/Comments" },
     { title: "The document title element — MDN", url: "https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/title" },
     { title: "Headings and paragraphs — MDN Learn", url: "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Structuring_content/Headings_and_paragraphs" },
   ],

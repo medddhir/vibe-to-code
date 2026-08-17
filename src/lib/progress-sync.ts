@@ -16,7 +16,8 @@ import {
 
 export const MAX_SAVED_CODE_UNITS = 10_000;
 export const MAX_SAVED_CODE_BYTES = 40_000;
-export const MAX_CANONICAL_PROGRESS_BYTES = 1_000_000;
+export const HISTORICAL_MAX_CANONICAL_PROGRESS_BYTES = 1_000_000;
+export const MAX_CANONICAL_PROGRESS_BYTES = 1_048_576;
 export const MAX_COUNTER_COMPONENT = 1_000_000;
 export const MAX_COUNTER_DEVICES = 32;
 
@@ -563,8 +564,9 @@ function parseCanonicalFoundationProgressVersion(
   input: unknown,
   curriculumVersion: number,
   manifest: readonly FoundationProgressLessonManifest[],
+  maximumBytes: number,
 ): ParsedCanonicalFoundationProgress {
-  if (serializedBytes(input) > MAX_CANONICAL_PROGRESS_BYTES || !isRecord(input)) {
+  if (serializedBytes(input) > maximumBytes || !isRecord(input)) {
     throw new ProgressValidationError("Canonical progress payload is invalid or too large");
   }
   if (
@@ -700,6 +702,7 @@ function upgradeCanonicalFoundationProgress(
     upgraded,
     FOUNDATION_CURRICULUM_VERSION,
     FOUNDATION_PROGRESS_MANIFEST,
+    MAX_CANONICAL_PROGRESS_BYTES,
   ) as CanonicalFoundationProgress;
 }
 
@@ -712,6 +715,7 @@ export function parseCanonicalFoundationProgress(
         input,
         FOUNDATION_LEGACY_CURRICULUM_VERSION,
         FOUNDATION_PROGRESS_MANIFEST_VERSION_2,
+        HISTORICAL_MAX_CANONICAL_PROGRESS_BYTES,
       ),
       FOUNDATION_PROGRESS_MANIFEST_VERSION_2,
     );
@@ -723,6 +727,7 @@ export function parseCanonicalFoundationProgress(
         input,
         FOUNDATION_PREVIOUS_CURRICULUM_VERSION,
         FOUNDATION_PROGRESS_MANIFEST_VERSION_3,
+        HISTORICAL_MAX_CANONICAL_PROGRESS_BYTES,
       ),
       FOUNDATION_PROGRESS_MANIFEST_VERSION_3,
     );
@@ -732,6 +737,7 @@ export function parseCanonicalFoundationProgress(
     input,
     FOUNDATION_CURRICULUM_VERSION,
     FOUNDATION_PROGRESS_MANIFEST,
+    MAX_CANONICAL_PROGRESS_BYTES,
   ) as CanonicalFoundationProgress;
 }
 

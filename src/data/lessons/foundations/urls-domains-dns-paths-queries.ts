@@ -35,8 +35,8 @@ export const urlsDomainsDnsPathsQueriesLesson = {
         },
         {
           type: "example",
-          title: "A labelled URL",
-          code: "https://learn.example.org:443/guides/web?mode=beginner#dns\n|scheme| |--- hostname ---|port|-- path --|--- query ---|fragment|",
+          title: "One URL, one component per line",
+          code: "Complete URL: https://learn.example.org:443/guides/web?mode=beginner#dns\n\nScheme:   https\nHostname: learn.example.org\nPort:     443\nPath:     /guides/web\nQuery:    mode=beginner\nFragment: dns",
         },
       ],
       requiredActivityIds: [],

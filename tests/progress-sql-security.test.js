@@ -139,8 +139,12 @@ test("sorted SQL history preserves versions 2 and 3 and adds the exact version-4
   })));
   assert.doesNotMatch(version3Migration.sql, /update\s+public\.learner_course_progress/i);
   assert.doesNotMatch(version3Migration.sql, /progress_sync_requests\s+(?:set|values)/i);
-  assert.doesNotMatch(version4Migration.sql, /update\s+public\.learner_course_progress/i);
-  assert.doesNotMatch(version4Migration.sql, /progress_sync_requests\s+(?:set|values)/i);
+  const version4ManifestInstall = version4Migration.sql.slice(
+    0,
+    version4Migration.sql.indexOf("create or replace function private.commit_progress_document"),
+  );
+  assert.doesNotMatch(version4ManifestInstall, /update\s+public\.learner_course_progress/i);
+  assert.doesNotMatch(version4ManifestInstall, /progress_sync_requests\s+(?:set|values)/i);
   assert.equal(
     crypto.createHash("sha256").update(migration).digest("hex"),
     "791b372e9d257bd5a7133d27840e7b81f1ac381722ed9a04ced63509ed03fd4c",
@@ -189,11 +193,16 @@ test("version-3 migration fails closed before inserts when learner data exists",
 
 test("version-4 migration fails closed before curriculum and progress-ID inserts", () => {
   const sql = version4Migration.sql;
+  const curriculumLock = sql.indexOf("lock table public.curriculum_lessons in share row exclusive mode;");
+  const receiptsLock = sql.indexOf("lock table public.progress_sync_requests in share row exclusive mode;");
+  const learnerLock = sql.indexOf("lock table public.learner_course_progress in share row exclusive mode;");
   const guard = sql.indexOf("do $$");
   const guardEnd = sql.indexOf("$$;", guard);
   const curriculumInsert = sql.indexOf("insert into public.curriculum_lessons");
   const progressIdsInsert = sql.indexOf("insert into private.curriculum_progress_ids");
 
+  assert.ok(curriculumLock >= 0 && curriculumLock < receiptsLock);
+  assert.ok(receiptsLock < learnerLock && learnerLock < guard);
   assert.ok(guard >= 0 && guardEnd > guard);
   assert.match(sql.slice(guard, guardEnd), /exists \(select 1 from public\.learner_course_progress\)/);
   assert.match(sql.slice(guard, guardEnd), /exists \(select 1 from public\.progress_sync_requests\)/);
@@ -204,6 +213,34 @@ test("version-4 migration fails closed before curriculum and progress-ID inserts
   assert.equal(
     sqlManifest(sql).reduce((total, lesson) => total + lesson.stepIds.length + lesson.activityIds.length, 0),
     180,
+  );
+});
+
+test("version-4 reinstalls private mutations with current-version and size enforcement", () => {
+  const sql = version4Migration.sql;
+  assert.equal(
+    (sql.match(/create or replace function private\.commit_progress_document\(/g) ?? []).length,
+    1,
+  );
+  assert.equal(
+    (sql.match(/create or replace function private\.reset_progress_document\(/g) ?? []).length,
+    1,
+  );
+  assert.equal(
+    (sql.match(/select max\(lesson\.curriculum_version\)\s+into current_curriculum_version/g) ?? []).length,
+    2,
+  );
+  assert.equal(
+    (sql.match(/if p_curriculum_version <> current_curriculum_version then\s+raise exception 'Curriculum migration required'/g) ?? []).length,
+    2,
+  );
+  assert.match(
+    sql,
+    /octet_length\(convert_to\(p_payload::text, 'UTF8'\)\) > 1048576/,
+  );
+  assert.doesNotMatch(
+    sql,
+    /octet_length\(convert_to\(p_payload::text, 'UTF8'\)\) > 1000000/,
   );
 });
 

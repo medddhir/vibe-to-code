@@ -80,13 +80,14 @@ export const boxModelLayoutResponsiveDesignLesson = {
           heading: "Let content fit smaller spaces",
           body: [
             "A container can use `width: 100%` so it fits available space and `max-width` so it stops becoming uncomfortably wide. `margin-inline: auto` can center a constrained block.",
+            "The default `content-box` sizing applies the declared width to content only, then adds left and right padding outside it. With `width: 100%`, that extra padding can overflow the parent. `box-sizing: border-box` includes padding and border inside the declared width.",
             "Padding protects content from touching the viewport edge. Images and long text also need rules that allow them to fit rather than overflow.",
           ],
         },
         {
           type: "example",
           title: "A flexible constrained container",
-          code: ".page {\n  width: 100%;\n  max-width: 70rem;\n  margin-inline: auto;\n  padding: 1rem;\n}",
+          code: ".page {\n  box-sizing: border-box;\n  width: 100%;\n  max-width: 70rem;\n  margin-inline: auto;\n  padding: 1rem;\n}",
         },
       ],
       requiredActivityIds: [],
@@ -191,6 +192,7 @@ export const boxModelLayoutResponsiveDesignLesson = {
   },
   sources: [
     { title: "The CSS box model — MDN Learn", url: "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Box_model" },
+    { title: "box-sizing — MDN CSS Reference", url: "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/box-sizing" },
     { title: "Normal flow — MDN Learn", url: "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Introduction#normal_layout_flow" },
     { title: "Flexbox — MDN Learn", url: "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Flexbox" },
     { title: "CSS grid layout — MDN Learn", url: "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Grids" },

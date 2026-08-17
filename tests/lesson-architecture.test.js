@@ -50,6 +50,8 @@ const {
   getChoiceCheckpointDisplayState,
 } = require("../src/components/choice-checkpoint.tsx");
 const {
+  advanceCounterSimulation,
+  getCounterSimulationDisplayCount,
   getLessonBlockRendererKind,
   getOrderingCheckpointDisplayOrder,
   getOrderingCheckpointDisplayState,
@@ -271,6 +273,16 @@ test("keeps 362 declared, 202 cataloged, 23 published, and 179 planned lessons",
   assert.equal(LESSON_CATALOG.length, 202);
   assert.equal(LESSON_CATALOG.filter((entry) => entry.publicationState === "published").length, 23);
   assert.equal(LESSON_CATALOG.filter((entry) => entry.publicationState === "planned").length, 179);
+});
+
+test("README and product facts describe the complete 23-lesson Foundation path", () => {
+  const readme = fs.readFileSync(path.join(process.cwd(), "README.md"), "utf8");
+  const product = fs.readFileSync(path.join(process.cwd(), "PRODUCT.md"), "utf8");
+  assert.match(readme, /23 Developer Foundations lessons are published/);
+  assert.match(readme, /Lesson 1 is public; the other 22 require a free Vibe to Code account with Google sign-in/);
+  assert.match(product, /Level 0, Level 1, and the complete Level 2 as a sequential 23-lesson path/);
+  assert.doesNotMatch(readme, /15 Developer Foundations lessons are published/);
+  assert.doesNotMatch(product, /Level 2 Lesson 1 as a sequential 15-lesson path/);
 });
 
 test("publishes all nine Foundation Level 2 lessons through authenticated data-driven records", () => {
@@ -793,6 +805,24 @@ test("activity validation enforces type compatibility and exactly-once rendering
     guidedSteps: [{ id: "fixture-step", title: "Step", eyebrow: "Test", blocks: [{ type: "single-answer-checkpoint", activityId: "unknown" }], requiredActivityIds: [] }],
   });
   assert.ok(validateLessonContentDefinition(unknown).some((issue) => issue.includes("unknown activity")));
+
+  const invalidCounter = contentFixture({
+    guidedSteps: [{ id: "fixture-step", title: "Step", eyebrow: "Test", blocks: [{ type: "counter-simulation", activityId: "fixture-counter" }], requiredActivityIds: ["fixture-counter"] }],
+    activities: [{
+      type: "counter-simulation",
+      id: "fixture-counter",
+      title: "Counter",
+      instruction: "Add one twice.",
+      buttonLabel: "Add one",
+      initialCount: 2,
+      targetCount: 2,
+      successMessage: "Done.",
+    }],
+    completionRule: { type: "all-steps-and-required-activities", requiredActivityIds: ["fixture-counter"] },
+  });
+  assert.ok(validateLessonContentDefinition(invalidCounter).some(
+    (issue) => issue.includes("targetCount must be greater"),
+  ));
 });
 
 test("activity validation rejects unreachable and cross-step required activities", () => {
@@ -951,12 +981,16 @@ test("all eight new trusted bundles have stable IDs, exactly three reachable act
     assert.equal(new Set(definition.guidedSteps.map((step) => step.id)).size, 6);
     assert.equal(new Set(definition.activities.map((activity) => activity.id)).size, 3);
     const checkpoints = definition.guidedSteps.flatMap((step) => step.blocks.filter(
-      (block) => block.type === "single-answer-checkpoint" || block.type === "ordering-checkpoint",
+      (block) => block.type === "single-answer-checkpoint" ||
+        block.type === "ordering-checkpoint" || block.type === "counter-simulation",
     ));
     assert.deepEqual(checkpoints.map((block) => block.activityId).sort(), definition.activities.map((activity) => activity.id).sort());
     checkpoints.forEach((checkpoint) => {
       const activity = definition.activities.find((candidate) => candidate.id === checkpoint.activityId);
-      assert.equal(checkpoint.type, `${activity.type}-checkpoint`);
+      const expectedBlockType = activity.type === "counter-simulation"
+        ? "counter-simulation"
+        : `${activity.type}-checkpoint`;
+      assert.equal(checkpoint.type, expectedBlockType);
     });
     assert.equal(definition.sourceVerifiedAt, "2026-08-17");
     definition.sources.forEach((source) => {
@@ -992,13 +1026,86 @@ test("Lesson 15 is a valid trusted publishable bundle with the exact completion 
 test("generic renderer dispatches only trusted blocks and preserves completion requirements", () => {
   assert.deepEqual(SUPPORTED_LESSON_BLOCK_TYPES, [
     "explanation", "callout", "example", "single-answer-checkpoint",
-    "ordering-checkpoint", "recap", "transfer-challenge",
+    "ordering-checkpoint", "counter-simulation", "recap", "transfer-challenge",
   ]);
   SUPPORTED_LESSON_BLOCK_TYPES.forEach((type) => assert.equal(getLessonBlockRendererKind({ type }), type));
   assert.throws(() => getLessonBlockRendererKind({ type: "component-name" }), /Unsupported/);
   const steps = getGuidedStepsForLessonDefinition(contentFixture());
   assert.deepEqual(steps[0].requiredActivityIds, ["fixture-check"]);
   assert.equal(steps[0].requiresPractice, true);
+});
+
+test("corrected Level 2 content keeps valid reasoning, sizing, and evidence explicit", () => {
+  const lesson16 = lessonContentRegistry.bySlug("urls-domains-dns-paths-queries");
+  const urlDiagram = lesson16.guidedSteps[0].blocks.find((block) => block.type === "example").code;
+  assert.match(urlDiagram, /Scheme:\s+https\nHostname:\s+learn\.example\.org/);
+  assert.doesNotMatch(urlDiagram, /\|--- hostname ---\|/);
+
+  const lesson18 = lessonContentRegistry.bySlug("browser-developer-tools");
+  const devtoolsCopy = JSON.stringify(lesson18.guidedSteps);
+  assert.match(devtoolsCopy, /Chrome or Chromium/);
+  assert.match(devtoolsCopy, /Elements, Console, and Network are Chrome panel names/);
+  assert.match(devtoolsCopy, /reload the page and observe the original heading return/);
+  assert.match(devtoolsCopy, /sufficient for completion/);
+
+  const lesson19 = lessonContentRegistry.bySlug("first-html-document");
+  const htmlCopy = JSON.stringify(lesson19.guidedSteps);
+  assert.match(htmlCopy, /lang=\\\"en\\\"/);
+  assert.match(htmlCopy, /meta charset=\\\"utf-8\\\"/);
+  assert.match(htmlCopy, /HTML comment/);
+  assert.ok(lesson19.sources.some((source) => source.url.endsWith("/Elements/meta")));
+  assert.ok(lesson19.sources.some((source) => source.url.endsWith("/Guides/Comments")));
+
+  const lesson20 = lessonContentRegistry.bySlug("meaningful-html-text-links-images-controls");
+  const labelActivity = lesson20.activities.find((activity) => activity.id === "order-labeled-control");
+  assert.equal(labelActivity.type, "single-answer");
+  assert.equal(labelActivity.correctOptionId, "matching-for-id");
+  assert.match(labelActivity.options.find((option) => option.id === "matching-for-id").feedback, /choosing the wording or input type first is not/);
+
+  const lesson22 = lessonContentRegistry.bySlug("box-model-layout-responsive-design");
+  const containerExample = lesson22.guidedSteps
+    .flatMap((step) => step.blocks)
+    .find((block) => block.type === "example" && block.title.includes("constrained"));
+  assert.match(containerExample.code, /box-sizing: border-box;/);
+  assert.match(containerExample.code, /width: 100%;/);
+  assert.match(containerExample.code, /padding: 1rem;/);
+  assert.ok(containerExample.code.indexOf("box-sizing: border-box") < containerExample.code.indexOf("width: 100%"));
+  assert.match(JSON.stringify(lesson22.guidedSteps), /content-box.*padding outside/);
+  assert.ok(lesson22.sources.some((source) => source.url.endsWith("/Properties/box-sizing")));
+});
+
+test("trusted counter simulation advances 0 to 1 to 2 and restores completion authoritatively", () => {
+  const lesson23 = lessonContentRegistry.bySlug("javascript-dom-events");
+  const activity = lesson23.activities.find((candidate) => candidate.id === "simulate-counter-clicks");
+  assert.equal(activity.type, "counter-simulation");
+  assert.equal(activity.initialCount, 0);
+  assert.equal(activity.targetCount, 2);
+  assert.equal(activity.buttonLabel, "Add one");
+
+  let count = getCounterSimulationDisplayCount(activity, activity.initialCount, false);
+  assert.equal(count, 0);
+  count = advanceCounterSimulation(activity, count, false);
+  assert.equal(getCounterSimulationDisplayCount(activity, count, false), 1);
+  count = advanceCounterSimulation(activity, count, false);
+  assert.equal(getCounterSimulationDisplayCount(activity, count, false), 2);
+  assert.equal(advanceCounterSimulation(activity, count, false), 2);
+  assert.equal(getCounterSimulationDisplayCount(activity, 0, true), 2);
+
+  const example = lesson23.guidedSteps
+    .flatMap((step) => step.blocks)
+    .find((block) => block.type === "example" && block.title.includes("click-to-screen"));
+  assert.match(example.code, /querySelector/);
+  assert.match(example.code, /addEventListener/);
+  assert.match(example.code, /let count = 0/);
+  assert.match(example.code, /textContent/);
+
+  const renderer = fs.readFileSync(
+    path.join(process.cwd(), "src/components/generic-lesson-renderer.tsx"),
+    "utf8",
+  );
+  assert.match(renderer, /<button[\s\S]*type="button"[\s\S]*activity\.buttonLabel/);
+  assert.match(renderer, /<output aria-live="polite" aria-atomic="true">Count:/);
+  assert.doesNotMatch(renderer, /\beval\s*\(|dangerouslySetInnerHTML|<iframe|setTimeout|fetch\s*\(/);
 });
 
 test("completed ordering restoration always displays the verified correct order", () => {

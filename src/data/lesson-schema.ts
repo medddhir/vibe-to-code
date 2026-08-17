@@ -55,7 +55,7 @@ export type ExampleBlock = {
 };
 
 export type ActivityReferenceBlock = {
-  type: "single-answer-checkpoint" | "ordering-checkpoint";
+  type: "single-answer-checkpoint" | "ordering-checkpoint" | "counter-simulation";
   activityId: string;
 };
 
@@ -86,6 +86,7 @@ export const SUPPORTED_LESSON_BLOCK_TYPES = [
   "example",
   "single-answer-checkpoint",
   "ordering-checkpoint",
+  "counter-simulation",
   "recap",
   "transfer-challenge",
 ] as const satisfies readonly TrustedLessonBlock["type"][];
@@ -112,7 +113,21 @@ export type OrderingActivity = {
   errorMessage: string;
 };
 
-export type LessonActivity = SingleAnswerActivity | OrderingActivity;
+export type CounterSimulationActivity = {
+  type: "counter-simulation";
+  id: string;
+  title: string;
+  instruction: string;
+  buttonLabel: string;
+  initialCount: number;
+  targetCount: number;
+  successMessage: string;
+};
+
+export type LessonActivity =
+  | SingleAnswerActivity
+  | OrderingActivity
+  | CounterSimulationActivity;
 
 export type GuidedLessonDefinitionStep = {
   id: string;

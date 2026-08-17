@@ -7,6 +7,7 @@ import { CodeWindow } from "@/components/code-window";
 import { useLessonProgress } from "@/components/guided-lesson-flow";
 import {
   isSupportedLessonBlockType,
+  type CounterSimulationActivity,
   type LessonActivity,
   type LessonContentDefinition,
   type OrderingActivity,
@@ -189,6 +190,61 @@ function OrderingCheckpoint({ activity }: { activity: OrderingActivity }) {
   );
 }
 
+export function getCounterSimulationDisplayCount(
+  activity: CounterSimulationActivity,
+  currentCount: number,
+  completed: boolean,
+) {
+  if (completed) return activity.targetCount;
+  return Math.min(activity.targetCount, Math.max(activity.initialCount, currentCount));
+}
+
+export function advanceCounterSimulation(
+  activity: CounterSimulationActivity,
+  currentCount: number,
+  completed: boolean,
+) {
+  if (completed) return activity.targetCount;
+  return Math.min(activity.targetCount, currentCount + 1);
+}
+
+function CounterSimulation({ activity }: { activity: CounterSimulationActivity }) {
+  const { completePractice, practiceCompletedIds } = useLessonProgress();
+  const [count, setCount] = useState(activity.initialCount);
+  const completed = practiceCompletedIds.includes(activity.id);
+  const displayCount = getCounterSimulationDisplayCount(activity, count, completed);
+
+  function addOne() {
+    const nextCount = advanceCounterSimulation(activity, count, completed);
+    setCount(nextCount);
+    if (nextCount === activity.targetCount) completePractice(activity.id);
+  }
+
+  return (
+    <section className="choice-checkpoint" aria-labelledby={`${activity.id}-title`}>
+      <div className="choice-checkpoint-heading">
+        <div>
+          <p className="eyebrow">Counter simulation</p>
+          <h3 id={`${activity.id}-title`}>{activity.title}</h3>
+        </div>
+      </div>
+      <p>{activity.instruction}</p>
+      <div className="counter-simulation-controls">
+        <button
+          className="button button-primary"
+          type="button"
+          disabled={completed}
+          onClick={addOne}
+        >
+          {completed ? "Counter complete" : activity.buttonLabel}
+        </button>
+        <output aria-live="polite" aria-atomic="true">Count: {displayCount}</output>
+      </div>
+      {completed ? <p className="choice-feedback">{activity.successMessage}</p> : null}
+    </section>
+  );
+}
+
 function activityById(
   activities: readonly LessonActivity[],
   activityId: string,
@@ -245,6 +301,13 @@ function renderBlock(
         throw new Error(`Activity ${activity.id} is not an ordering checkpoint`);
       }
       return <OrderingCheckpoint key={key} activity={activity} />;
+    }
+    case "counter-simulation": {
+      const activity = activityById(activities, block.activityId);
+      if (activity.type !== "counter-simulation") {
+        throw new Error(`Activity ${activity.id} is not a counter simulation`);
+      }
+      return <CounterSimulation key={key} activity={activity} />;
     }
     case "recap":
       return (

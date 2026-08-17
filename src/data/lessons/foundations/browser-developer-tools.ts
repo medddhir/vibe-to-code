@@ -30,6 +30,8 @@ export const browserDeveloperToolsLesson = {
           heading: "Inspect before changing",
           body: [
             "Browser developer tools show what the browser received, interpreted, and attempted. They help answer focused questions about the current page.",
+            "In Chrome or Chromium on desktop, open DevTools from the browser menu under More tools, or use F12 / Control+Shift+I (Command+Option+I on macOS). You can also right-click a page element and choose Inspect. Menu wording and shortcuts can vary on other browsers and devices.",
+            "Elements, Console, and Network are Chrome panel names used in this lesson. Firefox and other browsers provide comparable tools, sometimes with different names. If your mobile browser does not expose these panels, the built-in checkpoints provide the same evidence-reading practice and are sufficient for completion.",
             "DevTools can also change the current page temporarily. Unless a dedicated workspace is configured, those experiments do not edit the project's saved source files and usually disappear after refresh.",
           ],
         },
@@ -47,6 +49,7 @@ export const browserDeveloperToolsLesson = {
           heading: "Elements shows the current document",
           body: [
             "The Elements panel presents the browser's current DOM tree and the styles affecting a selected element. It is useful for checking whether an element exists, how it is nested, and which CSS declarations apply.",
+            "Optional desktop observation: inspect a heading, double-click its text in Elements, type a temporary replacement, and press Enter. Then reload the page and observe the original heading return. If you cannot open desktop DevTools, read the same before/edit/reload evidence in the checkpoint; the optional observation is never required for completion.",
             "The displayed DOM can differ from the original HTML source after the browser repairs markup or JavaScript changes the page. Record that as evidence rather than assuming the source file already matches it.",
           ],
         },
