@@ -213,6 +213,57 @@ test("permits a valid Google-authenticated session", async () => {
   }
 });
 
+test("bypasses lesson authentication only on the exact staging preview host", async () => {
+  let claimsCalls = 0;
+  const resetClient = setClient({
+    auth: {
+      getClaims: async () => {
+        claimsCalls += 1;
+        return { error: "staging should not inspect a session" };
+      },
+    },
+  });
+
+  try {
+    for (const slug of PROTECTED_LESSONS) {
+      await lessonAccess.requireAuthenticatedLessonAccess(
+        `/lessons/${slug}`,
+        { requestHost: "staging.vibe-to-code.tech" },
+      );
+    }
+    assert.equal(claimsCalls, 0);
+  } finally {
+    resetClient();
+  }
+});
+
+test("does not bypass lesson authentication on production or lookalike hosts", async () => {
+  const resetClient = setClient(null);
+
+  try {
+    for (const requestHost of [
+      "vibe-to-code.tech",
+      "staging.vibe-to-code.tech.attacker.example",
+      "vibe-to-code-git-develop-medhirlokhande99-4313s-projects.vercel.app",
+    ]) {
+      try {
+        await lessonAccess.requireAuthenticatedLessonAccess(
+          "/lessons/source-code-running-output",
+          { requestHost },
+        );
+        assert.fail(`expected authentication redirect for ${requestHost}`);
+      } catch (error) {
+        assert.equal(
+          redirectTarget(error),
+          "/sign-in?next=%2Flessons%2Fsource-code-running-output",
+        );
+      }
+    }
+  } finally {
+    resetClient();
+  }
+});
+
 test("rejects malformed, missing, invalid, anonymous, non-google, and auth-error lesson sessions", async () => {
   const lessonPath = "/lessons/internet-web-browser-server";
 

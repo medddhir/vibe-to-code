@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
+import { isStagingCoursePreviewHost } from "@/lib/staging-preview";
 import { resolveSafeReturnPath } from "@/lib/supabase/return-path";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -121,12 +123,35 @@ export const isAuthorizedLessonClaims = (
   return isAuthenticatedGoogleSession(claimsResult.data?.claims);
 };
 
+type LessonAccessOptions = {
+  requestHost?: string | null;
+};
+
+async function getLessonRequestHost(
+  options: LessonAccessOptions,
+): Promise<string | null> {
+  if (Object.prototype.hasOwnProperty.call(options, "requestHost")) {
+    return options.requestHost ?? null;
+  }
+
+  try {
+    return (await headers()).get("host");
+  } catch {
+    return null;
+  }
+}
+
 export async function requireAuthenticatedLessonAccess(
   lessonPath: string,
+  options: LessonAccessOptions = {},
 ): Promise<void> {
   const decision = getLessonPathDecision(lessonPath);
 
   if (!decision.isProtected || !decision.signInPath) {
+    return;
+  }
+
+  if (isStagingCoursePreviewHost(await getLessonRequestHost(options))) {
     return;
   }
 
