@@ -30,6 +30,7 @@ const {
   FOUNDATION_CURRICULUM_VERSION,
   FOUNDATION_PROGRESS_MANIFEST,
   FOUNDATION_PROGRESS_MANIFEST_VERSION_2,
+  FOUNDATION_PROGRESS_MANIFEST_VERSION_3,
   FOUNDATION_PROGRESS_LEVEL1_LESSON_SLUGS,
   FOUNDATION_PROGRESS_SCHEMA_VERSION,
 } = require("../src/lib/progress-manifest.ts");
@@ -49,6 +50,8 @@ const {
   getChoiceCheckpointDisplayState,
 } = require("../src/components/choice-checkpoint.tsx");
 const {
+  advanceCounterSimulation,
+  getCounterSimulationDisplayCount,
   getLessonBlockRendererKind,
   getOrderingCheckpointDisplayOrder,
   getOrderingCheckpointDisplayState,
@@ -76,7 +79,17 @@ const publishedSlugs = [
   "packages-dependencies-environments",
   "frontend-backend-api-database-cloud",
   "internet-web-browser-server",
+  "urls-domains-dns-paths-queries",
+  "requests-responses-http-https",
+  "browser-developer-tools",
+  "first-html-document",
+  "meaningful-html-text-links-images-controls",
+  "css-selectors-colour-spacing-cascade",
+  "box-model-layout-responsive-design",
+  "javascript-dom-events",
 ];
+
+const newLevel2Slugs = publishedSlugs.slice(15);
 
 const published = getPublishedLessonCatalogEntries();
 const sampleCatalogEntry = published[0];
@@ -140,7 +153,7 @@ const publishableCatalogFixture = (overrides = {}) => ({
   ...overrides,
 });
 
-test("keeps the exact 15 explicit publication records, slugs, and order", () => {
+test("keeps the exact 23 explicit publication records, slugs, and order", () => {
   assert.equal(Object.isFrozen(LESSON_PUBLICATION_RECORD), true);
   assert.equal(LESSON_PUBLICATION_RECORD.every(Object.isFrozen), true);
   assert.deepEqual(LESSON_PUBLICATION_RECORD.map((entry) => entry.lessonSlug), publishedSlugs);
@@ -149,12 +162,13 @@ test("keeps the exact 15 explicit publication records, slugs, and order", () => 
     LESSON_PUBLICATION_RECORD.map((entry) => entry.lessonSlug),
     FOUNDATION_PROGRESS_MANIFEST.map((entry) => entry.slug),
   );
-  assert.equal(published.length, 15);
+  assert.equal(published.length, 23);
 });
 
 test("a progress-manifest entry alone cannot publish a lesson", () => {
+  const plannedCatalogEntry = LESSON_CATALOG.find((entry) => entry.publicationState === "planned");
   const fakeManifestEntry = {
-    slug: "planned-foundations-level-2-lesson-1",
+    slug: plannedCatalogEntry.lessonSlug,
     lessonVersion: 1,
     stepIds: ["manifest-step"],
     activityIds: [],
@@ -164,11 +178,9 @@ test("a progress-manifest entry alone cannot publish a lesson", () => {
     LESSON_PUBLICATION_RECORD,
     [...FOUNDATION_PROGRESS_MANIFEST, fakeManifestEntry],
   );
-  const plannedLesson = catalog.find(
-    (entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2 && entry.lessonIndex === 1,
-  );
+  const plannedLesson = catalog.find((entry) => entry.catalogId === plannedCatalogEntry.catalogId);
 
-  assert.equal(catalog.filter((entry) => entry.publicationState === "published").length, 15);
+  assert.equal(catalog.filter((entry) => entry.publicationState === "published").length, 23);
   assert.deepEqual(plannedLesson.progressStepIds, []);
   assert.deepEqual(plannedLesson.activityIds, []);
   assert.equal(plannedLesson.publicationState, "planned");
@@ -178,12 +190,12 @@ test("a progress-manifest entry alone cannot publish a lesson", () => {
   assert.equal(plannedLesson.nextLessonSlug, null);
 });
 
-test("keeps Lesson 1 public and the other 14 published routes authenticated", () => {
+test("keeps Lesson 1 public and the other 22 published routes authenticated", () => {
   assert.deepEqual(
     published.filter((entry) => entry.access === "public").map((entry) => entry.route),
     ["/lessons/what-is-code"],
   );
-  assert.equal(published.filter((entry) => entry.access === "authenticated").length, 14);
+  assert.equal(published.filter((entry) => entry.access === "authenticated").length, 22);
   assert.deepEqual(validateLessonCatalog(LESSON_CATALOG), []);
 });
 
@@ -255,26 +267,36 @@ test("catalog and bundle validators reject authorization-contract drift", () => 
   ));
 });
 
-test("keeps 362 declared, 202 cataloged, 15 published, and 187 planned lessons", () => {
+test("keeps 362 declared, 202 cataloged, 23 published, and 179 planned lessons", () => {
   assert.equal(courses.length, 6);
   assert.equal(courses.reduce((total, course) => total + course.lessonCount, 0), 362);
   assert.equal(LESSON_CATALOG.length, 202);
-  assert.equal(LESSON_CATALOG.filter((entry) => entry.publicationState === "published").length, 15);
-  assert.equal(LESSON_CATALOG.filter((entry) => entry.publicationState === "planned").length, 187);
+  assert.equal(LESSON_CATALOG.filter((entry) => entry.publicationState === "published").length, 23);
+  assert.equal(LESSON_CATALOG.filter((entry) => entry.publicationState === "planned").length, 179);
 });
 
-test("publishes only Level 2 Lesson 1 and leaves the other eight Level 2 lessons inaccessible", () => {
+test("README and product facts describe the complete 23-lesson Foundation path", () => {
+  const readme = fs.readFileSync(path.join(process.cwd(), "README.md"), "utf8");
+  const product = fs.readFileSync(path.join(process.cwd(), "PRODUCT.md"), "utf8");
+  assert.match(readme, /23 Developer Foundations lessons are published/);
+  assert.match(readme, /Lesson 1 is public; the other 22 require a free Vibe to Code account with Google sign-in/);
+  assert.match(product, /Level 0, Level 1, and the complete Level 2 as a sequential 23-lesson path/);
+  assert.doesNotMatch(readme, /15 Developer Foundations lessons are published/);
+  assert.doesNotMatch(product, /Level 2 Lesson 1 as a sequential 15-lesson path/);
+});
+
+test("publishes all nine Foundation Level 2 lessons through authenticated data-driven records", () => {
   const level2 = LESSON_CATALOG.filter(
     (entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2,
   );
   assert.equal(level2.length, 9);
   assert.deepEqual(
     level2.filter((entry) => entry.publicationState === "published").map((entry) => entry.lessonSlug),
-    ["internet-web-browser-server"],
+    publishedSlugs.slice(14),
   );
-  assert.equal(level2.filter((entry) => entry.publicationState === "planned").length, 8);
+  assert.equal(level2.filter((entry) => entry.publicationState === "planned").length, 0);
   assert.equal(
-    level2.slice(1).every((entry) => entry.route === null && entry.access === "unavailable"),
+    level2.every((entry) => entry.route === `/lessons/${entry.lessonSlug}` && entry.access === "authenticated"),
     true,
   );
 });
@@ -285,15 +307,20 @@ test("course maps link only registry-published positions through canonical route
     route: "/lessons/internet-web-browser-server",
   });
 
-  const plannedWithPlausibleSlug = {
-    ...foundationLevels[2].lessons[1],
-    slug: "url-anatomy-looking-permanent",
-  };
-  assert.equal(plannedWithPlausibleSlug.slug, "url-anatomy-looking-permanent");
   assert.deepEqual(getCourseMapLessonState("foundations", 2, 1), {
-    label: "Planned",
-    route: null,
+    label: "Start",
+    route: "/lessons/urls-domains-dns-paths-queries",
   });
+
+  const planned = LESSON_CATALOG.find((entry) => entry.publicationState === "planned");
+  const clonedCourses = structuredClone(courses);
+  clonedCourses[planned.courseSlug === "foundations" ? 0 : courses.findIndex((course) => course.slug === planned.courseSlug)]
+    .levels[planned.levelIndex].lessons[planned.lessonIndex].slug = "plausible-permanent-looking-slug";
+  const catalog = createLessonCatalog(clonedCourses, LESSON_PUBLICATION_RECORD, FOUNDATION_PROGRESS_MANIFEST);
+  const stillPlanned = catalog.find((entry) => entry.catalogId === planned.catalogId);
+  assert.equal(stillPlanned.publicationState, "planned");
+  assert.equal(stillPlanned.route, null);
+  assert.equal(stillPlanned.access, "unavailable");
 
   assert.deepEqual(
     published.map((entry) => entry.route),
@@ -301,7 +328,7 @@ test("course maps link only registry-published positions through canonical route
   );
 });
 
-test("uses the approved Lesson 15 slug while keeping Lesson 16 provisional", () => {
+test("uses permanent approved slugs for the complete Foundation Level 2 path", () => {
   assert.equal(published.every((entry) => entry.slugState === "permanent"), true);
   const lesson15 = LESSON_CATALOG.find(
     (entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2 && entry.lessonIndex === 0,
@@ -310,18 +337,15 @@ test("uses the approved Lesson 15 slug while keeping Lesson 16 provisional", () 
   assert.equal(lesson15.slugState, "permanent");
   assert.equal(lesson15.lessonSlug, "internet-web-browser-server");
   assert.equal(lesson15.publicationState, "published");
-  const lesson16 = LESSON_CATALOG.find(
-    (entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2 && entry.lessonIndex === 1,
+  assert.deepEqual(
+    LESSON_CATALOG.filter((entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2)
+      .map((entry) => entry.lessonSlug),
+    publishedSlugs.slice(14),
   );
-  assert.equal(lesson16.slugState, "provisional");
-  assert.equal(lesson16.lessonSlug, "planned-foundations-level-2-lesson-1");
-  assert.equal(lesson16.publicationState, "planned");
 });
 
 test("reserved provisional placeholders cannot become permanent, draft, or published", () => {
-  const lesson16 = LESSON_CATALOG.find(
-    (entry) => entry.courseSlug === "foundations" && entry.levelIndex === 2 && entry.lessonIndex === 1,
-  );
+  const lesson16 = LESSON_CATALOG.find((entry) => entry.publicationState === "planned");
   for (const candidate of [
     { ...lesson16, slugState: "permanent" },
     { ...lesson16, slugState: "permanent", publicationState: "draft" },
@@ -333,9 +357,9 @@ test("reserved provisional placeholders cannot become permanent, draft, or publi
   }
 
   const attemptedPublication = [...LESSON_PUBLICATION_RECORD, {
-    courseSlug: "foundations",
-    levelIndex: 2,
-    lessonIndex: 1,
+    courseSlug: lesson16.courseSlug,
+    levelIndex: lesson16.levelIndex,
+    lessonIndex: lesson16.lessonIndex,
     lessonSlug: lesson16.lessonSlug,
     route: `/lessons/${lesson16.lessonSlug}`,
     renderMode: "data-driven",
@@ -781,6 +805,24 @@ test("activity validation enforces type compatibility and exactly-once rendering
     guidedSteps: [{ id: "fixture-step", title: "Step", eyebrow: "Test", blocks: [{ type: "single-answer-checkpoint", activityId: "unknown" }], requiredActivityIds: [] }],
   });
   assert.ok(validateLessonContentDefinition(unknown).some((issue) => issue.includes("unknown activity")));
+
+  const invalidCounter = contentFixture({
+    guidedSteps: [{ id: "fixture-step", title: "Step", eyebrow: "Test", blocks: [{ type: "counter-simulation", activityId: "fixture-counter" }], requiredActivityIds: ["fixture-counter"] }],
+    activities: [{
+      type: "counter-simulation",
+      id: "fixture-counter",
+      title: "Counter",
+      instruction: "Add one twice.",
+      buttonLabel: "Add one",
+      initialCount: 2,
+      targetCount: 2,
+      successMessage: "Done.",
+    }],
+    completionRule: { type: "all-steps-and-required-activities", requiredActivityIds: ["fixture-counter"] },
+  });
+  assert.ok(validateLessonContentDefinition(invalidCounter).some(
+    (issue) => issue.includes("targetCount must be greater"),
+  ));
 });
 
 test("activity validation rejects unreachable and cross-step required activities", () => {
@@ -815,7 +857,7 @@ test("trusted content registry rejects duplicate slugs regardless of input order
       /Duplicate trusted lesson content slug: fixture-lesson/,
     );
   }
-  assert.equal(lessonContentRegistry.all().length, 1);
+  assert.equal(lessonContentRegistry.all().length, 9);
   assert.equal(
     lessonContentRegistry.all()[0].lessonSlug,
     "internet-web-browser-server",
@@ -895,11 +937,12 @@ test("published registry rejects draft/planned injection and malformed container
   assert.ok(validatePublishedLessonRegistry(null, null).length > 0);
 });
 
-test("bumps only the curriculum version and appends the exact Lesson 15 IDs", () => {
+test("keeps progress schema v2 and publishes the exact curriculum-v4 manifest", () => {
   assert.equal(FOUNDATION_PROGRESS_SCHEMA_VERSION, 2);
-  assert.equal(FOUNDATION_CURRICULUM_VERSION, 3);
-  assert.equal(FOUNDATION_PROGRESS_MANIFEST.length, 15);
+  assert.equal(FOUNDATION_CURRICULUM_VERSION, 4);
+  assert.equal(FOUNDATION_PROGRESS_MANIFEST.length, 23);
   assert.equal(FOUNDATION_PROGRESS_MANIFEST_VERSION_2.length, 14);
+  assert.equal(FOUNDATION_PROGRESS_MANIFEST_VERSION_3.length, 15);
   assert.equal(FOUNDATION_PROGRESS_LEVEL1_LESSON_SLUGS.length, 7);
   assert.equal(
     FOUNDATION_PROGRESS_LEVEL1_LESSON_SLUGS.includes("internet-web-browser-server"),
@@ -910,10 +953,53 @@ test("bumps only the curriculum version and appends the exact Lesson 15 IDs", ()
     FOUNDATION_PROGRESS_MANIFEST.slice(0, 14),
   );
   assert.deepEqual(
+    FOUNDATION_PROGRESS_MANIFEST_VERSION_3,
+    FOUNDATION_PROGRESS_MANIFEST.slice(0, 15),
+  );
+  assert.deepEqual(
     published.map(({ lessonSlug, lessonVersion, progressStepIds, activityIds }) => ({ lessonSlug, lessonVersion, progressStepIds, activityIds })),
     FOUNDATION_PROGRESS_MANIFEST.map(({ slug, lessonVersion, stepIds, activityIds }) => ({ lessonSlug: slug, lessonVersion, progressStepIds: stepIds, activityIds })),
   );
   assert.equal(getLessonStorageKey("what-is-code", 3), "vibe-to-code:lesson-progress:v1:what-is-code:lesson-v3");
+});
+
+test("all eight new trusted bundles have stable IDs, exactly three reachable activities, and verified primary sources", () => {
+  const definitions = newLevel2Slugs.map((slug) => lessonContentRegistry.bySlug(slug));
+  assert.equal(new Set(definitions.map((definition) => definition.lessonSlug)).size, 8);
+  definitions.forEach((definition) => {
+    assert.deepEqual(validateLessonContentDefinition(definition), []);
+    assert.deepEqual(
+      validatePublishableLessonBundle(getPublishedLessonBySlug(definition.lessonSlug), lessonContentRegistry),
+      [],
+    );
+    assert.equal(definition.guidedSteps.length, 6);
+    assert.equal(definition.activities.length, 3);
+    assert.deepEqual(
+      definition.completionRule.requiredActivityIds,
+      definition.activities.map((activity) => activity.id),
+    );
+    assert.equal(new Set(definition.guidedSteps.map((step) => step.id)).size, 6);
+    assert.equal(new Set(definition.activities.map((activity) => activity.id)).size, 3);
+    const checkpoints = definition.guidedSteps.flatMap((step) => step.blocks.filter(
+      (block) => block.type === "single-answer-checkpoint" ||
+        block.type === "ordering-checkpoint" || block.type === "counter-simulation",
+    ));
+    assert.deepEqual(checkpoints.map((block) => block.activityId).sort(), definition.activities.map((activity) => activity.id).sort());
+    checkpoints.forEach((checkpoint) => {
+      const activity = definition.activities.find((candidate) => candidate.id === checkpoint.activityId);
+      const expectedBlockType = activity.type === "counter-simulation"
+        ? "counter-simulation"
+        : `${activity.type}-checkpoint`;
+      assert.equal(checkpoint.type, expectedBlockType);
+    });
+    assert.equal(definition.sourceVerifiedAt, "2026-08-17");
+    definition.sources.forEach((source) => {
+      const url = new URL(source.url);
+      assert.equal(url.protocol, "https:");
+      assert.ok(source.title.trim().length > 0);
+      assert.ok(["developer.mozilla.org", "developer.chrome.com"].includes(url.hostname));
+    });
+  });
 });
 
 test("Lesson 15 is a valid trusted publishable bundle with the exact completion rule", () => {
@@ -940,13 +1026,86 @@ test("Lesson 15 is a valid trusted publishable bundle with the exact completion 
 test("generic renderer dispatches only trusted blocks and preserves completion requirements", () => {
   assert.deepEqual(SUPPORTED_LESSON_BLOCK_TYPES, [
     "explanation", "callout", "example", "single-answer-checkpoint",
-    "ordering-checkpoint", "recap", "transfer-challenge",
+    "ordering-checkpoint", "counter-simulation", "recap", "transfer-challenge",
   ]);
   SUPPORTED_LESSON_BLOCK_TYPES.forEach((type) => assert.equal(getLessonBlockRendererKind({ type }), type));
   assert.throws(() => getLessonBlockRendererKind({ type: "component-name" }), /Unsupported/);
   const steps = getGuidedStepsForLessonDefinition(contentFixture());
   assert.deepEqual(steps[0].requiredActivityIds, ["fixture-check"]);
   assert.equal(steps[0].requiresPractice, true);
+});
+
+test("corrected Level 2 content keeps valid reasoning, sizing, and evidence explicit", () => {
+  const lesson16 = lessonContentRegistry.bySlug("urls-domains-dns-paths-queries");
+  const urlDiagram = lesson16.guidedSteps[0].blocks.find((block) => block.type === "example").code;
+  assert.match(urlDiagram, /Scheme:\s+https\nHostname:\s+learn\.example\.org/);
+  assert.doesNotMatch(urlDiagram, /\|--- hostname ---\|/);
+
+  const lesson18 = lessonContentRegistry.bySlug("browser-developer-tools");
+  const devtoolsCopy = JSON.stringify(lesson18.guidedSteps);
+  assert.match(devtoolsCopy, /Chrome or Chromium/);
+  assert.match(devtoolsCopy, /Elements, Console, and Network are Chrome panel names/);
+  assert.match(devtoolsCopy, /reload the page and observe the original heading return/);
+  assert.match(devtoolsCopy, /sufficient for completion/);
+
+  const lesson19 = lessonContentRegistry.bySlug("first-html-document");
+  const htmlCopy = JSON.stringify(lesson19.guidedSteps);
+  assert.match(htmlCopy, /lang=\\\"en\\\"/);
+  assert.match(htmlCopy, /meta charset=\\\"utf-8\\\"/);
+  assert.match(htmlCopy, /HTML comment/);
+  assert.ok(lesson19.sources.some((source) => source.url.endsWith("/Elements/meta")));
+  assert.ok(lesson19.sources.some((source) => source.url.endsWith("/Guides/Comments")));
+
+  const lesson20 = lessonContentRegistry.bySlug("meaningful-html-text-links-images-controls");
+  const labelActivity = lesson20.activities.find((activity) => activity.id === "order-labeled-control");
+  assert.equal(labelActivity.type, "single-answer");
+  assert.equal(labelActivity.correctOptionId, "matching-for-id");
+  assert.match(labelActivity.options.find((option) => option.id === "matching-for-id").feedback, /choosing the wording or input type first is not/);
+
+  const lesson22 = lessonContentRegistry.bySlug("box-model-layout-responsive-design");
+  const containerExample = lesson22.guidedSteps
+    .flatMap((step) => step.blocks)
+    .find((block) => block.type === "example" && block.title.includes("constrained"));
+  assert.match(containerExample.code, /box-sizing: border-box;/);
+  assert.match(containerExample.code, /width: 100%;/);
+  assert.match(containerExample.code, /padding: 1rem;/);
+  assert.ok(containerExample.code.indexOf("box-sizing: border-box") < containerExample.code.indexOf("width: 100%"));
+  assert.match(JSON.stringify(lesson22.guidedSteps), /content-box.*padding outside/);
+  assert.ok(lesson22.sources.some((source) => source.url.endsWith("/Properties/box-sizing")));
+});
+
+test("trusted counter simulation advances 0 to 1 to 2 and restores completion authoritatively", () => {
+  const lesson23 = lessonContentRegistry.bySlug("javascript-dom-events");
+  const activity = lesson23.activities.find((candidate) => candidate.id === "simulate-counter-clicks");
+  assert.equal(activity.type, "counter-simulation");
+  assert.equal(activity.initialCount, 0);
+  assert.equal(activity.targetCount, 2);
+  assert.equal(activity.buttonLabel, "Add one");
+
+  let count = getCounterSimulationDisplayCount(activity, activity.initialCount, false);
+  assert.equal(count, 0);
+  count = advanceCounterSimulation(activity, count, false);
+  assert.equal(getCounterSimulationDisplayCount(activity, count, false), 1);
+  count = advanceCounterSimulation(activity, count, false);
+  assert.equal(getCounterSimulationDisplayCount(activity, count, false), 2);
+  assert.equal(advanceCounterSimulation(activity, count, false), 2);
+  assert.equal(getCounterSimulationDisplayCount(activity, 0, true), 2);
+
+  const example = lesson23.guidedSteps
+    .flatMap((step) => step.blocks)
+    .find((block) => block.type === "example" && block.title.includes("click-to-screen"));
+  assert.match(example.code, /querySelector/);
+  assert.match(example.code, /addEventListener/);
+  assert.match(example.code, /let count = 0/);
+  assert.match(example.code, /textContent/);
+
+  const renderer = fs.readFileSync(
+    path.join(process.cwd(), "src/components/generic-lesson-renderer.tsx"),
+    "utf8",
+  );
+  assert.match(renderer, /<button[\s\S]*type="button"[\s\S]*activity\.buttonLabel/);
+  assert.match(renderer, /<output aria-live="polite" aria-atomic="true">Count:/);
+  assert.doesNotMatch(renderer, /\beval\s*\(|dangerouslySetInnerHTML|<iframe|setTimeout|fetch\s*\(/);
 });
 
 test("completed ordering restoration always displays the verified correct order", () => {

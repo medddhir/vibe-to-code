@@ -4562,6 +4562,22 @@ pre {
   padding: 10px 14px;
 }
 
+.counter-simulation-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 18px;
+  gap: 16px;
+}
+
+.counter-simulation-controls output {
+  min-width: 7rem;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
 .lesson-live-region {
   position: absolute;
   width: 1px;

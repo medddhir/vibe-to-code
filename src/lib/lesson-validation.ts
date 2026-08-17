@@ -411,9 +411,14 @@ function validateBlock(block: unknown, path: string, issues: string[]) {
       break;
     case "single-answer-checkpoint":
     case "ordering-checkpoint":
+    case "counter-simulation":
       return {
         activityId: nonblank(block.activityId, `${path}.activityId`, issues),
-        expectedType: block.type === "single-answer-checkpoint" ? "single-answer" : "ordering",
+        expectedType: block.type === "single-answer-checkpoint"
+          ? "single-answer"
+          : block.type === "ordering-checkpoint"
+            ? "ordering"
+            : "counter-simulation",
       };
     case "recap":
       nonblank(block.heading, `${path}.heading`, issues);
@@ -434,7 +439,8 @@ function validateActivity(activity: unknown, path: string, issues: string[]) {
     return null;
   }
   const id = nonblank(activity.id, `${path}.id`, issues);
-  if (activity.type !== "single-answer" && activity.type !== "ordering") {
+  if (activity.type !== "single-answer" && activity.type !== "ordering" &&
+      activity.type !== "counter-simulation") {
     issues.push(`${path}.type is invalid`);
     return id ? { id, type: null } : null;
   }
@@ -461,7 +467,7 @@ function validateActivity(activity: unknown, path: string, issues: string[]) {
     duplicateValues(optionIds).forEach((value) => issues.push(`${path}.options contains duplicate ID: ${value}`));
     const correctId = nonblank(activity.correctOptionId, `${path}.correctOptionId`, issues);
     if (correctId && !optionIds.includes(correctId)) issues.push(`${path}.correctOptionId is unknown`);
-  } else {
+  } else if (activity.type === "ordering") {
     nonblank(activity.prompt, `${path}.prompt`, issues);
     nonblank(activity.successMessage, `${path}.successMessage`, issues);
     nonblank(activity.errorMessage, `${path}.errorMessage`, issues);
@@ -483,6 +489,15 @@ function validateActivity(activity: unknown, path: string, issues: string[]) {
     const order = stringIdArray(activity.correctOrder, `${path}.correctOrder`, issues);
     if (order.length !== itemIds.length || order.some((value) => !itemIds.includes(value))) {
       issues.push(`${path}.correctOrder must contain every item ID exactly once`);
+    }
+  } else {
+    nonblank(activity.instruction, `${path}.instruction`, issues);
+    nonblank(activity.buttonLabel, `${path}.buttonLabel`, issues);
+    nonblank(activity.successMessage, `${path}.successMessage`, issues);
+    const initialCount = nonnegativeInteger(activity.initialCount, `${path}.initialCount`, issues);
+    const targetCount = positiveInteger(activity.targetCount, `${path}.targetCount`, issues);
+    if (initialCount !== null && targetCount !== null && targetCount <= initialCount) {
+      issues.push(`${path}.targetCount must be greater than initialCount`);
     }
   }
   return id ? { id, type: activity.type } : null;

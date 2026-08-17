@@ -3,7 +3,10 @@ import {
   clearStoredLessonProgress,
   clearStoredLessonProgressForLessons,
 } from "@/lib/lesson-progress-storage";
-import { FOUNDATION_CURRICULUM_VERSION } from "@/lib/progress-manifest";
+import {
+  FOUNDATION_CURRICULUM_VERSION,
+  FOUNDATION_PREVIOUS_CURRICULUM_VERSION,
+} from "@/lib/progress-manifest";
 import { getPublishedLessonCatalogEntries } from "@/lib/lesson-registry";
 
 type LessonProgressRecord = {
@@ -185,7 +188,8 @@ function normalizeCourseRecord(raw: string | null, courseSlug: string): CoursePr
 
     if (
       parsed.version !== COURSE_PROGRESS_VERSION ||
-      ![1, 2, FOUNDATION_COURSE_VERSION].includes(parsed.courseVersion ?? -1)
+      ![1, 2, FOUNDATION_PREVIOUS_CURRICULUM_VERSION, FOUNDATION_COURSE_VERSION]
+        .includes(parsed.courseVersion ?? -1)
     ) {
       return fallback;
     }

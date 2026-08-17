@@ -24,7 +24,7 @@ Learners use the site in a desktop or mobile browser. Published Foundation lesso
 
 ## Capabilities and Constraints
 
-- Developer Foundations currently publishes Level 0, Level 1, and Level 2 Lesson 1 as a sequential 15-lesson path.
+- Developer Foundations publishes Level 0, Level 1, and the complete Level 2 as a sequential 23-lesson path.
 - Guest access is available for Lesson 1 (`/lessons/what-is-code`) only.
 - A verified Google account is required for all other published lessons.
 - Lessons preserve learner attempts, hints, checkpoint state, and completion state locally.

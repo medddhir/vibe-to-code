@@ -1,5 +1,13 @@
 import type { LessonContentDefinition } from "@/data/lesson-schema";
+import { boxModelLayoutResponsiveDesignLesson } from "@/data/lessons/foundations/box-model-layout-responsive-design";
+import { browserDeveloperToolsLesson } from "@/data/lessons/foundations/browser-developer-tools";
+import { cssSelectorsColourSpacingCascadeLesson } from "@/data/lessons/foundations/css-selectors-colour-spacing-cascade";
+import { firstHtmlDocumentLesson } from "@/data/lessons/foundations/first-html-document";
 import { internetWebBrowserServerLesson } from "@/data/lessons/foundations/internet-web-browser-server";
+import { javascriptDomEventsLesson } from "@/data/lessons/foundations/javascript-dom-events";
+import { meaningfulHtmlTextLinksImagesControlsLesson } from "@/data/lessons/foundations/meaningful-html-text-links-images-controls";
+import { requestsResponsesHttpHttpsLesson } from "@/data/lessons/foundations/requests-responses-http-https";
+import { urlsDomainsDnsPathsQueriesLesson } from "@/data/lessons/foundations/urls-domains-dns-paths-queries";
 import {
   assertValidLessonContentDefinition,
   LessonValidationError,
@@ -45,4 +53,12 @@ export function createLessonContentRegistry(
 
 export const lessonContentRegistry = createLessonContentRegistry([
   internetWebBrowserServerLesson,
+  urlsDomainsDnsPathsQueriesLesson,
+  requestsResponsesHttpHttpsLesson,
+  browserDeveloperToolsLesson,
+  firstHtmlDocumentLesson,
+  meaningfulHtmlTextLinksImagesControlsLesson,
+  cssSelectorsColourSpacingCascadeLesson,
+  boxModelLayoutResponsiveDesignLesson,
+  javascriptDomEventsLesson,
 ]);
