@@ -63,7 +63,7 @@ export default function Home() {
 
             <p className="vtc-guest-note">
               <span aria-hidden="true">✓</span>
-              Start free as a guest. Sign in to sync progress is the next account milestone.
+              Try Lesson 1 without an account. Continue every published lesson free with Google.
             </p>
           </div>
 

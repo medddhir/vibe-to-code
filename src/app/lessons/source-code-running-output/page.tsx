@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { requireAuthenticatedLessonAccess } from "@/lib/auth/lesson-access";
 import { ChoiceCheckpoint } from "@/components/choice-checkpoint";
 import { CodeWindow } from "@/components/code-window";
 import { SaveRunLab } from "@/components/foundations/computer-confidence-labs";
@@ -11,6 +12,9 @@ import {
   getFoundationsCourseLessonNumber,
   getFoundationsLessonNumber,
 } from "@/data/foundations-level1";
+
+export const dynamic = "force-dynamic";
+
 
 const lessonSlug = "source-code-running-output";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 2;
@@ -29,7 +33,9 @@ export const metadata: Metadata = {
   description: "Learn the edit, save, run, observe loop by changing a tiny program and proving which version actually ran.",
 };
 
-export default function SourceCodeRunningOutputLesson() {
+export default async function SourceCodeRunningOutputLesson() {
+  await requireAuthenticatedLessonAccess("/lessons/source-code-running-output");
+
   return (
     <FoundationLessonPage
       lessonSlug={lessonSlug}

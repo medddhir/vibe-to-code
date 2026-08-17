@@ -1,5 +1,6 @@
 import { foundationLevels } from "@/data/course-content";
 import type { Lesson } from "@/data/curriculum";
+import { getPublishedLessonCatalogEntries } from "@/lib/lesson-registry";
 
 export const FOUNDATION_LEVEL0_LESSONS = foundationLevels[0]?.lessons ?? [];
 export const FOUNDATION_LEVEL1_LESSONS = foundationLevels[1]?.lessons ?? [];
@@ -13,9 +14,23 @@ export const FOUNDATION_TOTAL_LESSONS = foundationLevels.reduce(
   0,
 );
 
-export const FOUNDATION_PUBLISHED_LEVELS = foundationLevels.slice(0, 2);
-export const FOUNDATION_PUBLISHED_LESSONS = FOUNDATION_PUBLISHED_LEVELS.flatMap(
-  (level) => level.lessons,
+const FOUNDATION_PUBLISHED_CATALOG = getPublishedLessonCatalogEntries().filter(
+  (entry) => entry.courseSlug === "foundations",
+);
+
+export const FOUNDATION_PUBLISHED_LEVELS = foundationLevels.flatMap((level, levelIndex) => {
+  const publishedLessons = FOUNDATION_PUBLISHED_CATALOG.flatMap((entry) => {
+    if (entry.levelIndex !== levelIndex) return [];
+    const lesson = level.lessons[entry.lessonIndex];
+    return lesson?.slug === entry.lessonSlug ? [lesson] : [];
+  });
+  return publishedLessons.length ? [{ ...level, lessons: publishedLessons }] : [];
+});
+export const FOUNDATION_PUBLISHED_LESSONS = FOUNDATION_PUBLISHED_CATALOG.flatMap(
+  (entry) => {
+    const lesson = foundationLevels[entry.levelIndex]?.lessons[entry.lessonIndex];
+    return lesson?.slug === entry.lessonSlug ? [lesson] : [];
+  },
 );
 export const FOUNDATION_PUBLISHED_TOTAL_LESSONS = FOUNDATION_PUBLISHED_LESSONS.length;
 
@@ -71,10 +86,24 @@ export const FOUNDATION_LEVEL1_BY_SLUG = createLevelMap(
   FOUNDATION_LEVEL1_OFFSET,
 );
 
-export const FOUNDATION_PUBLISHED_BY_SLUG = {
-  ...FOUNDATION_LEVEL0_BY_SLUG,
-  ...FOUNDATION_LEVEL1_BY_SLUG,
-};
+export const FOUNDATION_PUBLISHED_BY_SLUG = FOUNDATION_PUBLISHED_CATALOG.reduce<
+  Record<string, FoundationLessonSlot>
+>((acc, entry, publishedIndex) => {
+  const level = foundationLevels[entry.levelIndex];
+  const lesson = level?.lessons[entry.lessonIndex];
+  if (!level || lesson?.slug !== entry.lessonSlug) return acc;
+  acc[entry.lessonSlug] = {
+    index: entry.lessonIndex,
+    number: entry.lessonIndex + 1,
+    courseNumber: publishedIndex + 1,
+    levelIndex: entry.levelIndex,
+    levelLabel: level.label,
+    levelTitle: level.title,
+    levelTotal: level.lessons.length,
+    lesson,
+  };
+  return acc;
+}, {});
 
 export function getFoundationLessonSlot(lessonSlug: string) {
   return FOUNDATION_PUBLISHED_BY_SLUG[lessonSlug];

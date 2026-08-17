@@ -45,6 +45,7 @@ import {
   readCanonicalProgressCache,
   writeCanonicalProgressCache,
 } from "@/lib/progress-sync-storage";
+import { shouldUseRemoteProgressSync } from "@/lib/staging-preview";
 import { isProgressSyncEnabled } from "@/lib/supabase/config";
 
 export type ProgressSyncStatus =
@@ -183,7 +184,13 @@ function refreshGuestCanonicalCache(deviceId: string, importedAt: string) {
 }
 
 export function ProgressSyncProvider({ children }: { children: ReactNode }) {
-  const enabled = isProgressSyncEnabled();
+  const browserHost = typeof window === "undefined"
+    ? null
+    : window.location.hostname;
+  const enabled = shouldUseRemoteProgressSync(
+    isProgressSyncEnabled(),
+    browserHost,
+  );
   const { status: authStatus, user: authUser } = useAuthUser();
   const [status, setStatus] = useState<ProgressSyncStatus>("device-only");
   const [message, setMessage] = useState("Progress is saved on this device.");

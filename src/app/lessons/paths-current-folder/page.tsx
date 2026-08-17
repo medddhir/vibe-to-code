@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { requireAuthenticatedLessonAccess } from "@/lib/auth/lesson-access";
 import { ChoiceCheckpoint } from "@/components/choice-checkpoint";
 import { PathResolverLab } from "@/components/foundations/computer-confidence-labs";
 import { FoundationLessonPage } from "@/components/foundations/foundation-lesson-page";
@@ -10,6 +11,9 @@ import {
   getFoundationsCourseLessonNumber,
   getFoundationsLessonNumber,
 } from "@/data/foundations-level1";
+
+export const dynamic = "force-dynamic";
+
 
 const lessonSlug = "paths-current-folder";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 5;
@@ -33,7 +37,9 @@ export const metadata: Metadata = {
   description: "Resolve absolute and relative file paths, use parent folders safely, and understand why the current folder changes an address.",
 };
 
-export default function PathsCurrentFolderLesson() {
+export default async function PathsCurrentFolderLesson() {
+  await requireAuthenticatedLessonAccess("/lessons/paths-current-folder");
+
   return (
     <FoundationLessonPage
       lessonSlug={lessonSlug}

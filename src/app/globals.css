@@ -4523,6 +4523,74 @@ pre {
   font-size: 0.7rem;
 }
 
+.ordering-checkpoint-list {
+  display: grid;
+  margin: 18px 0;
+  padding-left: 28px;
+  gap: 10px;
+}
+
+.ordering-checkpoint-list li {
+  display: grid;
+  min-height: 56px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface-soft);
+  color: var(--ink-soft);
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.ordering-checkpoint-controls {
+  display: inline-flex;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .ordering-checkpoint-list li {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+}
+
+.ordering-checkpoint-controls .button {
+  min-height: 44px;
+  padding: 10px 14px;
+}
+
+.counter-simulation-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 18px;
+  gap: 16px;
+}
+
+.counter-simulation-controls output {
+  min-width: 7rem;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.lesson-live-region {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .choice-feedback {
   display: grid;
   align-items: start;

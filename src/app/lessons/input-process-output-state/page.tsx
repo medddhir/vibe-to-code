@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { requireAuthenticatedLessonAccess } from "@/lib/auth/lesson-access";
 import { ChoiceCheckpoint, type ChoiceCheckpointOption } from "@/components/choice-checkpoint";
 import { FoundationLessonPage } from "@/components/foundations/foundation-lesson-page";
 import { type GuidedLessonStep } from "@/components/guided-lesson-flow";
@@ -11,6 +12,9 @@ import {
   getFoundationsCourseLessonNumber,
   FOUNDATION_LEVEL1_TOTAL_LESSONS,
 } from "@/data/foundations-level1";
+
+export const dynamic = "force-dynamic";
+
 
 const lessonSlug = "input-process-output-state";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 3;
@@ -100,7 +104,9 @@ export const metadata: Metadata = {
     "Trace a counter-style interaction through input, processing, state updates, and visible screen output.",
 };
 
-export default function InputProcessOutputStateLesson() {
+export default async function InputProcessOutputStateLesson() {
+  await requireAuthenticatedLessonAccess("/lessons/input-process-output-state");
+
   return (
     <FoundationLessonPage
       lessonSlug={lessonSlug}

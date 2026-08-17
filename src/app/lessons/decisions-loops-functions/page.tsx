@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
 
+import { requireAuthenticatedLessonAccess } from "@/lib/auth/lesson-access";
+
+export const dynamic = "force-dynamic";
+
+
 import { ChoiceCheckpoint, type ChoiceCheckpointOption } from "@/components/choice-checkpoint";
 import { CodeWindow } from "@/components/code-window";
 import {
@@ -102,7 +107,9 @@ export const metadata: Metadata = {
     "Use conditions, one safe loop, and small reusable formula rules to see how program control works.",
 };
 
-export default function DecisionsLoopsFunctionsLesson() {
+export default async function DecisionsLoopsFunctionsLesson() {
+  await requireAuthenticatedLessonAccess("/lessons/decisions-loops-functions");
+
   return (
     <FoundationLessonPage
       lessonSlug={lessonSlug}

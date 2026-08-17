@@ -20,6 +20,32 @@ type ChoiceCheckpointProps = {
   hint: string;
 };
 
+export function getChoiceCheckpointDisplayState({
+  completed,
+  correctId,
+  selectedId,
+  feedback,
+  answerCorrect,
+  successMessage,
+}: {
+  completed: boolean;
+  correctId: string;
+  selectedId: string;
+  feedback: string;
+  answerCorrect: boolean;
+  successMessage: string;
+}) {
+  if (completed) {
+    return {
+      selectedId: correctId,
+      feedback: successMessage,
+      answerCorrect: true,
+    };
+  }
+
+  return { selectedId, feedback, answerCorrect };
+}
+
 export function ChoiceCheckpoint({
   stepId,
   title,
@@ -42,8 +68,14 @@ export function ChoiceCheckpoint({
   const [selectedId, setSelectedId] = useState("");
   const [feedback, setFeedback] = useState("");
   const [answerCorrect, setAnswerCorrect] = useState(false);
-  const displayedSelection = completed && !selectedId ? correctId : selectedId;
-  const displayedFeedback = completed && !feedback ? successMessage : feedback;
+  const displayState = getChoiceCheckpointDisplayState({
+    completed,
+    correctId,
+    selectedId,
+    feedback,
+    answerCorrect,
+    successMessage,
+  });
   const showHint = attempts >= 3 && !completed;
 
   function checkAnswer(event: FormEvent<HTMLFormElement>) {
@@ -88,7 +120,7 @@ export function ChoiceCheckpoint({
           <div className="choice-options">
             {options.map((option, index) => {
               const optionId = `${groupId}-${option.id}`;
-              const selected = displayedSelection === option.id;
+              const selected = displayState.selectedId === option.id;
 
               return (
                 <label
@@ -109,7 +141,9 @@ export function ChoiceCheckpoint({
                     }}
                   />
                   <span aria-hidden="true">
-                    {selected ? "✓" : String.fromCharCode(65 + index)}
+                    {selected
+                      ? (displayState.answerCorrect ? "✓" : "•")
+                      : String.fromCharCode(65 + index)}
                   </span>
                   <strong>{option.label}</strong>
                 </label>
@@ -132,15 +166,15 @@ export function ChoiceCheckpoint({
         </div>
       </form>
 
-      {displayedFeedback ? (
+      {displayState.feedback ? (
         <div
-          className={`choice-feedback${completed || answerCorrect ? " is-correct" : " is-try-again"}`}
+          className={`choice-feedback${displayState.answerCorrect ? " is-correct" : " is-try-again"}`}
           role="status"
           aria-live="polite"
           aria-atomic="true"
         >
-          <span aria-hidden="true">{completed || answerCorrect ? "✓" : "↳"}</span>
-          <p>{displayedFeedback}</p>
+          <span aria-hidden="true">{displayState.answerCorrect ? "✓" : "↳"}</span>
+          <p>{displayState.feedback}</p>
         </div>
       ) : null}
 

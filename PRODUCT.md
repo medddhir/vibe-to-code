@@ -24,12 +24,14 @@ Learners use the site in a desktop or mobile browser. Published Foundation lesso
 
 ## Capabilities and Constraints
 
-- Developer Foundations currently publishes Level 0 and Level 1 as a sequential 14-lesson path.
+- Developer Foundations publishes Level 0, Level 1, and the complete Level 2 as a sequential 23-lesson path.
+- Guest access is available for Lesson 1 (`/lessons/what-is-code`) only.
+- A verified Google account is required for all other published lessons.
 - Lessons preserve learner attempts, hints, checkpoint state, and completion state locally.
 - Existing Level 1 progress must survive curriculum and progress-schema changes.
 - Lesson content, simulations, gates, and progress logic must remain functional through the redesign.
 - The next action must be obvious after every checkpoint, lesson, and level.
-- Google signup and server-synced progress are the next product milestone. The public learning path remains usable in guest mode, and account work must merge rather than erase existing local progress.
+- All learning remains free. Account sign-in is an access gate and progress-sync is a separate optional feature.
 - The project is a Next.js App Router application deployed on Vercel and maintained in one GitHub repository.
 
 ## Brand Commitments
@@ -52,7 +54,7 @@ Learners use the site in a desktop or mobile browser. Published Foundation lesso
 2. Prove ideas through interaction, not unsupported claims.
 3. Preserve beginner confidence without hiding technical truth.
 4. Make progress legible across checkpoints, lessons, and levels.
-5. Keep public learning accessible, fast, and usable without an account.
+5. Keep Lesson 1 accessible without an account; keep all later published lessons gated to Google access.
 
 ## Accessibility & Inclusion
 

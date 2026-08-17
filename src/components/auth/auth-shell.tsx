@@ -34,10 +34,9 @@ export function AuthShell({
           <aside className="auth-continuity" aria-labelledby="auth-continuity-title">
             <div>
               <p className="auth-continuity-label">Learning continuity</p>
-              <h2 id="auth-continuity-title">Start anywhere. Keep your place.</h2>
+              <h2 id="auth-continuity-title">Start with Lesson 1. Continue with Google.</h2>
               <p>
-                Accounts add verified identity without putting a wall in front of
-                the lessons.
+                Lesson 1 is available without an account. Later published lessons are protected and require a free Vibe to Code account with Google.
               </p>
             </div>
 
@@ -46,27 +45,27 @@ export function AuthShell({
                 <span>01</span>
                 <div>
                   <strong>Learn as a guest</strong>
-                  <p>Every public lesson stays open. Progress remains on this device.</p>
+                  <p>Lesson 1 stays open. Start the first lesson without credentials.</p>
                 </div>
               </li>
               <li>
                 <span>02</span>
                 <div>
                   <strong>Continue with Google</strong>
-                  <p>Google confirms your account without another password.</p>
+                  <p>A Google account unlocks later published lessons while keeping all learning free.</p>
                 </div>
               </li>
               <li>
                 <span>03</span>
                 <div>
-                  <strong>Protect the stronger record</strong>
-                  <p>When sync runs, the more complete learning record wins.</p>
+                  <strong>Progress sync is separate</strong>
+                  <p>Sync is optional and may remain disabled in some environments.</p>
                 </div>
               </li>
             </ol>
 
             <p className="auth-continuity-note">
-              Guest access stays free. An account is for continuity, not permission.
+              Published learning after Lesson 1 requires Google. All learning remains free, with no payment or card required.
             </p>
           </aside>
         </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { requireAuthenticatedLessonAccess } from "@/lib/auth/lesson-access";
 import {
   ChoiceCheckpoint,
   type ChoiceCheckpointOption,
@@ -14,6 +15,9 @@ import {
   getFoundationsCourseLessonNumber,
   FOUNDATION_LEVEL1_TOTAL_LESSONS,
 } from "@/data/foundations-level1";
+
+export const dynamic = "force-dynamic";
+
 
 const lessonSlug = "languages-syntax-errors";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 4;
@@ -145,7 +149,9 @@ export const metadata: Metadata = {
     "Compare HTML, CSS, and JavaScript roles and fix grammar and syntax issues in a safe in-browser simulator.",
 };
 
-export default function LanguagesSyntaxErrorsLesson() {
+export default async function LanguagesSyntaxErrorsLesson() {
+  await requireAuthenticatedLessonAccess("/lessons/languages-syntax-errors");
+
   return (
     <FoundationLessonPage
       lessonSlug={lessonSlug}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { requireAuthenticatedLessonAccess } from "@/lib/auth/lesson-access";
 import {
   ChoiceCheckpoint,
   type ChoiceCheckpointOption,
@@ -14,6 +15,9 @@ import {
 } from "@/data/foundations-level1";
 import { type GuidedLessonStep } from "@/components/guided-lesson-flow";
 import { PracticeConsole } from "@/components/practice-console";
+
+export const dynamic = "force-dynamic";
+
 
 const lessonSlug = "values-variables-types";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 1;
@@ -97,7 +101,9 @@ export const metadata: Metadata = {
     "Build a small value lab with Python and watch variable kinds, live memory, and mistakes you can fix for real.",
 };
 
-export default function ValuesVariablesTypesLesson() {
+export default async function ValuesVariablesTypesLesson() {
+  await requireAuthenticatedLessonAccess("/lessons/values-variables-types");
+
   return (
     <FoundationLessonPage
       lessonSlug={lessonSlug}

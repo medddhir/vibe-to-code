@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { requireAuthenticatedLessonAccess } from "@/lib/auth/lesson-access";
 import { ChoiceCheckpoint } from "@/components/choice-checkpoint";
 import { WorkbenchLab } from "@/components/foundations/computer-confidence-labs";
 import { FoundationLessonPage } from "@/components/foundations/foundation-lesson-page";
@@ -10,6 +11,9 @@ import {
   getFoundationsCourseLessonNumber,
   getFoundationsLessonNumber,
 } from "@/data/foundations-level1";
+
+export const dynamic = "force-dynamic";
+
 
 const lessonSlug = "vscode-without-getting-lost";
 const lessonNumber = getFoundationsLessonNumber(lessonSlug) ?? 6;
@@ -27,7 +31,9 @@ export const metadata: Metadata = {
   description: "Practice opening a project folder, using Explorer, editing and saving a file, and choosing Problems or Terminal for evidence.",
 };
 
-export default function VSCodeWithoutGettingLostLesson() {
+export default async function VSCodeWithoutGettingLostLesson() {
+  await requireAuthenticatedLessonAccess("/lessons/vscode-without-getting-lost");
+
   return (
     <FoundationLessonPage
       lessonSlug={lessonSlug}

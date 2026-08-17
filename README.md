@@ -61,6 +61,7 @@ The curriculum contains **362 mapped lessons** across six practical tracks. We a
 
 ### Available right now
 
+- **23 Developer Foundations lessons are published** — Lesson 1 is public; the other 22 require a free Vibe to Code account with Google sign-in
 - **[Lesson 1: What code actually is](https://vibe-to-code.tech/lessons/what-is-code)** — guided topics, safe in-page Python practice, useful errors, hints, and saved progress
 - **[Developer Foundations roadmap](https://vibe-to-code.tech/courses/foundations)** — see what comes next
 - **[AI-Assisted Development roadmap](https://vibe-to-code.tech/courses/ai-assisted-development)** — explore the complete 12-level path for careful vibe coding

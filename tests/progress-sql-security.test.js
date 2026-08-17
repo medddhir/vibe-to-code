@@ -2,6 +2,7 @@
 require("./test-support");
 
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const { test } = require("node:test");
@@ -10,12 +11,22 @@ const {
   FOUNDATION_PROGRESS_MANIFEST,
 } = require("../src/lib/progress-manifest.ts");
 
-const migration = fs.readFileSync(
-  path.join(
-    process.cwd(),
-    "supabase/migrations/20260813130833_accounts_and_progress.sql",
-  ),
-  "utf8",
+const migrationsDirectory = path.join(process.cwd(), "supabase/migrations");
+const migrationFiles = fs.readdirSync(migrationsDirectory)
+  .filter((file) => file.endsWith(".sql"))
+  .sort();
+const migrationHistory = migrationFiles.map((file) => ({
+  file,
+  sql: fs.readFileSync(path.join(migrationsDirectory, file), "utf8"),
+}));
+const migration = migrationHistory.find(
+  ({ file }) => file === "20260813130833_accounts_and_progress.sql",
+).sql;
+const version3Migration = migrationHistory.find(
+  ({ file }) => file.endsWith("_add_foundations_lesson_15_manifest.sql"),
+);
+const version4Migration = migrationHistory.find(
+  ({ file }) => file.endsWith("_publish_foundations_level_2.sql"),
 );
 const defaultPrivilegeMigration = fs.readFileSync(
   path.join(
@@ -80,13 +91,232 @@ test("enables defense-in-depth RLS on the private validation manifest", () => {
   );
 });
 
+function sqlManifest(sql) {
+  const start = sql.indexOf("with manifest (lesson_slug, step_ids, activity_ids) as (");
+  const end = sql.indexOf("), manifest_ids as (", start);
+  assert.ok(start >= 0 && end > start, "SQL manifest CTE is missing");
+  const section = sql.slice(start, end);
+  const entries = [];
+  const pattern = /\(\s*'([^']+)',\s*array\[([^\]]*)\]::text\[\],\s*array\[([^\]]*)\]::text\[\]\s*\)/g;
+  for (const match of section.matchAll(pattern)) {
+    const strings = (value) => [...value.matchAll(/'([^']+)'/g)].map((item) => item[1]);
+    entries.push({ slug: match[1], stepIds: strings(match[2]), activityIds: strings(match[3]) });
+  }
+  return entries;
+}
+
+function curriculumRows(sql, version) {
+  return [...sql.matchAll(new RegExp(
+    `\\('foundations', ${version}, '([^']+)', (\\d+), (\\d+)\\)`,
+    "g",
+  ))].map((match) => ({ slug: match[1], order: Number(match[2]), lessonVersion: Number(match[3]) }));
+}
+
+test("sorted SQL history preserves versions 2 and 3 and adds the exact version-4 manifest", () => {
+  assert.equal(migrationFiles.at(-1), version4Migration.file);
+  const version2Lessons = curriculumRows(migration, 2);
+  const version3Lessons = curriculumRows(version3Migration.sql, 3);
+  const version4Lessons = curriculumRows(version4Migration.sql, 4);
+  const version2Ids = sqlManifest(migration);
+  const version3Ids = sqlManifest(version3Migration.sql);
+  const version4Ids = sqlManifest(version4Migration.sql);
+  const countIds = (entries) => entries.reduce(
+    (total, lesson) => total + lesson.stepIds.length + lesson.activityIds.length,
+    0,
+  );
+
+  assert.equal(version2Lessons.length, 14);
+  assert.equal(countIds(version2Ids), 99);
+  assert.equal(version3Lessons.length, 15);
+  assert.equal(countIds(version3Ids), 108);
+  assert.equal(version4Lessons.length, 23);
+  assert.equal(countIds(version4Ids), 180);
+  assert.deepEqual(version4Lessons.map((lesson) => lesson.slug), FOUNDATION_PROGRESS_MANIFEST.map((lesson) => lesson.slug));
+  assert.deepEqual(version4Ids, FOUNDATION_PROGRESS_MANIFEST.map((lesson) => ({
+    slug: lesson.slug,
+    stepIds: [...lesson.stepIds],
+    activityIds: [...lesson.activityIds],
+  })));
+  assert.doesNotMatch(version3Migration.sql, /update\s+public\.learner_course_progress/i);
+  assert.doesNotMatch(version3Migration.sql, /progress_sync_requests\s+(?:set|values)/i);
+  const version4ManifestInstall = version4Migration.sql.slice(
+    0,
+    version4Migration.sql.indexOf("create or replace function private.commit_progress_document"),
+  );
+  assert.doesNotMatch(version4ManifestInstall, /update\s+public\.learner_course_progress/i);
+  assert.doesNotMatch(version4ManifestInstall, /progress_sync_requests\s+(?:set|values)/i);
+  assert.equal(
+    crypto.createHash("sha256").update(migration).digest("hex"),
+    "791b372e9d257bd5a7133d27840e7b81f1ac381722ed9a04ced63509ed03fd4c",
+  );
+  assert.equal(
+    crypto.createHash("sha256").update(version3Migration.sql).digest("hex"),
+    "b061d9d3beb7ac6f6af87caf879094b0d21b0505abce15e1513e119c0cd6ba05",
+  );
+});
+
+test("version-3 migration fails closed before inserts when learner data exists", () => {
+  const sql = version3Migration.sql;
+  const guard = sql.indexOf("do $$");
+  const guardEnd = sql.indexOf("$$;", guard);
+  const curriculumInsert = sql.indexOf("insert into public.curriculum_lessons");
+  const progressIdsInsert = sql.indexOf("insert into private.curriculum_progress_ids");
+
+  assert.ok(guard >= 0 && guardEnd > guard);
+  assert.match(
+    sql.slice(guard, guardEnd),
+    /exists \(select 1 from public\.learner_course_progress\)/,
+  );
+  assert.match(
+    sql.slice(guard, guardEnd),
+    /exists \(select 1 from public\.progress_sync_requests\)/,
+  );
+  assert.match(
+    sql.slice(guard, guardEnd),
+    /Foundations curriculum v3 requires reviewed learner-progress migration/,
+  );
+  assert.ok(curriculumInsert > guardEnd);
+  assert.ok(progressIdsInsert > guardEnd);
+  assert.doesNotMatch(sql, /(?:update|delete\s+from)\s+public\.learner_course_progress/i);
+  assert.doesNotMatch(sql, /(?:update|delete\s+from)\s+public\.progress_sync_requests/i);
+
+  assert.equal(curriculumRows(migration, 2).length, 14);
+  assert.equal(curriculumRows(sql, 3).length, 15);
+  assert.equal(
+    sqlManifest(sql).reduce(
+      (total, lesson) => total + lesson.stepIds.length + lesson.activityIds.length,
+      0,
+    ),
+    108,
+  );
+});
+
+test("version-4 migration fails closed before curriculum and progress-ID inserts", () => {
+  const sql = version4Migration.sql;
+  const curriculumLock = sql.indexOf("lock table public.curriculum_lessons in access exclusive mode;");
+  const receiptsLock = sql.indexOf("lock table public.progress_sync_requests in share row exclusive mode;");
+  const learnerLock = sql.indexOf("lock table public.learner_course_progress in share row exclusive mode;");
+  const guard = sql.indexOf("do $$");
+  const guardEnd = sql.indexOf("$$;", guard);
+  const curriculumInsert = sql.indexOf("insert into public.curriculum_lessons");
+  const progressIdsInsert = sql.indexOf("insert into private.curriculum_progress_ids");
+
+  assert.ok(curriculumLock >= 0 && curriculumLock < receiptsLock);
+  assert.ok(receiptsLock < learnerLock && learnerLock < guard);
+  assert.ok(guard >= 0 && guardEnd > guard);
+  assert.match(sql.slice(guard, guardEnd), /exists \(select 1 from public\.learner_course_progress\)/);
+  assert.match(sql.slice(guard, guardEnd), /exists \(select 1 from public\.progress_sync_requests\)/);
+  assert.match(sql.slice(guard, guardEnd), /Foundations curriculum v4 requires reviewed learner-progress migration/);
+  assert.ok(curriculumInsert > guardEnd);
+  assert.ok(progressIdsInsert > curriculumInsert);
+  assert.equal(curriculumRows(sql, 4).length, 23);
+  assert.equal(
+    sqlManifest(sql).reduce((total, lesson) => total + lesson.stepIds.length + lesson.activityIds.length, 0),
+    180,
+  );
+});
+
+test("version-4 installs a private current-curriculum write invariant", () => {
+  const sql = version4Migration.sql;
+  const curriculumInsert = sql.indexOf("insert into public.curriculum_lessons");
+  const triggerFunction = sql.indexOf(
+    "create or replace function private.enforce_current_learner_curriculum_version()",
+  );
+  const trigger = sql.indexOf(
+    "create trigger learner_course_progress_current_curriculum_version",
+  );
+
+  assert.ok(triggerFunction > curriculumInsert);
+  assert.ok(trigger > triggerFunction);
+  assert.match(
+    sql.slice(triggerFunction, trigger),
+    /returns trigger\s+language plpgsql\s+security invoker\s+set search_path = ''/,
+  );
+  assert.match(
+    sql.slice(triggerFunction, trigger),
+    /select max\(lesson\.curriculum_version\)\s+into current_curriculum_version[\s\S]*where lesson\.course_slug = new\.course_slug/,
+  );
+  assert.match(
+    sql.slice(triggerFunction, trigger),
+    /new\.curriculum_version <> current_curriculum_version[\s\S]*using errcode = '22023'/,
+  );
+  assert.match(
+    sql.slice(trigger),
+    /before insert or update on public\.learner_course_progress\s+for each row execute function private\.enforce_current_learner_curriculum_version\(\)/,
+  );
+  assert.match(
+    sql,
+    /revoke execute on function private\.enforce_current_learner_curriculum_version\(\)\s+from public, anon, authenticated, service_role/,
+  );
+});
+
+test("version-4 reinstalls private mutations with current-version and size enforcement", () => {
+  const sql = version4Migration.sql;
+  assert.equal(
+    (sql.match(/create or replace function private\.commit_progress_document\(/g) ?? []).length,
+    1,
+  );
+  assert.equal(
+    (sql.match(/create or replace function private\.reset_progress_document\(/g) ?? []).length,
+    1,
+  );
+  assert.equal(
+    (sql.match(/select max\(lesson\.curriculum_version\)\s+into current_curriculum_version/g) ?? []).length,
+    3,
+  );
+  assert.equal(
+    (sql.match(/if p_curriculum_version <> current_curriculum_version then\s+raise exception 'Curriculum migration required'/g) ?? []).length,
+    2,
+  );
+  assert.match(
+    sql,
+    /octet_length\(convert_to\(p_payload::text, 'UTF8'\)\) > 1048576/,
+  );
+  assert.doesNotMatch(
+    sql,
+    /octet_length\(convert_to\(p_payload::text, 'UTF8'\)\) > 1000000/,
+  );
+});
+
+test("direct commit and reset accept only the registered current curriculum", () => {
+  const sql = version4Migration.sql;
+  const commitStart = sql.indexOf(
+    "create or replace function private.commit_progress_document(",
+  );
+  const resetStart = sql.indexOf(
+    "create or replace function private.reset_progress_document(",
+  );
+  const commitBody = sql.slice(commitStart, resetStart);
+  const resetBody = sql.slice(resetStart);
+
+  assert.equal(curriculumRows(migration, 2).length, 14);
+  assert.equal(curriculumRows(version3Migration.sql, 3).length, 15);
+  assert.equal(curriculumRows(sql, 4).length, 23);
+  for (const body of [commitBody, resetBody]) {
+    const currentCheck = body.indexOf(
+      "if p_curriculum_version <> current_curriculum_version then",
+    );
+    assert.ok(currentCheck >= 0);
+    assert.match(
+      body.slice(currentCheck),
+      /raise exception 'Curriculum migration required' using errcode = '22023'/,
+    );
+    const firstMutation = Math.min(
+      ...["delete from public.progress_sync_requests", "insert into public.learner_course_progress"]
+        .map((statement) => body.indexOf(statement))
+        .filter((index) => index >= 0),
+    );
+    assert.ok(currentCheck < firstMutation);
+  }
+});
+
 test("SQL progress allowlist contains every canonical manifest ID", () => {
   for (const lesson of FOUNDATION_PROGRESS_MANIFEST) {
-    assert.match(migration, new RegExp(`'${lesson.slug}'`));
+    assert.match(version4Migration.sql, new RegExp(`'${lesson.slug}'`));
 
     for (const progressId of [...lesson.stepIds, ...lesson.activityIds]) {
       assert.match(
-        migration,
+        version4Migration.sql,
         new RegExp(`'${progressId}'`),
         `SQL allowlist is missing ${lesson.slug}:${progressId}`,
       );

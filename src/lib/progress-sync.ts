@@ -1,18 +1,23 @@
 import { getLessonStorageKey } from "@/lib/lesson-progress-storage";
 import {
   FOUNDATION_CURRICULUM_VERSION,
-  FOUNDATION_PROGRESS_LESSON_ORDER,
+  FOUNDATION_LEGACY_CURRICULUM_VERSION,
   FOUNDATION_PROGRESS_LEVEL1_LESSON_SLUGS,
   FOUNDATION_PROGRESS_MANIFEST,
+  FOUNDATION_PROGRESS_MANIFEST_VERSION_2,
+  FOUNDATION_PROGRESS_MANIFEST_VERSION_3,
   FOUNDATION_PROGRESS_SCHEMA_VERSION,
+  FOUNDATION_PREVIOUS_CURRICULUM_VERSION,
   getFoundationKnownProgressIds,
   getFoundationProgressLessonManifest,
   type FoundationProgressLessonSlug,
+  type FoundationProgressLessonManifest,
 } from "@/lib/progress-manifest";
 
 export const MAX_SAVED_CODE_UNITS = 10_000;
 export const MAX_SAVED_CODE_BYTES = 40_000;
-export const MAX_CANONICAL_PROGRESS_BYTES = 1_000_000;
+export const HISTORICAL_MAX_CANONICAL_PROGRESS_BYTES = 1_000_000;
+export const MAX_CANONICAL_PROGRESS_BYTES = 1_048_576;
 export const MAX_COUNTER_COMPONENT = 1_000_000;
 export const MAX_COUNTER_DEVICES = 32;
 
@@ -251,7 +256,12 @@ function readLegacyAggregate(raw: unknown) {
     return null;
   }
 
-  if (parsed.courseVersion !== 1 && parsed.courseVersion !== FOUNDATION_CURRICULUM_VERSION) {
+  if (
+    parsed.courseVersion !== 1 &&
+    parsed.courseVersion !== FOUNDATION_LEGACY_CURRICULUM_VERSION &&
+    parsed.courseVersion !== FOUNDATION_PREVIOUS_CURRICULUM_VERSION &&
+    parsed.courseVersion !== FOUNDATION_CURRICULUM_VERSION
+  ) {
     return null;
   }
 
@@ -541,16 +551,28 @@ function parseSavedCode(
   return result;
 }
 
-export function parseCanonicalFoundationProgress(
+type ParsedCanonicalFoundationProgress = Omit<
+  CanonicalFoundationProgress,
+  "curriculumVersion" | "lastVisited" | "lessons"
+> & {
+  curriculumVersion: number;
+  lastVisited: TimestampedValue<string> | null;
+  lessons: Record<string, CanonicalLessonProgress>;
+};
+
+function parseCanonicalFoundationProgressVersion(
   input: unknown,
-): CanonicalFoundationProgress {
-  if (serializedBytes(input) > MAX_CANONICAL_PROGRESS_BYTES || !isRecord(input)) {
+  curriculumVersion: number,
+  manifest: readonly FoundationProgressLessonManifest[],
+  maximumBytes: number,
+): ParsedCanonicalFoundationProgress {
+  if (serializedBytes(input) > maximumBytes || !isRecord(input)) {
     throw new ProgressValidationError("Canonical progress payload is invalid or too large");
   }
   if (
     input.schemaVersion !== FOUNDATION_PROGRESS_SCHEMA_VERSION ||
     input.courseSlug !== FOUNDATION_COURSE_SLUG ||
-    input.curriculumVersion !== FOUNDATION_CURRICULUM_VERSION ||
+    input.curriculumVersion !== curriculumVersion ||
     typeof input.legacyLevel1Access !== "boolean" ||
     !isRecord(input.lessons)
   ) {
@@ -561,7 +583,7 @@ export function parseCanonicalFoundationProgress(
   assertSafeInteger(input.revision, "revision");
   assertValidTimestamp(input.updatedAt, "updatedAt");
 
-  const expectedSlugs = new Set<string>(FOUNDATION_PROGRESS_LESSON_ORDER);
+  const expectedSlugs = new Set<string>(manifest.map((lesson) => lesson.slug));
   const actualSlugs = Object.keys(input.lessons);
   if (
     actualSlugs.length !== expectedSlugs.size ||
@@ -574,10 +596,10 @@ export function parseCanonicalFoundationProgress(
     input.lastVisited,
     expectedSlugs,
     "lastVisited",
-  ) as TimestampedValue<FoundationProgressLessonSlug> | null;
-  const lessons = {} as Record<FoundationProgressLessonSlug, CanonicalLessonProgress>;
+  );
+  const lessons: Record<string, CanonicalLessonProgress> = {};
 
-  for (const manifestLesson of FOUNDATION_PROGRESS_MANIFEST) {
+  for (const manifestLesson of manifest) {
     const rawLesson = input.lessons[manifestLesson.slug];
     if (!isRecord(rawLesson) || !isRecord(rawLesson.versions)) {
       throw new ProgressValidationError(`lessons.${manifestLesson.slug} is invalid`);
@@ -597,7 +619,10 @@ export function parseCanonicalFoundationProgress(
     }
 
     const stepIds = new Set<string>(manifestLesson.stepIds);
-    const knownIds = new Set<string>(getFoundationKnownProgressIds(manifestLesson.slug));
+    const knownIds = new Set<string>([
+      ...manifestLesson.stepIds,
+      ...manifestLesson.activityIds,
+    ]);
     const completedAt = rawLesson.completedAt;
     if (completedAt !== null) {
       assertValidTimestamp(completedAt, `lessons.${manifestLesson.slug}.completedAt`);
@@ -647,7 +672,7 @@ export function parseCanonicalFoundationProgress(
   return {
     schemaVersion: FOUNDATION_PROGRESS_SCHEMA_VERSION,
     courseSlug: FOUNDATION_COURSE_SLUG,
-    curriculumVersion: FOUNDATION_CURRICULUM_VERSION,
+    curriculumVersion,
     courseEpoch: input.courseEpoch,
     revision: input.revision,
     legacyLevel1Access: input.legacyLevel1Access,
@@ -655,6 +680,65 @@ export function parseCanonicalFoundationProgress(
     lessons,
     updatedAt: input.updatedAt,
   };
+}
+
+function upgradeCanonicalFoundationProgress(
+  parsed: ParsedCanonicalFoundationProgress,
+  previousManifest: readonly FoundationProgressLessonManifest[],
+): CanonicalFoundationProgress {
+  const upgraded = createEmptyCanonicalFoundationProgress(parsed.updatedAt);
+  upgraded.courseEpoch = parsed.courseEpoch;
+  upgraded.revision = parsed.revision;
+  upgraded.legacyLevel1Access = parsed.legacyLevel1Access;
+  upgraded.lastVisited = parsed.lastVisited as TimestampedValue<FoundationProgressLessonSlug> | null;
+
+  for (const lesson of previousManifest) {
+    upgraded.lessons[lesson.slug as FoundationProgressLessonSlug] = structuredClone(
+      parsed.lessons[lesson.slug],
+    );
+  }
+
+  return parseCanonicalFoundationProgressVersion(
+    upgraded,
+    FOUNDATION_CURRICULUM_VERSION,
+    FOUNDATION_PROGRESS_MANIFEST,
+    MAX_CANONICAL_PROGRESS_BYTES,
+  ) as CanonicalFoundationProgress;
+}
+
+export function parseCanonicalFoundationProgress(
+  input: unknown,
+): CanonicalFoundationProgress {
+  if (isRecord(input) && input.curriculumVersion === FOUNDATION_LEGACY_CURRICULUM_VERSION) {
+    return upgradeCanonicalFoundationProgress(
+      parseCanonicalFoundationProgressVersion(
+        input,
+        FOUNDATION_LEGACY_CURRICULUM_VERSION,
+        FOUNDATION_PROGRESS_MANIFEST_VERSION_2,
+        HISTORICAL_MAX_CANONICAL_PROGRESS_BYTES,
+      ),
+      FOUNDATION_PROGRESS_MANIFEST_VERSION_2,
+    );
+  }
+
+  if (isRecord(input) && input.curriculumVersion === FOUNDATION_PREVIOUS_CURRICULUM_VERSION) {
+    return upgradeCanonicalFoundationProgress(
+      parseCanonicalFoundationProgressVersion(
+        input,
+        FOUNDATION_PREVIOUS_CURRICULUM_VERSION,
+        FOUNDATION_PROGRESS_MANIFEST_VERSION_3,
+        HISTORICAL_MAX_CANONICAL_PROGRESS_BYTES,
+      ),
+      FOUNDATION_PROGRESS_MANIFEST_VERSION_3,
+    );
+  }
+
+  return parseCanonicalFoundationProgressVersion(
+    input,
+    FOUNDATION_CURRICULUM_VERSION,
+    FOUNDATION_PROGRESS_MANIFEST,
+    MAX_CANONICAL_PROGRESS_BYTES,
+  ) as CanonicalFoundationProgress;
 }
 
 export function normalizeCanonicalFoundationProgress(input: unknown) {

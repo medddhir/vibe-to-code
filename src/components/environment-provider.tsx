@@ -1,8 +1,19 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
+
+import { isStagingCoursePreviewHost } from "@/lib/staging-preview";
 
 const CurriculumReviewContext = createContext(false);
+const subscribeToHost = () => () => {};
+const getServerHostSnapshot = () => false;
+const getBrowserHostSnapshot = () =>
+  isStagingCoursePreviewHost(window.location.hostname);
 
 export function EnvironmentProvider({
   curriculumReview,
@@ -11,8 +22,14 @@ export function EnvironmentProvider({
   curriculumReview: boolean;
   children: ReactNode;
 }) {
+  const stagingPreview = useSyncExternalStore(
+    subscribeToHost,
+    getBrowserHostSnapshot,
+    getServerHostSnapshot,
+  );
+
   return (
-    <CurriculumReviewContext.Provider value={curriculumReview}>
+    <CurriculumReviewContext.Provider value={curriculumReview || stagingPreview}>
       {children}
     </CurriculumReviewContext.Provider>
   );

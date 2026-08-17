@@ -1,8 +1,10 @@
 import Link from "next/link";
 
 import { BrandMark } from "@/components/brand-mark";
+import { getPublishedLessonCatalogEntries } from "@/lib/lesson-registry";
 
 export function SiteFooter() {
+  const publishedLessonCount = getPublishedLessonCatalogEntries().length;
   return (
     <footer className="site-footer">
       <div className="shell footer-grid">
@@ -12,7 +14,7 @@ export function SiteFooter() {
             The learning layer between an AI-generated first draft and software
             you can confidently call your own.
           </p>
-          <span className="footer-status"><i aria-hidden="true" /> 14 guided lessons live</span>
+          <span className="footer-status"><i aria-hidden="true" /> {publishedLessonCount} guided lessons live</span>
         </div>
 
         <div className="footer-links">
