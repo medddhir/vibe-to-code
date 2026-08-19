@@ -587,6 +587,11 @@ html[data-vtc-intro="play"] .vtc-startup-wordmark {
   animation: vtc-enter 820ms 90ms var(--vtc-ease) both;
 }
 
+.vtc-hero .mini-lab {
+  min-width: 0;
+  animation: vtc-enter 820ms 90ms var(--vtc-ease) both;
+}
+
 .vtc-live-curriculum > header {
   display: flex;
   min-height: 76px;
@@ -1006,6 +1011,40 @@ html[data-vtc-intro="play"] .vtc-startup-wordmark {
   border-radius: 3px;
 }
 
+.mini-lab-steps {
+  display: grid;
+  padding: 0;
+  margin: 0;
+  border-bottom: 1px solid #35404a;
+  background: #10161d;
+  color: #6f7c89;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  list-style: none;
+  text-transform: uppercase;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.mini-lab-steps li {
+  padding: 11px 16px;
+  border-right: 1px solid #2d3741;
+}
+
+.mini-lab-steps li:last-child {
+  border-right: 0;
+}
+
+.mini-lab-steps li.is-active {
+  background: #161e27;
+  color: #dce3ea;
+}
+
+.mini-lab-steps li span {
+  margin-right: 5px;
+  color: #8196ff;
+}
+
 .mini-lab-grid {
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
@@ -1226,9 +1265,12 @@ html[data-vtc-intro="play"] .vtc-startup-wordmark {
 }
 
 .mini-lab-verdict {
+  display: flex;
   min-height: 49px;
-  margin: 0;
-  padding: 14px 18px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px 10px 18px;
   border-top: 1px solid #c9cec8;
   background: #e5ead9;
   color: #31401d;
@@ -1237,10 +1279,32 @@ html[data-vtc-intro="play"] .vtc-startup-wordmark {
   letter-spacing: 0.03em;
 }
 
-.mini-lab-verdict span {
+.mini-lab-verdict p {
+  margin: 0;
+}
+
+.mini-lab-verdict p span {
   margin-right: 7px;
   color: #567d0b;
   font-weight: 900;
+}
+
+.mini-lab-verdict button {
+  min-height: 34px;
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  cursor: pointer;
+  border: 1px solid #708347;
+  border-radius: 3px;
+  background: #f6f8ef;
+  color: #24310e;
+  font: inherit;
+  font-weight: 750;
+}
+
+.mini-lab-verdict button:disabled {
+  cursor: default;
+  opacity: 0.48;
 }
 
 .vtc-paths {
@@ -2182,6 +2246,11 @@ html[data-vtc-intro="play"] .vtc-startup-wordmark {
     min-height: 500px;
   }
 
+  .vtc-hero .mini-lab-codebody {
+    min-height: 260px;
+    padding-block: 34px;
+  }
+
   .vtc-manifesto-grid {
     grid-template-columns: 0.4fr 1.4fr 0.7fr;
     gap: 40px;
@@ -2228,7 +2297,8 @@ html[data-vtc-intro="play"] .vtc-startup-wordmark {
     font-size: clamp(4rem, 10vw, 6.4rem);
   }
 
-  .vtc-live-curriculum {
+  .vtc-live-curriculum,
+  .vtc-hero .mini-lab {
     min-height: auto;
   }
 
@@ -2287,6 +2357,10 @@ html[data-vtc-intro="play"] .vtc-startup-wordmark {
   .vtc-live-course {
     border-right: 0;
     border-bottom: 1px solid #35404a;
+  }
+
+  .vtc-hero .mini-lab-canvas {
+    min-height: 360px;
   }
 
   .vtc-live-course {
@@ -2403,6 +2477,29 @@ html[data-vtc-intro="play"] .vtc-startup-wordmark {
   .vtc-live-curriculum > footer {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .mini-lab-toolbar,
+  .mini-lab-toolbar > div,
+  .mini-lab-verdict {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mini-lab-toolbar > div {
+    gap: 4px;
+  }
+
+  .mini-lab-steps li {
+    padding-inline: 9px;
+  }
+
+  .mini-lab-controls > div {
+    grid-template-columns: 1fr;
+  }
+
+  .mini-lab-verdict button {
+    width: 100%;
   }
 
   .vtc-live-levels {
@@ -2670,7 +2767,8 @@ html[data-vtc-intro="play"] .vtc-startup-wordmark {
   }
 
   .vtc-hero-copy,
-  .vtc-live-curriculum {
+  .vtc-live-curriculum,
+  .vtc-hero .mini-lab {
     animation: none;
   }
 
