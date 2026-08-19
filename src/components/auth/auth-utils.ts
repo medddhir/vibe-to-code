@@ -168,6 +168,8 @@ export function getCallbackErrorMessage(code?: string) {
       return "We could not verify that identity. Please start the sign-in again.";
     case "oauth_callback":
       return "Google sign-in did not finish. Please try again.";
+    case "oauth_start":
+      return "Google sign-in could not start. Please try again.";
     default:
       return "";
   }
