@@ -39,3 +39,19 @@ test("copies Supabase anti-cache headers when refreshed auth cookies are set", (
     /sb-test-auth-token=refreshed-session/,
   );
 });
+
+test("sets refreshed cookies when Supabase does not provide response headers", () => {
+  const request = new NextRequest("https://vibe-to-code.tech/account");
+  const response = createSupabaseSessionResponse(request, [
+    {
+      name: "sb-test-auth-token",
+      value: "refreshed-session",
+      options: { path: "/", sameSite: "lax" },
+    },
+  ]);
+
+  assert.match(
+    response.headers.get("set-cookie") ?? "",
+    /sb-test-auth-token=refreshed-session/,
+  );
+});

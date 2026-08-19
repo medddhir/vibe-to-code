@@ -12,7 +12,7 @@ type SupabaseCookieWrite = {
 export const createSupabaseSessionResponse = (
   request: NextRequest,
   cookiesToSet: SupabaseCookieWrite[],
-  headersToSet: Record<string, string>,
+  headersToSet: Record<string, string> = {},
 ): NextResponse => {
   cookiesToSet.forEach(({ name, value }) => {
     request.cookies.set(name, value);

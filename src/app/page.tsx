@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { LiveCurriculumCard } from "@/components/live-curriculum-card";
 import { MiniLessonLab } from "@/components/mini-lesson-lab";
 import { coreLessonCount, courses } from "@/data/curriculum";
 import { FOUNDATION_PUBLISHED_TOTAL_LESSONS } from "@/data/foundations-level1";
@@ -67,7 +66,7 @@ export default function Home() {
             </p>
           </div>
 
-          <LiveCurriculumCard />
+          <MiniLessonLab />
         </div>
 
         <div className="shell vtc-proof-rail" aria-label="Platform facts">
@@ -127,26 +126,10 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="vtc-lab-section vtc-section" aria-labelledby="lab-heading">
-        <div className="shell">
-          <div className="vtc-lab-heading">
-            <div>
-              <span className="vtc-section-index">03 / Try the product</span>
-              <h2 id="lab-heading">Don&apos;t watch another tutorial. Touch the code.</h2>
-            </div>
-            <p>
-              Every guided lesson turns an abstract idea into a small decision you
-              can make, observe, and verify yourself.
-            </p>
-          </div>
-          <MiniLessonLab />
-        </div>
-      </section>
-
       <section className="vtc-paths vtc-section" aria-labelledby="paths-title">
         <div className="shell">
           <div className="vtc-paths-heading">
-            <span className="vtc-section-index">04 / Learning paths</span>
+            <span className="vtc-section-index">03 / Learning paths</span>
             <h2 id="paths-title">A route through the noise.</h2>
             <p>
               Start with the systems every developer uses. Add languages and tools
@@ -205,7 +188,7 @@ export default function Home() {
       <section className="vtc-open-source vtc-section" aria-labelledby="open-source-title">
         <div className="shell vtc-open-source-grid">
           <div>
-            <span className="vtc-section-index">05 / Built in public</span>
+            <span className="vtc-section-index">04 / Built in public</span>
             <h2 id="open-source-title">The learning manual is open.</h2>
           </div>
           <div>

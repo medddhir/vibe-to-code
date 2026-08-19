@@ -58,14 +58,14 @@ export function AuthShell({
               <li>
                 <span>03</span>
                 <div>
-                  <strong>Progress sync is separate</strong>
-                  <p>Sync is optional and may remain disabled in some environments.</p>
+                  <strong>Keep your progress</strong>
+                  <p>Your completed lessons and checkpoints follow your account across devices.</p>
                 </div>
               </li>
             </ol>
 
             <p className="auth-continuity-note">
-              Published learning after Lesson 1 requires Google. All learning remains free, with no payment or card required.
+              Published learning after Lesson 1 requires Google. All learning remains free, and course-update emails are always opt-in.
             </p>
           </aside>
         </div>

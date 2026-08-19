@@ -73,5 +73,6 @@ test("forces staging preview progress to stay device-only", () => {
     false,
   );
   assert.equal(shouldUseRemoteProgressSync(true, "vibe-to-code.tech"), true);
-  assert.equal(shouldUseRemoteProgressSync(false, "vibe-to-code.tech"), false);
+  assert.equal(shouldUseRemoteProgressSync(false, "vibe-to-code.tech"), true);
+  assert.equal(shouldUseRemoteProgressSync(false, "preview.example.com"), false);
 });
