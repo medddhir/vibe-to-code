@@ -1,9 +1,17 @@
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabasePublicConfig } from "@/lib/supabase/config";
 import { resolveSafeReturnPath } from "@/lib/supabase/return-path";
 
 type OAuthIntent = "sign-in" | "sign-up";
+
+type PendingCookie = {
+  name: string;
+  options: CookieOptions;
+  value: string;
+};
 
 export const getOAuthStartParams = (url: URL) => {
   const intent: OAuthIntent =
@@ -22,12 +30,47 @@ const signInErrorRedirect = (origin: string, reason: string) => {
   return NextResponse.redirect(url);
 };
 
+const createOAuthStartClient = async () => {
+  const config = getSupabasePublicConfig();
+
+  if (!config) {
+    return null;
+  }
+
+  const cookieStore = await cookies();
+  const pendingCookies: PendingCookie[] = [];
+
+  const supabase = createServerClient(config.url, config.publishableKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        pendingCookies.push(...cookiesToSet);
+      },
+    },
+  });
+
+  return { pendingCookies, supabase };
+};
+
+const applyPendingCookies = (
+  response: NextResponse,
+  pendingCookies: PendingCookie[],
+): NextResponse => {
+  pendingCookies.forEach(({ name, options, value }) => {
+    response.cookies.set(name, value, options);
+  });
+
+  return response;
+};
+
 export const GET = async (request: NextRequest): Promise<NextResponse> => {
   const requestUrl = request.nextUrl;
   const { intent, next } = getOAuthStartParams(requestUrl);
-  const supabase = await createSupabaseServerClient();
+  const auth = await createOAuthStartClient();
 
-  if (!supabase) {
+  if (!auth) {
     return signInErrorRedirect(requestUrl.origin, "auth_unavailable");
   }
 
@@ -37,7 +80,7 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
     intent === "sign-up" ? "/account/welcome" : next,
   );
 
-  const { data, error } = await supabase.auth.signInWithOAuth({
+  const { data, error } = await auth.supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
       redirectTo: callbackUrl.toString(),
@@ -49,11 +92,13 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
     return signInErrorRedirect(requestUrl.origin, "oauth_start");
   }
 
-  return NextResponse.redirect(data.url, {
+  const response = NextResponse.redirect(data.url, {
     headers: {
       "Cache-Control": "private, no-cache, no-store, must-revalidate, max-age=0",
       Expires: "0",
       Pragma: "no-cache",
     },
   });
+
+  return applyPendingCookies(response, auth.pendingCookies);
 };
