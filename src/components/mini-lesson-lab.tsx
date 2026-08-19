@@ -94,7 +94,7 @@ export function MiniLessonLab() {
           </div>
           <div className="mini-lab-verdict" aria-live="polite">
             <p>
-              <span aria-hidden="true">{isVerified ? "✓" : "→"}</span>
+              <span aria-hidden="true">{isVerified ? "✓" : "→"}</span>{" "}
               {isVerified
                 ? `Verified: ${selected.note.toLowerCase()} spacing matches the code.`
                 : hasEdited
