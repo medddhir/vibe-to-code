@@ -176,7 +176,7 @@ export function AccountPageClient() {
         <div className="account-sync-state" role="status" aria-live="polite">
           <span><i aria-hidden="true" /> {progressSync.status === "synced" ? "Account progress synced" : "Device copy protected"}</span>
           <p>{progressSync.message}</p>
-          <small>Progress sync is optional, separate from access, and may remain disabled in some environments.</small>
+          <small>Signed-in progress is saved to your account. Your device copy stays available if you go offline.</small>
         </div>
         <div className="account-sync-actions">
           <Link className="button button-secondary" href="/courses/foundations">
