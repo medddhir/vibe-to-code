@@ -7,6 +7,7 @@ const { test } = require("node:test");
 const {
   createOAuthCallbackRedirect,
   getOAuthFlowOptions,
+  hasOAuthVerifierCookie,
 } = require("../src/app/auth/callback/route.ts");
 const {
   getOAuthStartParams,
@@ -43,6 +44,26 @@ test("omits OAuth flow options when Supabase does not send a flow identifier", (
   const url = new URL("https://vibe-to-code.tech/auth/callback?code=oauth-code");
 
   assert.equal(getOAuthFlowOptions(url), undefined);
+});
+
+test("detects the Supabase PKCE verifier cookie without reading its value", () => {
+  const request = {
+    cookies: {
+      getAll: () => [
+        { name: "unrelated", value: "ignored" },
+        {
+          name: "sb-project-auth-token-code-verifier",
+          value: "must-not-be-logged",
+        },
+      ],
+    },
+  };
+
+  assert.equal(hasOAuthVerifierCookie(request), true);
+  assert.equal(
+    hasOAuthVerifierCookie({ cookies: { getAll: () => [] } }),
+    false,
+  );
 });
 
 test("marks OAuth callback redirects private and non-cacheable", () => {

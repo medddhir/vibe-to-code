@@ -26,10 +26,35 @@ export const getOAuthFlowOptions = (
   return flowId ? { flowId } : undefined;
 };
 
+export const hasOAuthVerifierCookie = (request: NextRequest): boolean =>
+  request.cookies
+    .getAll()
+    .some(({ name }) => name.endsWith("-auth-token-code-verifier"));
+
+const logOAuthCallbackFailure = (
+  stage:
+    | "missing_code"
+    | "exchange_threw"
+    | "exchange_rejected"
+    | "claims_threw"
+    | "claims_rejected",
+  details: {
+    hasFlowId: boolean;
+    hasVerifierCookie: boolean;
+    errorCode?: string;
+    errorName?: string;
+    errorStatus?: number;
+  },
+) => {
+  // Never log the OAuth code, PKCE verifier, session tokens, or user identity.
+  console.error("oauth_callback_failure", { stage, ...details });
+};
+
 export const GET = async (request: NextRequest): Promise<NextResponse> => {
   const requestUrl = request.nextUrl;
   const code = requestUrl.searchParams.get("code");
   const flowOptions = getOAuthFlowOptions(requestUrl);
+  const hasVerifierCookie = hasOAuthVerifierCookie(request);
   const next = resolveSafeReturnPath(requestUrl.searchParams.get("next"));
   const supabase = await createSupabaseServerClient();
 
@@ -40,6 +65,10 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
   }
 
   if (!code) {
+    logOAuthCallbackFailure("missing_code", {
+      hasFlowId: Boolean(flowOptions),
+      hasVerifierCookie,
+    });
     return createOAuthCallbackRedirect(
       signInErrorUrl(requestUrl.origin, "oauth_callback"),
     );
@@ -49,13 +78,25 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
 
   try {
     exchange = await supabase.auth.exchangeCodeForSession(code, flowOptions);
-  } catch {
+  } catch (error) {
+    logOAuthCallbackFailure("exchange_threw", {
+      hasFlowId: Boolean(flowOptions),
+      hasVerifierCookie,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    });
     return createOAuthCallbackRedirect(
       signInErrorUrl(requestUrl.origin, "oauth_callback"),
     );
   }
 
   if (exchange.error) {
+    logOAuthCallbackFailure("exchange_rejected", {
+      hasFlowId: Boolean(flowOptions),
+      hasVerifierCookie,
+      errorCode: exchange.error.code,
+      errorName: exchange.error.name,
+      errorStatus: exchange.error.status,
+    });
     return createOAuthCallbackRedirect(
       signInErrorUrl(requestUrl.origin, "oauth_callback"),
     );
@@ -65,13 +106,25 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
 
   try {
     claims = await supabase.auth.getClaims();
-  } catch {
+  } catch (error) {
+    logOAuthCallbackFailure("claims_threw", {
+      hasFlowId: Boolean(flowOptions),
+      hasVerifierCookie,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    });
     return createOAuthCallbackRedirect(
       signInErrorUrl(requestUrl.origin, "identity_verification"),
     );
   }
 
   if (claims.error || !claims.data?.claims?.sub) {
+    logOAuthCallbackFailure("claims_rejected", {
+      hasFlowId: Boolean(flowOptions),
+      hasVerifierCookie,
+      errorCode: claims.error?.code,
+      errorName: claims.error?.name,
+      errorStatus: claims.error?.status,
+    });
     await supabase.auth.signOut({ scope: "local" });
     return createOAuthCallbackRedirect(
       signInErrorUrl(requestUrl.origin, "identity_verification"),
