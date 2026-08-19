@@ -8,6 +8,28 @@ const {
   createOAuthCallbackRedirect,
   getOAuthFlowOptions,
 } = require("../src/app/auth/callback/route.ts");
+const {
+  getOAuthStartParams,
+} = require("../src/app/auth/google/route.ts");
+
+test("starts Google OAuth with a sanitized return path", () => {
+  assert.deepEqual(
+    getOAuthStartParams(
+      new URL(
+        "https://vibe-to-code.tech/auth/google?intent=sign-in&next=%2Flessons%2Fsource-code-running-output",
+      ),
+    ),
+    { intent: "sign-in", next: "/lessons/source-code-running-output" },
+  );
+  assert.deepEqual(
+    getOAuthStartParams(
+      new URL(
+        "https://vibe-to-code.tech/auth/google?intent=sign-up&next=https%3A%2F%2Fattacker.example",
+      ),
+    ),
+    { intent: "sign-up", next: "/courses/foundations" },
+  );
+});
 
 test("preserves the Supabase PKCE flow identifier during OAuth exchange", () => {
   const url = new URL(
