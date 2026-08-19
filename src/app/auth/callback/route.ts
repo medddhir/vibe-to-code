@@ -19,9 +19,17 @@ export const createOAuthCallbackRedirect = (url: URL): NextResponse =>
     },
   });
 
+export const getOAuthFlowOptions = (
+  url: URL,
+): { flowId: string } | undefined => {
+  const flowId = url.searchParams.get("sb_flow_id")?.trim();
+  return flowId ? { flowId } : undefined;
+};
+
 export const GET = async (request: NextRequest): Promise<NextResponse> => {
   const requestUrl = request.nextUrl;
   const code = requestUrl.searchParams.get("code");
+  const flowOptions = getOAuthFlowOptions(requestUrl);
   const next = resolveSafeReturnPath(requestUrl.searchParams.get("next"));
   const supabase = await createSupabaseServerClient();
 
@@ -40,7 +48,7 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
   let exchange: Awaited<ReturnType<typeof supabase.auth.exchangeCodeForSession>>;
 
   try {
-    exchange = await supabase.auth.exchangeCodeForSession(code);
+    exchange = await supabase.auth.exchangeCodeForSession(code, flowOptions);
   } catch {
     return createOAuthCallbackRedirect(
       signInErrorUrl(requestUrl.origin, "oauth_callback"),
