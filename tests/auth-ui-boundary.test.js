@@ -66,12 +66,19 @@ test("keeps public account entry points Google-only", () => {
     path.join(process.cwd(), "src/components/auth/auth-shell.tsx"),
     "utf8",
   );
+  const googleStartRoute = fs.readFileSync(
+    path.join(process.cwd(), "src/app/auth/google/route.ts"),
+    "utf8",
+  );
   const verifyEmailPage = fs.readFileSync(
     path.join(process.cwd(), "src/app/verify-email/page.tsx"),
     "utf8",
   );
 
   assert.match(authMethodForm, /Continue with Google/);
+  assert.match(authMethodForm, /\/auth\/google/);
+  assert.match(googleStartRoute, /signInWithOAuth/);
+  assert.match(googleStartRoute, /skipBrowserRedirect:\s*true/);
   assert.doesNotMatch(authMethodForm, /signInWithOtp|auth-email-form|or use email/);
   assert.doesNotMatch(authShell, /Verify your inbox|one-time code/);
   assert.match(verifyEmailPage, /redirect\("\/sign-in"\)/);
