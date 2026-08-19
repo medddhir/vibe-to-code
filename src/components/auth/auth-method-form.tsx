@@ -1,14 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import {
-  classifyAuthError,
   getCallbackErrorMessage,
   type AuthIntent,
   writeAuthReturnPath,
 } from "@/components/auth/auth-utils";
-import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { resolveSafeReturnPath } from "@/lib/supabase/return-path";
 
@@ -29,7 +27,6 @@ export function AuthMethodForm({
   returnTo,
 }: AuthMethodFormProps) {
   const configured = isSupabaseConfigured();
-  const supabase = useMemo(() => createClient(), []);
   const [isPending, setIsPending] = useState(false);
   const [message, setMessage] = useState(() => getCallbackErrorMessage(initialErrorCode));
   const safeReturnTo = resolveSafeReturnPath(returnTo, "/learn");
@@ -38,38 +35,21 @@ export function AuthMethodForm({
   async function continueWithGoogle() {
     setMessage("");
 
-    if (!configured || !supabase) {
+    if (!configured) {
       setMessage("Account access is not connected in this environment yet.");
       return;
     }
 
     setIsPending(true);
 
-    const callbackNext = intent === "sign-up" ? "/account/welcome" : safeReturnTo;
-
     if (intent === "sign-up") {
       writeAuthReturnPath(safeReturnTo);
     }
 
-    const callbackUrl = new URL("/auth/callback", window.location.origin);
-    callbackUrl.searchParams.set("next", callbackNext);
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: callbackUrl.toString(),
-      },
-    });
-
-    if (error) {
-      const errorType = classifyAuthError(error);
-      setMessage(
-        errorType === "network"
-          ? "We could not reach Google sign-in. Check your connection and try again."
-          : "Google sign-in could not start. Please try again.",
-      );
-      setIsPending(false);
-    }
+    const startUrl = new URL("/auth/google", window.location.origin);
+    startUrl.searchParams.set("intent", intent);
+    startUrl.searchParams.set("next", safeReturnTo);
+    window.location.assign(startUrl.toString());
   }
 
   return (
