@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 import {
   getCallbackErrorMessage,
   type AuthIntent,
@@ -27,33 +25,20 @@ export function AuthMethodForm({
   returnTo,
 }: AuthMethodFormProps) {
   const configured = isSupabaseConfigured();
-  const [isPending, setIsPending] = useState(false);
-  const [message, setMessage] = useState(() => getCallbackErrorMessage(initialErrorCode));
+  const message = getCallbackErrorMessage(initialErrorCode);
   const safeReturnTo = resolveSafeReturnPath(returnTo, "/learn");
   const copy = authActionCopy[intent];
+  const startQuery = new URLSearchParams({ intent, next: safeReturnTo });
+  const startHref = `/auth/google?${startQuery.toString()}`;
 
-  async function continueWithGoogle() {
-    setMessage("");
-
-    if (!configured) {
-      setMessage("Account access is not connected in this environment yet.");
-      return;
-    }
-
-    setIsPending(true);
-
+  function rememberSignUpReturnPath() {
     if (intent === "sign-up") {
       writeAuthReturnPath(safeReturnTo);
     }
-
-    const startUrl = new URL("/auth/google", window.location.origin);
-    startUrl.searchParams.set("intent", intent);
-    startUrl.searchParams.set("next", safeReturnTo);
-    window.location.assign(startUrl.toString());
   }
 
   return (
-    <div className="auth-methods" aria-busy={isPending}>
+    <div className="auth-methods">
       {!configured ? (
         <div className="auth-config-notice" role="status">
           <strong>Account setup is not connected here yet.</strong>
@@ -67,15 +52,21 @@ export function AuthMethodForm({
         </p>
       ) : null}
 
-      <button
-        className="auth-google-button"
-        type="button"
-        disabled={!configured || isPending}
-        onClick={continueWithGoogle}
-      >
-        <span className="auth-google-mark" aria-hidden="true">G</span>
-        <span>{isPending ? "Opening Google..." : copy}</span>
-      </button>
+      {configured ? (
+        <a
+          className="auth-google-button"
+          href={startHref}
+          onClick={rememberSignUpReturnPath}
+        >
+          <span className="auth-google-mark" aria-hidden="true">G</span>
+          <span>{copy}</span>
+        </a>
+      ) : (
+        <button className="auth-google-button" type="button" disabled>
+          <span className="auth-google-mark" aria-hidden="true">G</span>
+          <span>{copy}</span>
+        </button>
+      )}
 
       <p className="auth-privacy-note">
         We only request your basic Google profile and email address.
