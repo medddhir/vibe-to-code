@@ -26,7 +26,7 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
     <AuthShell
       kicker="Continue with Google"
       title="Keep learning beyond Lesson 1."
-      description="Lesson 1 is open now. Create a free Vibe to Code account with Google to continue all later published lessons. Progress can sync when that feature is enabled."
+      description="Lesson 1 is open now. Create a free Vibe to Code account with Google to unlock every published lesson and save your progress across devices."
       footer={
         <p>
           Already have an account? <Link href={`/sign-in?next=${encodeURIComponent(returnTo)}`}>Sign in</Link>
