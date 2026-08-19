@@ -12,17 +12,38 @@ type Spacing = (typeof spacingOptions)[number]["value"];
 
 export function MiniLessonLab() {
   const [spacing, setSpacing] = useState<Spacing>("balanced");
+  const [hasEdited, setHasEdited] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
   const selected = spacingOptions.find((option) => option.value === spacing) ?? spacingOptions[1];
+  const activeStep = isVerified ? 3 : hasEdited ? 2 : 1;
+
+  function chooseSpacing(value: Spacing) {
+    setSpacing(value);
+    setHasEdited(true);
+    setIsVerified(false);
+  }
 
   return (
     <div className="mini-lab" aria-labelledby="mini-lab-title">
       <div className="mini-lab-toolbar">
         <div>
-          <span>Guided lab</span>
-          <strong id="mini-lab-title">Change one line. See exactly what moves.</strong>
+          <span>Live task</span>
+          <strong id="mini-lab-title">Change one line. Prove what it controls.</strong>
         </div>
-        <span className="mini-lab-progress">01 / 03</span>
+        <span className="mini-lab-progress">0{activeStep} / 03</span>
       </div>
+
+      <ol className="mini-lab-steps" aria-label="Task progress">
+        {["Inspect", "Change", "Verify"].map((step, index) => (
+          <li
+            key={step}
+            className={activeStep >= index + 1 ? "is-active" : undefined}
+            aria-current={activeStep === index + 1 ? "step" : undefined}
+          >
+            <span>0{index + 1}</span> {step}
+          </li>
+        ))}
+      </ol>
 
       <div className="mini-lab-grid">
         <div className="mini-lab-code">
@@ -48,7 +69,7 @@ export function MiniLessonLab() {
                   type="button"
                   className={spacing === option.value ? "is-selected" : undefined}
                   aria-pressed={spacing === option.value}
-                  onClick={() => setSpacing(option.value)}
+                  onClick={() => chooseSpacing(option.value)}
                 >
                   <strong>{option.label}</strong>
                   <span>{option.note}</span>
@@ -71,9 +92,23 @@ export function MiniLessonLab() {
               <button type="button">Ship the build</button>
             </article>
           </div>
-          <p className="mini-lab-verdict" aria-live="polite">
-            <span aria-hidden="true">✓</span> Change verified: {selected.note.toLowerCase()} spacing
-          </p>
+          <div className="mini-lab-verdict" aria-live="polite">
+            <p>
+              <span aria-hidden="true">{isVerified ? "✓" : "→"}</span>
+              {isVerified
+                ? `Verified: ${selected.note.toLowerCase()} spacing matches the code.`
+                : hasEdited
+                  ? "The preview changed. Run the check to verify why."
+                  : "Choose a value, then verify the result."}
+            </p>
+            <button
+              type="button"
+              disabled={!hasEdited || isVerified}
+              onClick={() => setIsVerified(true)}
+            >
+              {isVerified ? "Check passed" : "Run check"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
