@@ -1,4 +1,5 @@
 export const STAGING_PREVIEW_HOSTNAME = "staging.vibe-to-code.tech";
+export const PRODUCTION_HOSTNAME = "vibe-to-code.tech";
 
 const normalizeHost = (value: string | null | undefined): string | null => {
   if (!value) return null;
@@ -16,4 +17,9 @@ export const isStagingCoursePreviewHost = (
 export const shouldUseRemoteProgressSync = (
   configured: boolean,
   host: string | null | undefined,
-): boolean => configured && !isStagingCoursePreviewHost(host);
+): boolean => {
+  const normalizedHost = normalizeHost(host);
+
+  if (normalizedHost === STAGING_PREVIEW_HOSTNAME) return false;
+  return configured || normalizedHost === PRODUCTION_HOSTNAME;
+};
