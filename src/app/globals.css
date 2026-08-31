@@ -3037,10 +3037,21 @@ pre {
 /* Guided lesson experience */
 .guided-lesson-shell {
   width: min(100%, 1240px);
-  min-height: calc(100dvh - 150px);
+  min-height: calc(100dvh - 118px);
   align-items: start;
   grid-template-columns: minmax(230px, 280px) minmax(0, 1fr);
   gap: 30px;
+}
+
+.guided-lesson-main {
+  padding: 24px 0 34px;
+}
+
+.guided-lesson-sidebar {
+  top: 96px;
+  max-height: calc(100dvh - 122px);
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .guided-lesson-sidebar .breadcrumb {
@@ -3206,7 +3217,10 @@ pre {
 }
 
 .guided-lesson-article {
+  display: grid;
+  min-height: calc(100dvh - 118px);
   min-width: 0;
+  align-content: start;
 }
 
 .lesson-command-bar {
@@ -3282,6 +3296,7 @@ pre {
 }
 
 .lesson-active-progress {
+  display: none;
   margin-bottom: 10px;
   padding: 12px 14px;
   border: 1px solid var(--line);
@@ -3325,7 +3340,15 @@ pre {
 }
 
 .guided-lesson-panel {
-  min-height: min(560px, calc(100dvh - 250px));
+  max-height: calc(100dvh - 196px);
+  min-height: calc(100dvh - 196px);
+  overflow: auto;
+  padding: 0 22px 28px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-large);
+  background: var(--surface);
+  box-shadow: var(--shadow-small);
+  scroll-padding: 22px;
   animation: lesson-panel-arrive 220ms ease-out both;
 }
 
@@ -3336,6 +3359,8 @@ pre {
 
 .guided-topic > .lesson-section,
 .guided-topic.lesson-section {
+  padding-top: 26px;
+  padding-bottom: 26px;
   border-bottom: 0;
 }
 
@@ -6005,6 +6030,8 @@ pre {
 
   .lesson-sidebar {
     position: static;
+    max-height: none;
+    overflow: visible;
     padding-bottom: 18px;
     border-bottom: 1px solid var(--line);
   }
@@ -6056,6 +6083,15 @@ pre {
   .lesson-command-bar {
     top: 10px;
     margin-inline: -2px;
+  }
+
+  .guided-lesson-article {
+    min-height: 0;
+  }
+
+  .guided-lesson-panel {
+    max-height: none;
+    min-height: 0;
   }
 
   .lesson-mobile-toc a {
