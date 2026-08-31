@@ -353,6 +353,9 @@ export function GuidedLessonFlow({
   const lessonCompleted = Boolean(progress.completedAt);
   const lessonStepPercent = steps.length ? ((activeIndex + 1) / steps.length) * 100 : 0;
   const coursePercent = (courseLessonProgressValue / courseLessonTotalValue) * 100;
+  const continueButtonLabel = isFinalStep
+    ? finalButtonLabel
+    : activeStep?.continueLabel ?? `Next ${stepNoun.toLowerCase()}`;
 
   const trackCourseStep = useCallback(
     (stepId: string) => {
@@ -394,7 +397,6 @@ export function GuidedLessonFlow({
     updateProgress((current) => ({ ...current, currentStepId: stepId }));
     trackCourseStep(stepId);
     window.requestAnimationFrame(() => {
-      panelStartRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
       panelStartRef.current?.focus({ preventScroll: true });
     });
   }, [trackCourseStep, updateProgress]);
@@ -447,7 +449,6 @@ export function GuidedLessonFlow({
 
     if (!isFinalStep) {
       window.requestAnimationFrame(() => {
-        panelStartRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
         panelStartRef.current?.focus({ preventScroll: true });
       });
     }
@@ -478,7 +479,6 @@ export function GuidedLessonFlow({
     }
 
     window.requestAnimationFrame(() => {
-      panelStartRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
       panelStartRef.current?.focus({ preventScroll: true });
     });
   }
@@ -649,6 +649,39 @@ export function GuidedLessonFlow({
 
           <article className="lesson-article guided-lesson-article">
             <h1 className="lesson-persistent-title">{title}</h1>
+            <div className="lesson-command-bar" aria-label="Lesson controls">
+              <div className="lesson-command-context">
+                <span>{activeStep.eyebrow}</span>
+                <strong>{stepNoun} {activeIndex + 1} of {steps.length}</strong>
+              </div>
+              <div className="lesson-command-actions">
+                <button
+                  className="button button-secondary"
+                  type="button"
+                  disabled={activeIndex === 0}
+                  onClick={goBack}
+                >
+                  Previous
+                </button>
+                {lessonCompleted && isFinalStep && resolvedNextLesson ? (
+                  <Link className="button button-primary" href={resolvedNextLesson.href}>
+                    {resolvedNextLesson.actionLabel}
+                  </Link>
+                ) : (
+                  <button
+                    className="button button-primary"
+                    type="button"
+                    disabled={!canContinue}
+                    onClick={goForward}
+                  >
+                    {continueButtonLabel}
+                  </button>
+                )}
+              </div>
+              {!canContinue ? (
+                <small role="status">Clear this checkpoint to unlock the next action.</small>
+              ) : null}
+            </div>
             <div
               className="lesson-panel-start"
               ref={panelStartRef}
@@ -715,31 +748,7 @@ export function GuidedLessonFlow({
                   </div>
                 </div>
               </section>
-            ) : (
-              <nav className="guided-lesson-navigation" aria-label="Lesson topic navigation">
-                <button
-                  className="button button-secondary"
-                  type="button"
-                  disabled={activeIndex === 0}
-                  onClick={goBack}
-                >
-                  ← Previous topic
-                </button>
-                <div>
-                  {!canContinue ? <small>Clear the checkpoint above to continue</small> : null}
-                  <button
-                    className="button button-primary"
-                    type="button"
-                    disabled={!canContinue}
-                    onClick={goForward}
-                  >
-                    {isFinalStep
-                      ? finalButtonLabel
-                      : activeStep.continueLabel ?? `Next ${stepNoun.toLowerCase()}`} →
-                  </button>
-                </div>
-              </nav>
-            )}
+            ) : null}
           </article>
         </div>
       </main>
