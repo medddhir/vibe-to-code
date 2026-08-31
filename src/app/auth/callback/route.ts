@@ -31,6 +31,14 @@ export const hasOAuthVerifierCookie = (request: NextRequest): boolean =>
     .getAll()
     .some(({ name }) => name.endsWith("-auth-token-code-verifier"));
 
+const safeOAuthErrorMessage = (message?: string): string | undefined => {
+  if (!message) {
+    return undefined;
+  }
+
+  return message.replace(/[A-Za-z0-9_-]{24,}/g, "[redacted]").slice(0, 180);
+};
+
 const logOAuthCallbackFailure = (
   stage:
     | "missing_code"
@@ -42,6 +50,7 @@ const logOAuthCallbackFailure = (
     hasFlowId: boolean;
     hasVerifierCookie: boolean;
     errorCode?: string;
+    errorMessage?: string;
     errorName?: string;
     errorStatus?: number;
   },
@@ -82,6 +91,9 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
     logOAuthCallbackFailure("exchange_threw", {
       hasFlowId: Boolean(flowOptions),
       hasVerifierCookie,
+      errorMessage: safeOAuthErrorMessage(
+        error instanceof Error ? error.message : undefined,
+      ),
       errorName: error instanceof Error ? error.name : "UnknownError",
     });
     return createOAuthCallbackRedirect(
@@ -94,6 +106,7 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
       hasFlowId: Boolean(flowOptions),
       hasVerifierCookie,
       errorCode: exchange.error.code,
+      errorMessage: safeOAuthErrorMessage(exchange.error.message),
       errorName: exchange.error.name,
       errorStatus: exchange.error.status,
     });
@@ -110,6 +123,9 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
     logOAuthCallbackFailure("claims_threw", {
       hasFlowId: Boolean(flowOptions),
       hasVerifierCookie,
+      errorMessage: safeOAuthErrorMessage(
+        error instanceof Error ? error.message : undefined,
+      ),
       errorName: error instanceof Error ? error.name : "UnknownError",
     });
     return createOAuthCallbackRedirect(
@@ -122,6 +138,7 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
       hasFlowId: Boolean(flowOptions),
       hasVerifierCookie,
       errorCode: claims.error?.code,
+      errorMessage: safeOAuthErrorMessage(claims.error?.message),
       errorName: claims.error?.name,
       errorStatus: claims.error?.status,
     });
