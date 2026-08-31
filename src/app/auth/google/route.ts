@@ -41,6 +41,11 @@ const createOAuthStartClient = async () => {
   const pendingCookies: PendingCookie[] = [];
 
   const supabase = createServerClient(config.url, config.publishableKey, {
+    auth: {
+      experimental: {
+        appendPkceFlowIdToRedirects: true,
+      },
+    },
     cookies: {
       getAll() {
         return cookieStore.getAll();
